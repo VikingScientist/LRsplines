@@ -51,7 +51,7 @@ IF(NOT WIN32)
 ENDIF(NOT WIN32)
 
 # Make the LRSplineSurface library
-FILE(GLOB_RECURSE LRSplineSurface ${PROJECT_SOURCE_DIR}/src/*.cpp)
+FILE(GLOB_RECURSE LRSPLINE_SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp)
 ADD_LIBRARY(LRSplineSurface ${LRSPLINE_SRCS})
 
 # Make some Apps
