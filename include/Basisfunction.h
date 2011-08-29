@@ -27,8 +27,8 @@ public:
 	~Basisfunction();
 
 
-	double evaluate(double u, double v) const;
-	void evaluate(std::vector<double> &results, double u, double v, int derivs) const;
+	double evaluate(double u, double v, bool u_from_right=true, bool v_from_right=true) const;
+	void evaluate(std::vector<double> &results, double u, double v, int derivs, bool u_from_right=true, bool v_from_right=true) const;
 
 	bool operator==(const Basisfunction &other) const;
 	void operator+=(const Basisfunction &other) ;

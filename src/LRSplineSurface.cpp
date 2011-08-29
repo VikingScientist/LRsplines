@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <boost/rational.hpp>
 
 typedef unsigned int uint;
 
@@ -60,7 +61,7 @@ void LRSplineSurface::point(Go::Point &pt, double u, double v) const {
 	pt *= 0;
 	for(uint i=0; i<basis_.size(); i++) {
 		basis_[i]->getControlPoint(cp);
-		basis_ev = basis_[i]->evaluate(u,v);
+		basis_ev = basis_[i]->evaluate(u,v, u!=end_u_, v!=end_v_);
 		pt += basis_ev*cp;
 	}
 }
@@ -78,7 +79,7 @@ void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int
 
 	for(uint i=0; i<basis_.size(); i++) {
 		basis_[i]->getControlPoint(cp);
-		basis_[i]->evaluate(basis_ev, u,v, derivs);
+		basis_[i]->evaluate(basis_ev, u,v, derivs, u!=end_u_, v!=end_v_);
 		for(uint j=0; j<pts.size(); j++)
 			pts[j] += basis_ev[j]*cp;
 	}
@@ -88,7 +89,7 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 	result.prepareDerivs(param_u, param_v, 0, -1, basis_.size());
 	std::vector<double> values;
 	for(uint i=0; i<basis_.size(); i++) {
-		basis_[i]->evaluate(values, param_u, param_v, 1);
+		basis_[i]->evaluate(values, param_u, param_v, 1, param_u!=end_u_, param_v!=end_v_);
 		result.basisValues[i]   = values[0];
 		result.basisDerivs_u[i] = values[1];
 		result.basisDerivs_v[i] = values[2];
@@ -99,7 +100,7 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsSf & result ) const {
 	result.preparePts(param_u, param_v, 0, -1, basis_.size());
 	for(uint i=0; i<basis_.size(); i++)
-		result.basisValues[i] = basis_[i]->evaluate(param_u, param_v);
+		result.basisValues[i] = basis_[i]->evaluate(param_u, param_v, param_u!=end_u_, param_v!=end_v_);
 }
 
 void LRSplineSurface::insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity) {
@@ -114,7 +115,7 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	}
 	for(uint i=0; i<meshline_.size(); i++) {
 		if( meshline_[i]->is_spanning_u() != const_u && meshline_[i]->const_par_ == const_par && 
-		     meshline_[i]->start_ <= stop && meshline_[i]->stop_ >= start)  {
+				 meshline_[i]->start_ <= stop && meshline_[i]->stop_ >= start)  {
 			std::cerr << "Meshline extension not implemented yet - just new lines currently\n";
 			std::cerr << "New line requeste:    " << *newline      << std::endl;
 			std::cerr << "Old line intersected: " << *meshline_[i] << std::endl;
@@ -139,7 +140,7 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	for(uint i=nOldFunctions-nRemovedFunctions-1; i<basis_.size(); i++) {
 		for(uint j=0; j<meshline_.size(); j++) {
 			if(meshline_[j]->splits(basis_[i]) && 
-			   !meshline_[j]->containedIn(basis_[i])) {
+				 !meshline_[j]->containedIn(basis_[i])) {
 				std::cout << "Old meshline " << *meshline_[j] << " splits function " << *basis_[i] << std::endl;
 				split( !meshline_[j]->is_spanning_u(), i, meshline_[j]->const_par_ );
 				i--; // splitting deletes a basisfunction in the middle of the basis_ vector
@@ -200,6 +201,34 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 }
 
 void LRSplineSurface::getGlobalKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const {
+	getGlobalUniqueKnotVector(knot_u, knot_v);
+
+	// add in duplicates where apropriate
+	for(uint i=0; i<knot_u.size(); i++) {
+		for(uint j=0; j<meshline_.size(); j++) {
+			if(!meshline_[j]->is_spanning_u() && meshline_[j]->const_par_==knot_u[i]) {
+				for(int m=1; m<meshline_[j]->multiplicity_; m++) {
+					knot_u.insert(knot_u.begin()+i, knot_u[i]);
+					i++;
+				}
+				break;
+			}
+		}
+	}
+	for(uint i=0; i<knot_v.size(); i++) {
+		for(uint j=0; j<meshline_.size(); j++) {
+			if(meshline_[j]->is_spanning_u() && meshline_[j]->const_par_==knot_v[i]) {
+				for(int m=1; m<meshline_[j]->multiplicity_; m++) {
+					knot_v.insert(knot_v.begin()+i, knot_v[i]);
+					i++;
+				}
+				break;
+			}
+		}
+	}
+}
+
+void LRSplineSurface::getGlobalUniqueKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const {
 	knot_u.clear();
 	knot_v.clear();
 	// create a huge list of all line instances
@@ -220,6 +249,199 @@ void LRSplineSurface::getGlobalKnotVector(std::vector<double> &knot_u, std::vect
 	knot_v.resize(it-knot_v.begin());
 }
 
+bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
+	// try and figure out this thing by the projection matrix C
+
+	std::vector<double> knots_u, knots_v;
+	getGlobalKnotVector(knots_u, knots_v);
+	int nmb_bas = basis_.size();
+	int n1 = knots_u.size() - order_u_;
+	int n2 = knots_v.size() - order_v_;
+	int fullDim = n1*n2;
+	bool fullVerbose   = fullDim < 30  && nmb_bas < 50;
+	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
+
+	std::cout << "U = [";
+	for(uint i=0; i<knots_u.size(); i++) std::cout << knots_u[i] << ", ";
+	std::cout << "]\n";
+	std::cout << "V = [";
+	for(uint i=0; i<knots_v.size(); i++) std::cout << knots_v[i] << ", ";
+	std::cout << "]\n";
+
+	std::vector<std::vector<boost::rational<long long> > > C;  // rational projection matrix 
+	std::vector<double> locKnotU, locKnotV;               // local INDEX knot vectors
+
+	// scaling factor to ensure that all knots are integers (assuming all multiplum of smallest knot span)
+	double smallKnotU = 1e300;
+	double smallKnotV = 1e300;
+	for(uint i=0; i<knots_u.size()-1; i++)
+		if(knots_u[i+1]-knots_u[i] < smallKnotU && knots_u[i+1] != knots_u[i])
+			smallKnotU = knots_u[i+1]-knots_u[i];
+	for(uint i=0; i<knots_v.size()-1; i++)
+		if(knots_v[i+1]-knots_v[i] < smallKnotV && knots_v[i+1] != knots_v[i])
+			smallKnotV = knots_v[i+1]-knots_v[i];
+	double eps = (smallKnotU<smallKnotV) ? smallKnotU/1000 : smallKnotV/1000;
+
+	for (int i = 0; i < nmb_bas; ++i) {
+		int startU, startV;
+		std::vector<double> locKnotU(basis_[i]->knot_u_, basis_[i]->knot_u_ + basis_[i]->order_u_+1);
+		std::vector<double> locKnotV(basis_[i]->knot_v_, basis_[i]->knot_v_ + basis_[i]->order_v_+1);
+		
+		for(startU=knots_u.size(); startU-->0; )
+			if(knots_u[startU] == basis_[i]->knot_u_[0]) break;
+		for(int j=0; j<basis_[i]->order_u_; j++) {
+			if(knots_u[startU] == basis_[i]->knot_u_[j]) startU--;
+			else break;
+		}
+		startU++;
+		for(startV=knots_v.size(); startV-->0; )
+			if(knots_v[startV] == basis_[i]->knot_v_[0]) break;
+		for(int j=0; j<basis_[i]->order_v_; j++) {
+			if(knots_v[startV] == basis_[i]->knot_v_[j]) startV--;
+			else break;
+		}
+		startV++;
+
+		std::vector<boost::rational<long long> > rowU(1,1), rowV(1,1);
+		int curU = startU+1;
+		for(uint j=0; j<locKnotU.size()-1; j++, curU++) {
+			if(locKnotU[j+1] != knots_u[curU]) {
+				std::vector<boost::rational<long long> > newRowU(rowU.size()+1, boost::rational<long long>(0));
+				for(uint k=0; k<rowU.size(); k++) {
+					#define U(x) ((int) (locKnotU[x+k]/smallKnotU + eps))
+					int z = (int) (knots_u[curU] / smallKnotU + eps);
+					int p = order_u_-1;
+					if(z < U(0) || z > U(p+1)) {
+						newRowU[k] = boost::rational<long long>(1);
+						continue;
+					}
+					boost::rational<long long> alpha1 = (U(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - U(0),  U(p)  - U(0));
+					boost::rational<long long> alpha2 = (z    <= U(1)) ? 1 : boost::rational<long long>( U(p+1) - z   , U(p+1) - U(1));
+					newRowU[k]   += rowU[k]*alpha1;
+					newRowU[k+1] += rowU[k]*alpha2;
+					#undef U
+				}
+				locKnotU.insert(locKnotU.begin()+(j+1), knots_u[curU]);
+				rowU= newRowU;
+			}
+		}
+		int curV = startV+1;
+		for(uint j=0; j<locKnotV.size()-1; j++, curV++) {
+			if(locKnotV[j+1] != knots_v[curV]) {
+				std::vector<boost::rational<long long> > newRowV(rowV.size()+1, boost::rational<long long>(0));
+				for(uint k=0; k<rowV.size(); k++) {
+					#define V(x) ((int) (locKnotV[x+k]/smallKnotV + eps))
+					int z = (int) (knots_v[curV] / smallKnotV + eps);
+					int p = order_v_-1;
+					if(z < V(0) || z > V(p+1)) {
+						newRowV[k] = boost::rational<long long>(1);
+						continue;
+					}
+					boost::rational<long long> alpha1 = (V(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - V(0),  V(p)  - V(0));
+					boost::rational<long long> alpha2 = (z    <= V(1)) ? 1 : boost::rational<long long>( V(p+1) - z   , V(p+1) - V(1));
+					newRowV[k]   += rowV[k]*alpha1;
+					newRowV[k+1] += rowV[k]*alpha2;
+					#undef V
+				}
+				locKnotV.insert(locKnotV.begin()+(j+1), knots_v[curV]);
+				rowV= newRowV;
+			}
+		}
+		std::vector<boost::rational<long long> > totalRow(fullDim, boost::rational<long long>(0));
+		for(uint i1=0; i1<rowU.size(); i1++)
+			for(uint i2=0; i2<rowV.size(); i2++)
+				totalRow[(startV+i2)*n1 + (startU+i1)] = rowV[i2]*rowU[i1];
+
+		// for(int j=0; j<totalRow.size(); j++)
+			// std::cout << totalRow[j] << ", ";
+		// std::cout << "]\n";
+
+		C.push_back(totalRow);
+	}
+
+	if(verbose && sparseVerbose) {
+		for(uint i=0; i<C.size(); i++) {
+			std::cout << "|";
+			for(uint j=0; j<C[i].size(); j++)
+				if(C[i][j]==0) {
+					if(fullVerbose)
+						std::cout << "\t";
+					else if(sparseVerbose)
+						std::cout << " ";
+				} else {
+					if(fullVerbose)
+						std::cout << C[i][j] << "\t";
+					else if(sparseVerbose)
+						std::cout << "x";
+				}
+			std::cout << "|\n";
+		}
+		std::cout << std::endl;
+	}
+
+	// gauss-jordan elimination
+	int zeroColumns = 0;
+	for(uint i=0; i<C.size() && i+zeroColumns<C[i].size(); i++) {
+		boost::rational<long long> maxPivot = 0;
+		int maxI = -1;
+		for(uint j=i; j<C.size(); j++) {
+			if(abs(C[j][i+zeroColumns]) > maxPivot) {
+				maxPivot = abs(C[j][i+zeroColumns]);
+				maxI = j;
+			}
+		}
+		if(maxI == -1) {
+			i--;
+			zeroColumns++;
+			continue;
+		}
+		std::vector<boost::rational<long long> > tmp = C[i];
+		C[i] = C[maxI];
+		C[maxI] = tmp;
+		// printf("swapping row %d and %d\n", i, maxI);
+		// for(int j=i+zeroColumns+1; j<C[i].size(); j++)
+			// C[i][j] /= C[i][i+zeroColumns];
+		// C[i][i+zeroColumns] = 1.0;
+		for(uint j=i+1; j<C.size(); j++) {
+			// if(j==i) continue;
+			boost::rational<long long> scale =  C[j][i+zeroColumns] / C[i][i+zeroColumns];
+			if(scale != 0) {
+				// std::cout << scale << " x row(" << i << ") added to row " << j << std::endl;
+				for(uint k=i+zeroColumns; k<C[j].size(); k++)
+					C[j][k] -= C[i][k] * scale;
+			}
+		}
+	}
+
+	if(verbose && sparseVerbose) {
+		for(uint i=0; i<C.size(); i++) {
+			std::cout << "|";
+			for(uint j=0; j<C[i].size(); j++)
+				if(C[i][j]==0) {
+					if(fullVerbose)
+						std::cout << "\t";
+					else if(sparseVerbose)
+				 	std::cout << " ";
+				} else {
+					if(fullVerbose)
+						std::cout << C[i][j] << "\t";
+					else if(sparseVerbose)
+						std::cout << "x";
+				}
+			std::cout << "|\n";
+		}
+		std::cout << std::endl;
+	}
+
+	int rank = (nmb_bas < n1*n2-zeroColumns) ? nmb_bas : n1*n2-zeroColumns;
+	if(verbose) {
+		std::cout << "Matrix size : " << nmb_bas << " x " << n1*n2 << std::endl;
+		std::cout << "Matrix rank : " << rank << std::endl;
+	}
+	
+	return rank == nmb_bas;
+}
+
 void LRSplineSurface::read(std::istream &is) {
 }
 
@@ -238,7 +460,7 @@ void LRSplineSurface::write(std::ostream &os) const {
 
 void LRSplineSurface::writePostscriptMesh(std::ostream &out) {
 	std::vector<double> knot_u, knot_v;
-	getGlobalKnotVector(knot_u, knot_v);
+	getGlobalUniqueKnotVector(knot_u, knot_v);
 	double min_span_u = knot_u[1] - knot_u[0];
 	double min_span_v = knot_v[1] - knot_v[0];
 	for(uint i=1; i<knot_u.size()-1; i++)
@@ -251,8 +473,6 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out) {
 	tm* lt = localtime(&t);
 	char date[11];
 	sprintf(date, "%02d/%02d/%04d", lt->tm_mday, lt->tm_mon + 1, lt->tm_year+1900);
-
-	
 
 	// get bounding box
 	int dx = end_u_ - start_u_;

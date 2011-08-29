@@ -24,7 +24,7 @@ Basisfunction::~Basisfunction() {
 	delete[] controlpoint_;
 }
 
-void Basisfunction::evaluate(std::vector<double> &results, double u, double v, int derivs) const {
+void Basisfunction::evaluate(std::vector<double> &results, double u, double v, int derivs, bool u_from_right, bool v_from_right) const {
 	if(derivs > 1) {
 		std::cerr << "Basisfunction::evaluate() not implemented for more derivatives than 1\n";
 		exit(325);
@@ -42,10 +42,10 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 	double diff_v;
 
 	for(int i=0; i<order_u_; i++) {
-		if(edge_index_ & EAST && u==knot_u_[order_u_])
-			ans_u[i] = (knot_u_[i] <  u && u <= knot_u_[i+1]) ? 1 : 0;
-		else 
+		if(u_from_right)
 			ans_u[i] = (knot_u_[i] <= u && u <  knot_u_[i+1]) ? 1 : 0;
+		else 
+			ans_u[i] = (knot_u_[i] <  u && u <= knot_u_[i+1]) ? 1 : 0;
 	}
 
 	for(int n=1; n<order_u_; n++) {
@@ -61,10 +61,10 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 	}
 					   
 	for(int i=0; i<order_v_; i++) {
-		if(edge_index_ & NORTH && v == knot_v_[order_v_])
-			ans_v[i] = (knot_v_[i] <  v && v <= knot_v_[i+1]) ? 1 : 0;
-		else 
+		if(v_from_right)
 			ans_v[i] = (knot_v_[i] <= v && v <  knot_v_[i+1]) ? 1 : 0;
+		else 
+			ans_v[i] = (knot_v_[i] <  v && v <= knot_v_[i+1]) ? 1 : 0;
 	}
 	for(int n=1; n<order_v_; n++) {
 		if(n==order_v_-1) {
@@ -85,7 +85,7 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 	}
 }
 
-double Basisfunction::evaluate(double u, double v) const {
+double Basisfunction::evaluate(double u, double v, bool u_from_right, bool v_from_right) const {
 	if(knot_u_[0] > u || u > knot_u_[order_u_])
 		return 0;
 	if(knot_v_[0] > v || v > knot_v_[order_v_])
@@ -95,10 +95,10 @@ double Basisfunction::evaluate(double u, double v) const {
 	double ans_v[order_v_];
 
 	for(int i=0; i<order_u_; i++) {
-		if(edge_index_ & EAST)
-			ans_u[i] = (knot_u_[i] <  u && u <= knot_u_[i+1]) ? 1 : 0;
-		else 
+		if(u_from_right)
 			ans_u[i] = (knot_u_[i] <= u && u <  knot_u_[i+1]) ? 1 : 0;
+		else 
+			ans_u[i] = (knot_u_[i] <  u && u <= knot_u_[i+1]) ? 1 : 0;
 	}
 	for(int n=1; n<order_u_; n++)
 		for(int j=0; j<order_u_-n; j++) {
@@ -107,10 +107,10 @@ double Basisfunction::evaluate(double u, double v) const {
 	}
 					   
 	for(int i=0; i<order_v_; i++) {
-		if(edge_index_ & NORTH)
-			ans_v[i] = (knot_v_[i] <  v && v <= knot_v_[i+1]) ? 1 : 0;
-		else 
+		if(v_from_right)
 			ans_v[i] = (knot_v_[i] <= v && v <  knot_v_[i+1]) ? 1 : 0;
+		else 
+			ans_v[i] = (knot_v_[i] <  v && v <= knot_v_[i+1]) ? 1 : 0;
 	}
 	for(int n=1; n<order_v_; n++)
 		for(int j=0; j<order_v_-n; j++) {
