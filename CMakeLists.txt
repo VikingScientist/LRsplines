@@ -55,9 +55,17 @@ FILE(GLOB_RECURSE LRSPLINE_SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp)
 ADD_LIBRARY(LRSplineSurface ${LRSPLINE_SRCS})
 
 # Make some Apps
-FILE(GLOB_RECURSE Tensor_SRCS ${PROJECT_SOURCE_DIR}/Apps/*.cpp)
+FILE(GLOB_RECURSE Tensor_SRCS ${PROJECT_SOURCE_DIR}/Apps/TensorComparison.cpp)
 ADD_EXECUTABLE(TensorComparison ${Tensor_SRCS})
 TARGET_LINK_LIBRARIES(TensorComparison LRSplineSurface ${DEPLIBS})
+
+FILE(GLOB_RECURSE UnityPart_SRCS ${PROJECT_SOURCE_DIR}/Apps/PartitionOfUnityTest.cpp)
+ADD_EXECUTABLE(PartitionOfUnityTest ${UnityPart_SRCS})
+TARGET_LINK_LIBRARIES(PartitionOfUnityTest LRSplineSurface ${DEPLIBS})
+
+FILE(GLOB_RECURSE Refinement_SRCS ${PROJECT_SOURCE_DIR}/Apps/RefinementUnchanged.cpp)
+ADD_EXECUTABLE(RefinementUnchanged ${Refinement_SRCS})
+TARGET_LINK_LIBRARIES(RefinementUnchanged LRSplineSurface ${DEPLIBS})
 
 # # Regression tests
 # FILE(GLOB_RECURSE LINEL_TESTFILES "${PROJECT_SOURCE_DIR}/Apps/LinearElasticity/Test/*.reg")
