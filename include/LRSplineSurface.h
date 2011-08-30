@@ -43,6 +43,8 @@ public:
 	double nBasisFunctions() const { return basis_.size(); };
 	double nElements() const       { return element_.size(); };
 	double nMeshlines() const      { return meshline_.size(); };
+	std::vector<Element*>::iterator elementBegin() { return element_.begin(); };
+	std::vector<Element*>::iterator elementEnd()   { return element_.end(); };
 
 	// input output methods
 	virtual void read(std::istream &is);

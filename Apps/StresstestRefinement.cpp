@@ -14,17 +14,29 @@ using namespace std;
 int main(int argc, char **argv) {
 	Profiler prof(argv[0]);
 
+	/* UNIFORM refinement
+	 * inserts global meshlines in a tensor product way, just stored within a 
+	 * LRSplineSurface object
+	 * 
+	 * CORNER refinement
+	 * splits the bottom left corner by introducing 3 new corner functions for
+	 * each successively inserted cross. The knotlines are distributed uniformely
+	 * throughout the lower left element
+	 */
+	enum refinement_scheme {UNIFORM, CORNER} refinement_scheme;
+
 	// set default parameter values
 	const double TOL = 1e-6;
 	const double max_n_linear_depence_testing = 1000;
+	int goalBasisFunctions = 1400;
 	int p1 = 3;
 	int p2 = 3;
-	int n1 = 9;
-	int n2 = 9;
+	int n1 = 7;
+	int n2 = 7;
 	int dim = 4;
 	bool rat = false;
-	bool dumpFile = false;
-	char *inputFileName = NULL;
+	refinement_scheme = CORNER;
+
 	string parameters(" parameters: \n" \
 	                  "   -p1  <n>  polynomial ORDER (degree+1) in first parametric direction\n" \
 	                  "   -p2  <n>  polynomial order in second parametric direction\n" \
@@ -48,18 +60,12 @@ int main(int argc, char **argv) {
 			n2 = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-dim") == 0)
 			dim = atoi(argv[++i]);
-		else if(strcmp(argv[i], "-dumpfile") == 0)
-			dumpFile = true;
 		else if(strcmp(argv[i], "-help") == 0) {
-			cout << "usage: " << argv[0] << "[parameters] <refine inputfile>" << endl << parameters;
+			cerr << "usage: " << argv[0] << endl << parameters;
 			exit(0);
 		} else {
-			if(inputFileName != NULL) {
-				cerr << "usage: " << argv[0] << endl << parameters;
-				exit(1);
-			} else {
-				inputFileName = argv[i];
-			}
+			cerr << "usage: " << argv[0] << endl << parameters;
+			exit(1);
 		}
 	}
 
@@ -70,38 +76,6 @@ int main(int argc, char **argv) {
 	} else if(n2 < p2) {
 		cerr << "ERROR: n2 must be greater or equal to p2\n";
 		exit(2);
-	} else if(inputFileName == NULL) {
-		cerr << "ERROR: Specify input file name\n";
-		exit(3);
-	}
-
-
-	// read input-file 
-	ifstream inputFile;
-	inputFile.open(inputFileName);
-	vector<bool>   is_const_u;
-	vector<double> const_par;
-	vector<double> start_par;
-	vector<double> end_par;
-	if( inputFile.is_open() ) {
-		int n;
-		inputFile >> n;
-		bool d;
-		double a,b,c;
-		for(int i=0; i<n; i++) {
-			inputFile >> d;
-			inputFile >> a;
-			inputFile >> b;
-			inputFile >> c;
-			is_const_u.push_back(d);
-			const_par.push_back(a);
-			start_par.push_back(b);
-			end_par.push_back(c);
-		}
-
-	} else {
-		cerr <<"ERROR: could not open file " << inputFileName << endl;
-		exit(3);
 	}
 
 	// make a uniform integer knot vector
@@ -124,13 +98,52 @@ int main(int argc, char **argv) {
 	SplineSurface   ss(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
 	LRSplineSurface lr(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
 
-	for(uint i=0; i<is_const_u.size(); i++) {
-		if(is_const_u[i])
-			lr.insert_const_u_edge(const_par[i], start_par[i], end_par[i]);
-		else
-			lr.insert_const_v_edge(const_par[i], start_par[i], end_par[i]);
+	// perform the actual refinement
+	int end1 = n1-p1+1;
+	int end2 = n2-p2+1;
+	double h = 1.0;
+	int nBasis = lr.nBasisFunctions();
+	bool step_u = true;
+	double u = h/2.0;
+	double v = h/2.0;
+	double unif_step_h = 1.0 / ((goalBasisFunctions - nBasis) / 3.0 + 1.0);
+	while(nBasis < goalBasisFunctions) {
+		if(refinement_scheme == UNIFORM) {
+			if(step_u) {
+				lr.insert_const_u_edge(u, 0, end2);
+				u += h;
+				if(u > end1) {
+					step_u = !step_u;
+					u = h/4.0;
+				}
+			} else {
+				lr.insert_const_v_edge(v, 0, end1);
+				v += h;
+				if(v > end2) {
+					step_u = !step_u;
+					v = h/4.0;
+					h /= 2.0;
+				}
+			}
+		} else if(refinement_scheme == CORNER) {
+			lr.insert_const_u_edge(h-unif_step_h, 0, h);
+			lr.insert_const_v_edge(h-unif_step_h, 0, h);
+			h -= unif_step_h;
+		}
+		nBasis = lr.nBasisFunctions();
+		int nElements = lr.nElements();
+		int nMeshlines = lr.nMeshlines();
+
+		system("clear");
+		cout << "Number of basis functions: " << nBasis     << endl;
+		cout << "Number of elements       : " << nElements  << endl;
+		cout << "Number of meshlines      : " << nMeshlines << endl;
+
 	}
 
+// currently I think we're going to avoid any verifications that this is right
+
+#if 0
 	// compare function values on edges, knots and in between the knots
 	// as well as all derivatives (up to first derivatives)
 	vector<Point> lr_pts(3), ss_pts(3);
@@ -229,20 +242,21 @@ int main(int argc, char **argv) {
 	cout << "  number of basis functions: " << lr.nBasisFunctions() << endl;
 	cout << "  number of mesh lines     : " << lr.nMeshlines() << endl;
 	cout << "  number of elements       : " << lr.nElements() << endl;
-	
-	
-	if(dumpFile) {
-		ofstream meshfile;
-		meshfile.open("mesh.eps");
-		lr.writePostscriptMesh(meshfile);
-		meshfile.close();
-	
-		ofstream lrfile;
-		lrfile.open("lrspline.txt");
-		lrfile << lr << endl;
-		lrfile.close();
 
-		cout << endl;
-		cout << "Written mesh to mesh.eps and lrspline.txt\n";
-	}
+#endif
+	
+	
+	ofstream meshfile;
+	meshfile.open("mesh.eps");
+	lr.writePostscriptMesh(meshfile);
+	meshfile.close();
+	
+	ofstream lrfile;
+	lrfile.open("lrspline.txt");
+	lrfile << lr << endl;
+	lrfile.close();
+
+	cout << endl;
+	cout << "Written mesh to mesh.eps and lrspline.txt\n";
 }
+

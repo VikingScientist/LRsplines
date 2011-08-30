@@ -67,6 +67,10 @@ FILE(GLOB_RECURSE Refinement_SRCS ${PROJECT_SOURCE_DIR}/Apps/RefinementUnchanged
 ADD_EXECUTABLE(RefinementUnchanged ${Refinement_SRCS})
 TARGET_LINK_LIBRARIES(RefinementUnchanged LRSplineSurface ${DEPLIBS})
 
+FILE(GLOB_RECURSE Stresstest_SRCS ${PROJECT_SOURCE_DIR}/Apps/StresstestRefinement.cpp)
+ADD_EXECUTABLE(StresstestRefinement ${Stresstest_SRCS})
+TARGET_LINK_LIBRARIES(StresstestRefinement LRSplineSurface ${DEPLIBS})
+
 # # Regression tests
 # FILE(GLOB_RECURSE LINEL_TESTFILES "${PROJECT_SOURCE_DIR}/Apps/LinearElasticity/Test/*.reg")
 # FOREACH(TESTFILE ${LINEL_TESTFILES})
