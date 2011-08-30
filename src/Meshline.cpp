@@ -1,5 +1,6 @@
 
 #include "Meshline.h"
+#include "Element.h"
 #include "Basisfunction.h"
 
 namespace LR {
@@ -21,6 +22,19 @@ bool Meshline::containedIn(Basisfunction *basis) const {
 		for(int i=0; i<=basis->order_u_; i++)
 			if(basis->knot_u_[i] == const_par_)
 				return true;
+	}
+	return false;
+}
+
+bool Meshline::splits(Element *el) const {
+	if(span_u_line_) {
+		if( el->vmin() < const_par_ && const_par_ < el->vmax() &&
+		    start_ <= el->umin()    && el->umax() <= stop_)
+			return  true;
+	} else { // span-v line
+		if( el->umin() < const_par_ && const_par_ < el->umax() &&
+		    start_ <= el->vmin()    && el->vmax() <= stop_)
+			return  true;
 	}
 	return false;
 }

@@ -20,6 +20,8 @@ NORTH_EAST = 18};
 
 typedef enum parameterEdge parameterEdge;
 
+class Element;
+
 class Basisfunction : public Go::Streamable {
 public:
 	// constructors
@@ -32,6 +34,12 @@ public:
 
 	bool operator==(const Basisfunction &other) const;
 	void operator+=(const Basisfunction &other) ;
+
+	bool overlaps(Element *el) const;
+	bool addSupport(Element *el) ;
+	bool removeSupport(Element *el) ;
+	std::vector<Element*>::iterator supportedElementBegin() ;
+	std::vector<Element*>::iterator supportedElementEnd() ;
 
 	// get/set methods
 	void setEdge(parameterEdge edge_index);
@@ -52,6 +60,7 @@ public:
 	int order_v_;
 	double weight_;
 	parameterEdge edge_index_;
+	std::vector<Element*> support_;
 
 };
 

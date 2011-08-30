@@ -6,6 +6,7 @@
 namespace LR {
 
 class Basisfunction;
+class Element;
 
 class Meshline : public Go::Streamable {
 
@@ -14,6 +15,7 @@ public:
 
 	bool containedIn(Basisfunction *basis) const;
 	bool splits(Basisfunction *basis) const;
+	bool splits(Element *el) const;
 
 	bool is_spanning_u() const;
 

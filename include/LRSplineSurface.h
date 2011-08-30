@@ -28,6 +28,10 @@ public:
 	void insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	void insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
+	void updateSupport(Basisfunction *f) ;
+	void updateSupport(Basisfunction *f,
+	                   std::vector<Element*>::iterator start,
+	                   std::vector<Element*>::iterator end ) ;
 
 	// common get/set methods
 	virtual double startparam_u() const { return start_u_; };
@@ -36,11 +40,15 @@ public:
 	virtual double endparam_v()   const { return end_v_; };
 	void getGlobalKnotVector      (std::vector<double> &knot_u, std::vector<double> &knot_v) const;
 	void getGlobalUniqueKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const;
+	double nBasisFunctions() const { return basis_.size(); };
+	double nElements() const       { return element_.size(); };
+	double nMeshlines() const      { return meshline_.size(); };
 
 	// input output methods
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
-	void writePostscriptMesh(std::ostream &out);
+	void writePostscriptMesh(std::ostream &out) const;
+	void printElements(std::ostream &out) const;
 
 private:
 	int split(bool insert_in_u, int function_index, double new_knot);

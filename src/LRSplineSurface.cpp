@@ -2,6 +2,8 @@
 #include "LRSplineSurface.h"
 #include "Basisfunction.h"
 #include "Meshline.h"
+#include "Element.h"
+#include "Profiler.h"
 #include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +16,7 @@ namespace LR {
 
 
 LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v, double *coef, int dim, bool rational) {
-
+	PROFILE("Constructor");
 	rational_ = rational;
 	dim_      = dim;
 	order_u_  = order_u;
@@ -35,12 +37,15 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 			if(j>=n2-order_v) basis_[k-1]->addEdge(NORTH);
 		}
 	}
+	int unique_u=0;
+	int unique_v=0;
 	for(int i=0; i<n1+order_u; i++) {// const u, spanning v
 		int mult = 1;
 		while(i<n1+order_u && knot_u[i]==knot_u[i+1]) {
 			i++;
 			mult++;
 		}
+		unique_u++;
 		meshline_.push_back(new Meshline(false, knot_u[i], knot_v[0], knot_v[n2], mult) );
 	}
 	for(int i=0; i<n2+order_v; i++) {// const v, spanning u
@@ -49,9 +54,20 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 			i++;
 			mult++;
 		}
+		unique_v++;
 		meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n2], mult) );
 	}
-	// element_;
+	for(int j=0; j<unique_v-1; j++) {
+		for(int i=0; i<unique_u-1; i++) {
+			double umin = meshline_[i]->const_par_;
+			double vmin = meshline_[unique_u + j]->const_par_;
+			double umax = meshline_[i+1]->const_par_;
+			double vmax = meshline_[unique_u + j+1]->const_par_;
+			element_.push_back(new Element(umin, vmin, umax, vmax));
+		}
+	}
+	for(uint i=0; i<basis_.size(); i++)
+		updateSupport(basis_[i]);
 }
 
 void LRSplineSurface::point(Go::Point &pt, double u, double v) const {
@@ -67,6 +83,7 @@ void LRSplineSurface::point(Go::Point &pt, double u, double v) const {
 }
 
 void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int derivs) const {
+	PROFILE("Point()");
 	Go::Point cp;
 	std::vector<double> basis_ev;
 
@@ -86,6 +103,7 @@ void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int
 }
 
 void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDerivsSf & result ) const {
+	PROFILE("computeBasis()");
 	result.prepareDerivs(param_u, param_v, 0, -1, basis_.size());
 	std::vector<double> values;
 	for(uint i=0; i<basis_.size(); i++) {
@@ -108,6 +126,7 @@ void LRSplineSurface::insert_const_u_edge(double u, double start_v, double stop_
 }
 
 void LRSplineSurface::insert_line(bool const_u, double const_par, double start, double stop, int multiplicity) {
+	PROFILE("insert_line()");
 	Meshline *newline = new Meshline(!const_u, const_par, start, stop, multiplicity);
 	if(multiplicity != 1) {
 		std::cerr << "ERROR: LRSplineSurface::insert_const_u_edge() not supported for multiplicity != 1\n";
@@ -128,20 +147,23 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	// STEP 1: test EVERY function against the NEW meshline
 	for(int i=0; i<nOldFunctions-nRemovedFunctions; i++) {
 		if(newline->splits(basis_[i])) {
-			std::cout << "Meshline " << *newline << " splits function " << *basis_[i] << std::endl;
+			// std::cout << "Meshline " << *newline << " splits function " << *basis_[i] << std::endl;
 			nNewFunctions += split( const_u, i, const_par );
 			i--; // splitting deletes a basisfunction in the middle of the basis_ vector
 			nRemovedFunctions++;
 		}
 	}
+	for(uint i=0; i<element_.size(); i++)
+		if(newline->splits(element_[i]))
+			element_.push_back(element_[i]->split(!newline->is_spanning_u(), newline->const_par_));
 
 	// STEP 2: test every NEW function against ALL old meshlines
 	meshline_.push_back(newline);
 	for(uint i=nOldFunctions-nRemovedFunctions-1; i<basis_.size(); i++) {
 		for(uint j=0; j<meshline_.size(); j++) {
 			if(meshline_[j]->splits(basis_[i]) && 
-				 !meshline_[j]->containedIn(basis_[i])) {
-				std::cout << "Old meshline " << *meshline_[j] << " splits function " << *basis_[i] << std::endl;
+			   !meshline_[j]->containedIn(basis_[i])) {
+				// std::cout << "Old meshline " << *meshline_[j] << " splits function " << *basis_[i] << std::endl;
 				split( !meshline_[j]->is_spanning_u(), i, meshline_[j]->const_par_ );
 				i--; // splitting deletes a basisfunction in the middle of the basis_ vector
 			}
@@ -154,6 +176,9 @@ void LRSplineSurface::insert_const_v_edge(double v, double start_u, double stop_
 }
 
 int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot) {
+	PROFILE("split()");
+
+	// create the new functions b1 and b2
 	Basisfunction b = *basis_[function_index];
 	Basisfunction *b1, *b2;
 	double *knot = (insert_in_u) ? b.knot_u_  : b.knot_v_;
@@ -176,26 +201,42 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 		b1 = new Basisfunction(b.knot_u_, newKnot  , b.controlpoint_, b.dim_, b.order_u_, b.order_v_, b.weight_*alpha1);
 		b2 = new Basisfunction(b.knot_u_, newKnot+1, b.controlpoint_, b.dim_, b.order_u_, b.order_v_, b.weight_*alpha2);
 	}
-	for(uint i=0; i<basis_.size(); i++) {
-		if(b1 && *b1 == *basis_[i]) {
-			std::cout << "Basis " << i << " equals new basis b1\n";
-			std::cout << "(" << *basis_[i] << ") == (" << *b1 << ")\n";
-			*basis_[i] += *b1;
+
+	// search for existing function (to make search local b1 and b2 is contained in the *el element)
+	std::vector<Element*>::iterator el_it;
+	Element *el=NULL;
+	for(el_it=b.supportedElementBegin(); el_it<b.supportedElementEnd(); el_it++) {
+		if(b1->overlaps(*el_it) && b2->overlaps(*el_it)) {
+			el = *el_it;
+			break;
+		}
+	}
+	std::vector<Basisfunction*>::iterator it;
+	for(it=el->supportBegin(); it != el->supportEnd(); it++) {
+		// existing functions need only update their control points and weights
+		if(b1 && *b1 == **it) {
+			**it += *b1;
 			delete b1;
 			b1 = NULL;
-		} else if(b2 && *b2 == *basis_[i]) {
-			std::cout << "Basis " << i << " equals new basis b2\n";
-			std::cout << "(" << *basis_[i] << ") == (" << *b2 << ")\n";
-			*basis_[i] += *b2;
+		} else if(b2 && *b2 == **it) {
+			**it += *b2;
 			delete b2;
 			b2 = NULL;
 		}
 	}
+
+	// add any brand new functions and detect their support elements
 	int newFunctions = 0;
-	if(b1) newFunctions++;
-	if(b2) newFunctions++;
-	if(b1) basis_.push_back(b1);
-	if(b2) basis_.push_back(b2);
+	if(b1) {
+		newFunctions++;
+		basis_.push_back(b1);
+		updateSupport(b1, b.supportedElementBegin(), b.supportedElementEnd());
+	}
+	if(b2) {
+		newFunctions++;
+		basis_.push_back(b2);
+		updateSupport(b2, b.supportedElementBegin(), b.supportedElementEnd());
+	}
 	basis_.erase(basis_.begin() + function_index);
 	return newFunctions;
 }
@@ -249,7 +290,22 @@ void LRSplineSurface::getGlobalUniqueKnotVector(std::vector<double> &knot_u, std
 	knot_v.resize(it-knot_v.begin());
 }
 
+void LRSplineSurface::updateSupport(Basisfunction *f,
+	                                std::vector<Element*>::iterator start,
+	                                std::vector<Element*>::iterator end ) {
+	PROFILE("update support");
+	std::vector<Element*>::iterator it;
+	for(it=start; it!=end; it++)
+		if(f->addSupport(*it)) // this tests for overlapping as well as updating  
+			(*it)->addSupportFunction(f);
+}
+
+void LRSplineSurface::updateSupport(Basisfunction *f) {
+	updateSupport(f, element_.begin(), element_.end());
+}
+
 bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
+	PROFILE("Linear independent)");
 	// try and figure out this thing by the projection matrix C
 
 	std::vector<double> knots_u, knots_v;
@@ -260,13 +316,6 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 	int fullDim = n1*n2;
 	bool fullVerbose   = fullDim < 30  && nmb_bas < 50;
 	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
-
-	std::cout << "U = [";
-	for(uint i=0; i<knots_u.size(); i++) std::cout << knots_u[i] << ", ";
-	std::cout << "]\n";
-	std::cout << "V = [";
-	for(uint i=0; i<knots_v.size(); i++) std::cout << knots_v[i] << ", ";
-	std::cout << "]\n";
 
 	std::vector<std::vector<boost::rational<long long> > > C;  // rational projection matrix 
 	std::vector<double> locKnotU, locKnotV;               // local INDEX knot vectors
@@ -351,10 +400,6 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		for(uint i1=0; i1<rowU.size(); i1++)
 			for(uint i2=0; i2<rowV.size(); i2++)
 				totalRow[(startV+i2)*n1 + (startU+i1)] = rowV[i2]*rowU[i1];
-
-		// for(int j=0; j<totalRow.size(); j++)
-			// std::cout << totalRow[j] << ", ";
-		// std::cout << "]\n";
 
 		C.push_back(totalRow);
 	}
@@ -458,7 +503,8 @@ void LRSplineSurface::write(std::ostream &os) const {
 		os << i << ": " << **mit << std::endl;
 }
 
-void LRSplineSurface::writePostscriptMesh(std::ostream &out) {
+void LRSplineSurface::writePostscriptMesh(std::ostream &out) const {
+	PROFILE("Write EPS");
 	std::vector<double> knot_u, knot_v;
 	getGlobalUniqueKnotVector(knot_u, knot_v);
 	double min_span_u = knot_u[1] - knot_u[0];
@@ -535,6 +581,13 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out) {
 	}
 
 	out << "%%EOF\n";
+}
+
+void LRSplineSurface::printElements(std::ostream &out) const {
+	for(uint i=0; i<element_.size(); i++) {
+		if(i<10) out << " ";
+		out << i << ": " << *element_[i] << std::endl;
+	}
 }
 
 } // end namespace LR

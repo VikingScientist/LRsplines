@@ -1,4 +1,6 @@
 #include "Basisfunction.h"
+#include "Element.h"
+#include "Profiler.h"
 #include <algorithm>
 
 namespace LR {
@@ -19,6 +21,9 @@ Basisfunction::Basisfunction(double *knot_u, double *knot_v, double *controlpoin
 }
 
 Basisfunction::~Basisfunction() {
+	PROFILE("Function destruction");
+	for(uint i=0; i<support_.size(); i++)
+		support_[i]->removeSupportFunction( (Basisfunction*) this);
 	delete[] knot_u_;
 	delete[] knot_v_;
 	delete[] controlpoint_;
@@ -131,12 +136,52 @@ void Basisfunction::setEdge(parameterEdge edge_index) {
 	edge_index_ = edge_index;
 }
 
+std::vector<Element*>::iterator Basisfunction::supportedElementBegin()  {
+	return support_.begin();
+}
+
+std::vector<Element*>::iterator Basisfunction::supportedElementEnd()  {
+	return support_.end();
+}
+
 void Basisfunction::addEdge(parameterEdge edge_index) {
 	edge_index_ = (parameterEdge) (edge_index_ | edge_index);
 }
 
 parameterEdge Basisfunction::getEdgeIndex() const {
 	return edge_index_;
+}
+
+bool Basisfunction::removeSupport(Element *el) {
+	for(uint i=0; i<support_.size(); i++) {
+		if(el == support_[i]) {
+			support_[i] = support_.back();
+			support_.pop_back();
+			break;
+		}
+	}
+	if(overlaps(el)) {
+		support_.push_back(el);
+		return true;
+	}
+	return false;
+}
+
+bool Basisfunction::addSupport(Element *el) {
+	if(overlaps(el)) {
+		for(uint i=0; i<support_.size(); i++)
+			if(support_[i] == el) return true;
+		support_.push_back(el);
+		return true;
+	}
+	return false;
+}
+
+bool Basisfunction::overlaps(Element *el) const {
+	return knot_u_[0]        < el->umax() &&
+	       knot_u_[order_u_] > el->umin() && 
+	       knot_v_[0]        < el->vmax() &&
+	       knot_v_[order_v_] > el->vmin();
 }
 
 bool Basisfunction::operator==(const Basisfunction &other) const {
