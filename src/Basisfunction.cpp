@@ -1,6 +1,7 @@
 #include "LRSpline/Basisfunction.h"
 #include "LRSpline/Element.h"
 #include "LRSpline/Profiler.h"
+#include "LRSpline/Meshline.h"
 #include <algorithm>
 
 namespace LR {
@@ -149,6 +150,14 @@ void Basisfunction::setEdge(parameterEdge edge_index) {
 	edge_index_ = edge_index;
 }
 
+std::vector<Meshline*>::iterator Basisfunction::partialLineBegin()  {
+	return partial_line_.begin();
+}
+
+std::vector<Meshline*>::iterator Basisfunction::partialLineEnd()  {
+	return partial_line_.end();
+}
+
 std::vector<Element*>::iterator Basisfunction::supportedElementBegin()  {
 	return support_.begin();
 }
@@ -173,17 +182,17 @@ bool Basisfunction::removeSupport(Element *el) {
 			break;
 		}
 	}
-	if(overlaps(el)) {
-		support_.push_back(el);
-		return true;
-	}
+	// if(overlaps(el)) {
+		// support_.push_back(el);
+		// return true;
+	// }
 	return false;
 }
 
 bool Basisfunction::addSupport(Element *el) {
 	if(overlaps(el)) {
-		for(uint i=0; i<support_.size(); i++)
-			if(support_[i] == el) return true;
+		// for(uint i=0; i<support_.size(); i++)
+			// if(support_[i] == el) return true;
 		support_.push_back(el);
 		return true;
 	}
@@ -195,6 +204,13 @@ bool Basisfunction::overlaps(Element *el) const {
 	       knot_u_[order_u_] > el->umin() && 
 	       knot_v_[0]        < el->vmax() &&
 	       knot_v_[order_v_] > el->vmin();
+}
+
+void Basisfunction::inheritPartialLine(Basisfunction *f) {
+	std::vector<Meshline*>::iterator it;
+	for(it=f->partialLineBegin(); it != f->partialLineEnd(); it++)
+		if((*it)->touches(this)) 
+			partial_line_.push_back(*it);
 }
 
 void Basisfunction::inheritEdgeTag(Basisfunction *f, bool verticalSplit, bool minorFunction) {

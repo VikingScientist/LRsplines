@@ -1,5 +1,6 @@
 
 #include "LRSpline/Element.h"
+#include "LRSpline/Meshline.h"
 #include "LRSpline/Basisfunction.h"
 
 namespace LR {
@@ -33,13 +34,13 @@ void Element::removeSupportFunction(Basisfunction *f) {
 }
 
 void Element::addSupportFunction(Basisfunction *f) {
-	for(uint i=0; i<support_.size(); i++) {
-		if(f == support_[i]) {
-			return;
-		}
-	}
+	// for(uint i=0; i<support_.size(); i++) {
+		// if(f == support_[i]) {
+			// return;
+		// }
+	// }
 	support_.push_back(f);
-	f->addSupport(this);
+	// f->addSupport(this);
 }
 
 Element* Element::split(bool split_u, double par_value) {
@@ -56,7 +57,7 @@ Element* Element::split(bool split_u, double par_value) {
 		stop_v_ = par_value;
 	}
 	for(uint i=0; i<support_.size(); i++) {
-		if(support_[i]->overlaps(newElement))
+		if(support_[i]->addSupport(newElement)) // tests for overlapping as well
 			newElement->addSupportFunction(support_[i]);
 		if(!support_[i]->overlaps(this)) {
 			support_[i]->removeSupport(this);
@@ -66,6 +67,13 @@ Element* Element::split(bool split_u, double par_value) {
 		}
 	}
 	return newElement;
+}
+
+void Element::addPartialLine(Meshline *line) {
+	for(uint i=0; i<support_.size(); i++) {
+		if(line->touches(support_[i]))
+			support_[i]->addPartialLine(line);
+	}
 }
 
 void Element::updateBasisPointers(std::vector<Basisfunction*> &basis) {

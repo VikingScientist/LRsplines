@@ -16,7 +16,9 @@ public:
 
 	bool containedIn(Basisfunction *basis) const;
 	bool splits(Basisfunction *basis) const;
+	bool touches(Basisfunction *basis) const;
 	bool splits(Element *el) const;
+	bool touches(Element *el) const;
 
 	bool is_spanning_u() const;
 

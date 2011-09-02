@@ -246,6 +246,8 @@ int main(int argc, char **argv) {
 		cout << endl;
 		cout << "Written mesh to mesh.eps and lrspline.txt\n";
 	}
+
+	/*
 	vector<Basisfunction*> edges;
 	lr.getEdgeFunctions(edges, EAST);
 	cout << "EAST EDGES:\n";
@@ -263,5 +265,6 @@ int main(int argc, char **argv) {
 	cout << "SOUTH EDGES:\n";
 	for(uint i=0; i<edges.size(); i++)
 		cout << *edges[i] << endl;
+	*/
 
 }

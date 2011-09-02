@@ -22,6 +22,7 @@ NORTH_EAST = 18};
 typedef enum parameterEdge parameterEdge;
 
 class Element;
+class Meshline;
 
 class Basisfunction : public Go::Streamable {
 public:
@@ -42,16 +43,22 @@ public:
 	bool removeSupport(Element *el) ;
 	std::vector<Element*>::iterator supportedElementBegin() ;
 	std::vector<Element*>::iterator supportedElementEnd() ;
+	std::vector<Meshline*>::iterator partialLineBegin() ;
+	std::vector<Meshline*>::iterator partialLineEnd() ;
 
 	void inheritEdgeTag(Basisfunction *f, bool verticalSplit, bool minorFunction);
+	void inheritPartialLine(Basisfunction *f);
 
 	// get/set methods
 	void setEdge(parameterEdge edge_index);
 	void addEdge(parameterEdge edge_index);
+	void addPartialLine(Meshline *line) { partial_line_.push_back(line); };
 	parameterEdge getEdgeIndex() const;
 	void getControlPoint(Go::Point &pt) const;
 	void setId(int id)  { this->id_ = id; };
 	int getId() const   { return id_; };
+	int nSupportedElements() { return support_.size(); };
+	int nPartialLines() { return partial_line_.size(); };
 
 	// IO-functions
 	virtual void read(std::istream &is);
@@ -67,6 +74,7 @@ public:
 	double weight_;
 	parameterEdge edge_index_;
 	std::vector<Element*> support_;
+	std::vector<Meshline*> partial_line_;
 	int id_;
 
 };

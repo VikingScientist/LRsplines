@@ -34,6 +34,19 @@ bool Meshline::containedIn(Basisfunction *basis) const {
 	return false;
 }
 
+bool Meshline::touches(Element *el) const {
+	if(span_u_line_) {
+		if( el->vmin() < const_par_ && const_par_ < el->vmax() &&
+		   (start_ == el->umax()    || el->umin() == stop_))
+			return  true;
+	} else { // span-v line
+		if( el->umin() < const_par_ && const_par_ < el->umax() &&
+		   (start_ == el->vmax()    || el->vmin() == stop_))
+			return  true;
+	}
+	return false;
+}
+
 bool Meshline::splits(Element *el) const {
 	if(span_u_line_) {
 		if( el->vmin() < const_par_ && const_par_ < el->vmax() &&
@@ -43,6 +56,19 @@ bool Meshline::splits(Element *el) const {
 		if( el->umin() < const_par_ && const_par_ < el->umax() &&
 		    start_ <= el->vmin()    && el->vmax() <= stop_)
 			return  true;
+	}
+	return false;
+}
+
+bool Meshline::touches(Basisfunction *basis) const {
+	if(span_u_line_) {
+		if( basis->knot_v_[0] < const_par_ && const_par_ < basis->knot_v_[basis->order_v_] &&
+		   (start_ < basis->knot_u_[basis->order_u_]  || basis->knot_u_[0] < stop_))
+			return true;
+	} else { // span-v line
+		if( basis->knot_u_[0] < const_par_ && const_par_ < basis->knot_u_[basis->order_u_] &&
+		   (start_ < basis->knot_v_[basis->order_v_]  || basis->knot_v_[0] < stop_))
+			return true;
 	}
 	return false;
 }

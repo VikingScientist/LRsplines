@@ -7,6 +7,7 @@
 namespace LR {
 
 class Basisfunction;
+class Meshline;
 
 class Element : public Go::Streamable {
 
@@ -27,10 +28,12 @@ public:
 	std::vector<Basisfunction*>::iterator supportEnd()   { return support_.end();   };
 	std::vector<Basisfunction*>::const_iterator supportBegin()const { return support_.begin(); };
 	std::vector<Basisfunction*>::const_iterator supportEnd() const  { return support_.end();   };
-	int nBasisFunctions() const { return support_.size(); };
-	void setId(int id)          { this->id_ = id; };
-	int getId() const           { return id_; };
+	Basisfunction* supportFunction(int i) { return support_[i];   };
+	int nBasisFunctions() const           { return support_.size(); };
+	void setId(int id)                    { this->id_ = id; };
+	int getId() const                     { return id_; };
 
+	void addPartialLine(Meshline *line);
 	void updateBasisPointers(std::vector<Basisfunction*> &basis) ;
 
 	virtual void read(std::istream &is);
