@@ -3,9 +3,9 @@
 #include <string.h>
 #include <fstream>
 #include <GoTools/geometry/SplineSurface.h>
-#include "LRSplineSurface.h"
-#include "Profiler.h"
-#include "Element.h"
+#include "LRSpline/LRSplineSurface.h"
+#include "LRSpline/Profiler.h"
+#include "LRSpline/Element.h"
 
 using namespace Go;
 using namespace LR;
@@ -19,8 +19,8 @@ int main(int argc, char **argv) {
 	const double max_n_linear_depence_testing = 1000;
 	int p1 = 3;
 	int p2 = 3;
-	int n1 = 9;
-	int n2 = 9;
+	int n1 = 7;
+	int n2 = 7;
 	int dim = 4;
 	bool rat = false;
 	bool dumpFile = false;
@@ -138,7 +138,8 @@ int main(int argc, char **argv) {
 	vector<double> par_u_values;
 	vector<double> par_v_values;
 	vector<Element*>::iterator el;
-	for(el=lr.elementBegin(); el!=lr.elementEnd(); el++) {
+	int el_i=0;
+	for(el=lr.elementBegin(); el!=lr.elementEnd(); el++, el_i++) {
 		// evaluate one midpoint, 4 edge midpoints and 4 corners of the element
 		double umin = (*el)->umin();
 		double vmin = (*el)->vmin();
@@ -164,7 +165,7 @@ int main(int argc, char **argv) {
 
 				// test for partition of unity
 				BasisDerivsSf lr_basis;
-				lr.computeBasis(u,v, lr_basis);
+				lr.computeBasis(u,v, lr_basis, el_i);
 				double sum        = 0;
 				double sum_diff_u = 0;
 				double sum_diff_v = 0;
@@ -245,4 +246,22 @@ int main(int argc, char **argv) {
 		cout << endl;
 		cout << "Written mesh to mesh.eps and lrspline.txt\n";
 	}
+	vector<Basisfunction*> edges;
+	lr.getEdgeFunctions(edges, EAST);
+	cout << "EAST EDGES:\n";
+	for(uint i=0; i<edges.size(); i++)
+		cout << *edges[i] << endl;
+	lr.getEdgeFunctions(edges, WEST);
+	cout << "WEST EDGES:\n";
+	for(uint i=0; i<edges.size(); i++)
+		cout << *edges[i] << endl;
+	lr.getEdgeFunctions(edges, NORTH);
+	cout << "NORTH EDGES:\n";
+	for(uint i=0; i<edges.size(); i++)
+		cout << *edges[i] << endl;
+	lr.getEdgeFunctions(edges, SOUTH);
+	cout << "SOUTH EDGES:\n";
+	for(uint i=0; i<edges.size(); i++)
+		cout << *edges[i] << endl;
+
 }

@@ -1,9 +1,17 @@
 
-#include "Meshline.h"
-#include "Element.h"
-#include "Basisfunction.h"
+#include "LRSpline/Meshline.h"
+#include "LRSpline/Element.h"
+#include "LRSpline/Basisfunction.h"
 
 namespace LR {
+
+Meshline::Meshline() {
+	span_u_line_  = false;
+	const_par_    = 0;
+	start_        = 0;
+	stop_         = 0;
+	multiplicity_ = 0;
+}
 
 Meshline::Meshline(bool span_u_line, double const_par, double start, double stop, int multiplicity) {
 	span_u_line_  =  span_u_line   ;
@@ -56,8 +64,39 @@ bool Meshline::is_spanning_u() const {
 	return span_u_line_;
 }
 
+// convenience macro for reading formated input
+#define ASSERT_NEXT_CHAR(c) {ws(is); nextChar = is.get(); if(nextChar!=c) { std::cerr << "Error parsing meshline\n"; std::cout << is; exit(325); } ws(is); }
 void Meshline::read(std::istream &is) {
+	char nextChar;
+	ws(is);
+	nextChar = is.peek();
+	if(nextChar == '[') { // first parametric direction interval => const v
+		ASSERT_NEXT_CHAR('[');
+		span_u_line_ = true;
+		is >> start_;
+		ASSERT_NEXT_CHAR(',');
+		is >> stop_;
+		ASSERT_NEXT_CHAR(']');
+		ASSERT_NEXT_CHAR('x');
+		is >> const_par_;
+		ASSERT_NEXT_CHAR('(');
+		is >> multiplicity_;
+		ASSERT_NEXT_CHAR(')');
+	} else {
+		span_u_line_ = false;
+		is >> const_par_;
+		ASSERT_NEXT_CHAR('x');
+		ASSERT_NEXT_CHAR('[');
+		is >> start_;
+		ASSERT_NEXT_CHAR(',');
+		is >> stop_;
+		ASSERT_NEXT_CHAR(']');
+		ASSERT_NEXT_CHAR('(');
+		is >> multiplicity_;
+		ASSERT_NEXT_CHAR(')');
+	}
 }
+#undef ASSERT_NEXT_CHAR
 
 void Meshline::write(std::ostream &os) const {
 	if(span_u_line_) 

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <string.h>
-#include "LRSplineSurface.h"
+#include "LRSpline/LRSplineSurface.h"
 
 using namespace Go;
 using namespace LR;

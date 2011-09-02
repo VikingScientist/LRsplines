@@ -3,9 +3,9 @@
 #include <string.h>
 #include <fstream>
 #include <GoTools/geometry/SplineSurface.h>
-#include "LRSplineSurface.h"
-#include "Profiler.h"
-#include "Element.h"
+#include "LRSpline/LRSplineSurface.h"
+#include "LRSpline/Profiler.h"
+#include "LRSpline/Element.h"
 
 using namespace Go;
 using namespace LR;
@@ -28,14 +28,14 @@ int main(int argc, char **argv) {
 	// set default parameter values
 	const double TOL = 1e-6;
 	const double max_n_linear_depence_testing = 1000;
-	int goalBasisFunctions = 1400;
+	int goalBasisFunctions = 150000;
 	int p1 = 3;
 	int p2 = 3;
 	int n1 = 7;
 	int n2 = 7;
 	int dim = 4;
 	bool rat = false;
-	refinement_scheme = CORNER;
+	refinement_scheme = UNIFORM;
 
 	string parameters(" parameters: \n" \
 	                  "   -p1  <n>  polynomial ORDER (degree+1) in first parametric direction\n" \

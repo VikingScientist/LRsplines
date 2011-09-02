@@ -11,7 +11,7 @@
 //!
 //==============================================================================
 
-#include "Profiler.h"
+#include "LRSpline/Profiler.h"
 #include <sys/time.h>
 
 

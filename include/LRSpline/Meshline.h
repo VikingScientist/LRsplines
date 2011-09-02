@@ -11,6 +11,7 @@ class Element;
 class Meshline : public Go::Streamable {
 
 public:
+	Meshline();
 	Meshline(bool span_u_line, double const_par, double start, double stop, int multiplicity);
 
 	bool containedIn(Basisfunction *basis) const;

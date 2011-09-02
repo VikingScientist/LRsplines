@@ -1,4 +1,4 @@
-PROJECT(LRSplineSurface)
+PROJECT(LRSpline)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
@@ -50,26 +50,30 @@ IF(NOT WIN32)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-parentheses")
 ENDIF(NOT WIN32)
 
-# Make the LRSplineSurface library
+# Make the LRSpline library
 FILE(GLOB_RECURSE LRSPLINE_SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp)
-ADD_LIBRARY(LRSplineSurface ${LRSPLINE_SRCS})
+ADD_LIBRARY(LRSpline ${LRSPLINE_SRCS})
 
 # Make some Apps
 FILE(GLOB_RECURSE Tensor_SRCS ${PROJECT_SOURCE_DIR}/Apps/TensorComparison.cpp)
 ADD_EXECUTABLE(TensorComparison ${Tensor_SRCS})
-TARGET_LINK_LIBRARIES(TensorComparison LRSplineSurface ${DEPLIBS})
+TARGET_LINK_LIBRARIES(TensorComparison LRSpline ${DEPLIBS})
 
 FILE(GLOB_RECURSE UnityPart_SRCS ${PROJECT_SOURCE_DIR}/Apps/PartitionOfUnityTest.cpp)
 ADD_EXECUTABLE(PartitionOfUnityTest ${UnityPart_SRCS})
-TARGET_LINK_LIBRARIES(PartitionOfUnityTest LRSplineSurface ${DEPLIBS})
+TARGET_LINK_LIBRARIES(PartitionOfUnityTest LRSpline ${DEPLIBS})
 
 FILE(GLOB_RECURSE Refinement_SRCS ${PROJECT_SOURCE_DIR}/Apps/RefinementUnchanged.cpp)
 ADD_EXECUTABLE(RefinementUnchanged ${Refinement_SRCS})
-TARGET_LINK_LIBRARIES(RefinementUnchanged LRSplineSurface ${DEPLIBS})
+TARGET_LINK_LIBRARIES(RefinementUnchanged LRSpline ${DEPLIBS})
 
 FILE(GLOB_RECURSE Stresstest_SRCS ${PROJECT_SOURCE_DIR}/Apps/StresstestRefinement.cpp)
 ADD_EXECUTABLE(StresstestRefinement ${Stresstest_SRCS})
-TARGET_LINK_LIBRARIES(StresstestRefinement LRSplineSurface ${DEPLIBS})
+TARGET_LINK_LIBRARIES(StresstestRefinement LRSpline ${DEPLIBS})
+
+FILE(GLOB_RECURSE ReadWrite_SRCS ${PROJECT_SOURCE_DIR}/Apps/TestReadWrite.cpp)
+ADD_EXECUTABLE(TestReadWrite ${ReadWrite_SRCS})
+TARGET_LINK_LIBRARIES(TestReadWrite LRSpline ${DEPLIBS})
 
 # # Regression tests
 # FILE(GLOB_RECURSE LINEL_TESTFILES "${PROJECT_SOURCE_DIR}/Apps/LinearElasticity/Test/*.reg")
@@ -91,12 +95,12 @@ IF(WIN32)
   # TODO
 ELSE(WIN32)
   # lib
-  INSTALL(TARGETS LRSplineSurface DESTINATION ${LRSPLINE_INSTALL_PREFIX}/lib)
+  INSTALL(TARGETS LRSpline DESTINATION ${LRSPLINE_INSTALL_PREFIX}/lib)
 
   # headers
-  FILE(GLOB_RECURSE LRSPLINE_HEADERS include/*.h)
+  FILE(GLOB_RECURSE LRSPLINE_HEADERS include/LRSpline/*.h)
   INSTALL(FILES ${LRSPLINE_HEADERS}
-          DESTINATION ${LRSPLINE_INSTALL_PREFIX}/include/LRSplineSurface)
+          DESTINATION ${LRSPLINE_INSTALL_PREFIX}/include/LRSpline)
 
   FILE(GLOB_RECURSE LOCAL_CMAKE_MODULES cmake/Modules/*.cmake)
 

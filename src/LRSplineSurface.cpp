@@ -1,9 +1,9 @@
 
-#include "LRSplineSurface.h"
-#include "Basisfunction.h"
-#include "Meshline.h"
-#include "Element.h"
-#include "Profiler.h"
+#include "LRSpline/LRSplineSurface.h"
+#include "LRSpline/Basisfunction.h"
+#include "LRSpline/Meshline.h"
+#include "LRSpline/Element.h"
+#include "LRSpline/Profiler.h"
 #include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +14,81 @@ typedef unsigned int uint;
 
 namespace LR {
 
+
+LRSplineSurface::LRSplineSurface() {
+	rational_ = false;
+	dim_      = 0;
+	order_u_  = 0;
+	order_v_  = 0;
+	start_u_  = 0;
+	start_v_  = 0;
+	end_u_    = 0;
+	end_v_    = 0;
+	basis_    = std::vector<Basisfunction*>(0);
+	meshline_ = std::vector<Meshline*>(0);
+	element_  = std::vector<Element*>(0);
+}
+
+LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
+	PROFILE("Constructor");
+	rational_ = surf->rational();
+	dim_      = surf->dimension();
+	order_u_  = surf->order_u();
+	order_v_  = surf->order_v();
+	start_u_  = surf->startparam_u();
+	start_v_  = surf->endparam_u();
+	end_u_    = surf->startparam_v();
+	end_v_    = surf->endparam_v();
+
+	int n1 = surf->numCoefs_u();
+	int n2 = surf->numCoefs_v();
+	std::vector<double>::iterator coef  = surf->coefs_begin();
+	std::vector<double>::const_iterator knot_u = surf->basis(0).begin();
+	std::vector<double>::const_iterator knot_v = surf->basis(1).begin();
+
+	basis_ = std::vector<Basisfunction*>(n1*n2);
+	int k=0;
+	for(int j=0; j<n2; j++) {
+		for(int i=0; i<n1; i++) {
+			basis_[k++] = new Basisfunction(&(*(knot_u+i)), &(*(knot_v+j)), &(*(coef+(j*n1+i)*(dim_+rational_))), dim_, order_u_, order_v_);
+			if(i == 0)    basis_[k-1]->addEdge(WEST);
+			if(i == n1-1) basis_[k-1]->addEdge(EAST);
+			if(j == 0)    basis_[k-1]->addEdge(SOUTH);
+			if(j == n2-1) basis_[k-1]->addEdge(NORTH);
+		}
+	}
+	int unique_u=0;
+	int unique_v=0;
+	for(int i=0; i<n1+order_u_; i++) {// const u, spanning v
+		int mult = 1;
+		while(i<n1+order_u_ && knot_u[i]==knot_u[i+1]) {
+			i++;
+			mult++;
+		}
+		unique_u++;
+		meshline_.push_back(new Meshline(false, knot_u[i], knot_v[0], knot_v[n2], mult) );
+	}
+	for(int i=0; i<n2+order_v_; i++) {// const v, spanning u
+		int mult = 1;
+		while(i<n2+order_v_ && knot_v[i]==knot_v[i+1]) {
+			i++;
+			mult++;
+		}
+		unique_v++;
+		meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n2], mult) );
+	}
+	for(int j=0; j<unique_v-1; j++) {
+		for(int i=0; i<unique_u-1; i++) {
+			double umin = meshline_[i]->const_par_;
+			double vmin = meshline_[unique_u + j]->const_par_;
+			double umax = meshline_[i+1]->const_par_;
+			double vmax = meshline_[unique_u + j+1]->const_par_;
+			element_.push_back(new Element(umin, vmin, umax, vmax));
+		}
+	}
+	for(uint i=0; i<basis_.size(); i++)
+		updateSupport(basis_[i]);
+}
 
 LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v, double *coef, int dim, bool rational) {
 	PROFILE("Constructor");
@@ -31,10 +106,10 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 	for(int j=0; j<n2; j++) {
 		for(int i=0; i<n1; i++) {
 			basis_[k++] = new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim+rational), dim, order_u, order_v);
-			if(i < order_u)   basis_[k-1]->addEdge(WEST);
-			if(i>=n1-order_u) basis_[k-1]->addEdge(EAST);
-			if(j < order_v)   basis_[k-1]->addEdge(SOUTH);
-			if(j>=n2-order_v) basis_[k-1]->addEdge(NORTH);
+			if(i == 0)    basis_[k-1]->addEdge(WEST);
+			if(i == n1-1) basis_[k-1]->addEdge(EAST);
+			if(j == 0)    basis_[k-1]->addEdge(SOUTH);
+			if(j == n2-1) basis_[k-1]->addEdge(NORTH);
 		}
 	}
 	int unique_u=0;
@@ -102,12 +177,16 @@ void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int
 	}
 }
 
-void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDerivsSf & result ) const {
+void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDerivsSf & result, int iEl ) const {
 	PROFILE("computeBasis()");
-	result.prepareDerivs(param_u, param_v, 0, -1, basis_.size());
 	std::vector<double> values;
-	for(uint i=0; i<basis_.size(); i++) {
-		basis_[i]->evaluate(values, param_u, param_v, 1, param_u!=end_u_, param_v!=end_v_);
+	std::vector<Basisfunction*>::const_iterator it, itStop, itStart;
+	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
+	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
+	result.prepareDerivs(param_u, param_v, 0, -1, (itStop-itStart));
+	int i=0;
+	for(it=itStart; it!=itStop; it++, i++) {
+		(*it)->evaluate(values, param_u, param_v, 1, param_u!=end_u_, param_v!=end_v_);
 		result.basisValues[i]   = values[0];
 		result.basisDerivs_u[i] = values[1];
 		result.basisDerivs_v[i] = values[2];
@@ -115,10 +194,14 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 }
 
 
-void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsSf & result ) const {
-	result.preparePts(param_u, param_v, 0, -1, basis_.size());
-	for(uint i=0; i<basis_.size(); i++)
-		result.basisValues[i] = basis_[i]->evaluate(param_u, param_v, param_u!=end_u_, param_v!=end_v_);
+void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsSf & result, int iEl ) const {
+	std::vector<Basisfunction*>::const_iterator it, itStop, itStart;
+	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
+	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
+	result.preparePts(param_u, param_v, 0, -1, (itStop-itStart));
+	int i=0;
+	for(it=itStart; it!=itStop; it++, i++)
+		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_u!=end_u_, param_v!=end_v_);
 }
 
 void LRSplineSurface::insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity) {
@@ -231,14 +314,24 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 		newFunctions++;
 		basis_.push_back(b1);
 		updateSupport(b1, b.supportedElementBegin(), b.supportedElementEnd());
+		b1->inheritEdgeTag(&b, !insert_in_u, true);
 	}
 	if(b2) {
 		newFunctions++;
 		basis_.push_back(b2);
 		updateSupport(b2, b.supportedElementBegin(), b.supportedElementEnd());
+		b2->inheritEdgeTag(&b, !insert_in_u, false);
 	}
 	basis_.erase(basis_.begin() + function_index);
 	return newFunctions;
+}
+
+void LRSplineSurface::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, bool corner) const {
+	edgeFunctions.clear();
+	for(uint i=0; i<basis_.size(); i++)
+		if( (!corner && (edge &  basis_[i]->getEdgeIndex()))  ||
+		    ( corner && (edge == basis_[i]->getEdgeIndex()))  ) 
+			edgeFunctions.push_back(basis_[i]);
 }
 
 void LRSplineSurface::getGlobalKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const {
@@ -302,6 +395,13 @@ void LRSplineSurface::updateSupport(Basisfunction *f,
 
 void LRSplineSurface::updateSupport(Basisfunction *f) {
 	updateSupport(f, element_.begin(), element_.end());
+}
+
+void LRSplineSurface::generateIDs() const {
+	for(uint i=0; i<basis_.size(); i++) 
+		basis_[i]->setId(i);
+	for(uint i=0; i<element_.size(); i++) 
+		element_[i]->setId(i);
 }
 
 bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
@@ -488,19 +588,99 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 }
 
 void LRSplineSurface::read(std::istream &is) {
+	// first get rid of comments and spaces
+	ws(is); 
+	char firstChar;
+	char buffer[1024];
+	firstChar = is.peek();
+	while(firstChar == '#') {
+		is.getline(buffer, 1024);
+		ws(is);
+		firstChar = is.peek();
+	}
+
+	// read actual parameters
+	int nBasis, nElements, nMeshlines;
+	is >> order_u_;    ws(is);
+	is >> order_v_;    ws(is);
+	is >> nBasis;      ws(is);
+	is >> nMeshlines;  ws(is);
+	is >> nElements;   ws(is);
+	is >> dim_;        ws(is);
+	is >> rational_;   ws(is);
+	
+	basis_.resize(nBasis);
+	meshline_.resize(nMeshlines);
+	element_.resize(nElements);
+
+	// get rid of more comments and spaces
+	firstChar = is.peek();
+	while(firstChar == '#') {
+		is.getline(buffer, 1024);
+		ws(is);
+		firstChar = is.peek();
+	}
+
+	// read all basisfunctions
+	for(int i=0; i<nBasis; i++) {
+		basis_[i] = new Basisfunction(dim_, order_u_, order_v_);
+		basis_[i]->read(is);
+	}
+
+	// get rid of more comments and spaces
+	firstChar = is.peek();
+	while(firstChar == '#') {
+		is.getline(buffer, 1024);
+		ws(is);
+		firstChar = is.peek();
+	}
+
+	for(int i=0; i<nMeshlines; i++) {
+		meshline_[i] = new Meshline();
+		meshline_[i]->read(is);
+	}
+
+	// get rid of more comments and spaces
+	firstChar = is.peek();
+	while(firstChar == '#') {
+		is.getline(buffer, 1024);
+		ws(is);
+		firstChar = is.peek();
+	}
+
+	for(int i=0; i<nElements; i++) {
+		element_[i] = new Element();
+		element_[i]->read(is);
+		element_[i]->updateBasisPointers(basis_);
+	}
+
 }
 
 void LRSplineSurface::write(std::ostream &os) const {
+	generateIDs();
+	os << "#\tp1\tp2\tNbasis\tNline\tNel\tdim\trat\n\t";
+	os << order_u_ << "\t";
+	os << order_v_ << "\t";
+	os << basis_.size() << "\t";
+	os << meshline_.size() << "\t";
+	os << element_.size() << "\t";
+	os << dim_ << "\t";
+	os << rational_ << "\n";
+
+	std::vector<Element*>::const_iterator eit;
 	std::vector<Basisfunction*>::const_iterator bit;
 	std::vector<Meshline*>::const_iterator mit;
 	os << "# Basis functions:\n";
 	int i=0; 
 	for(bit=basis_.begin(); bit<basis_.end(); bit++, i++)
-		os << i << ": " << **bit << std::endl;
+		os << **bit << std::endl;
 	i = 0;
 	os << "# Mesh lines:\n";
 	for(mit=meshline_.begin(); mit<meshline_.end(); mit++, i++)
-		os << i << ": " << **mit << std::endl;
+		os << **mit << std::endl;
+	os << "# Elements:\n";
+	for(eit=element_.begin(); eit<element_.end(); eit++, i++)
+		os << **eit << std::endl;
 }
 
 void LRSplineSurface::writePostscriptMesh(std::ostream &out) const {

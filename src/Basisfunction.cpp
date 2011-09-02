@@ -1,15 +1,28 @@
-#include "Basisfunction.h"
-#include "Element.h"
-#include "Profiler.h"
+#include "LRSpline/Basisfunction.h"
+#include "LRSpline/Element.h"
+#include "LRSpline/Profiler.h"
 #include <algorithm>
 
 namespace LR {
 
-Basisfunction::Basisfunction(double *knot_u, double *knot_v, double *controlpoint, int dim, int order_u, int order_v, double weight) {
+Basisfunction::Basisfunction(int dim, int order_u, int order_v) {
+	dim_          = dim    ;
+	order_u_      = order_u;
+	order_v_      = order_v;
+	weight_       = 1;
+	id_           = -1;
+	edge_index_   = NONE;
+	knot_u_       = new double[order_u+1];
+	knot_v_       = new double[order_v+1];
+	controlpoint_ = new double[dim];
+}
+
+Basisfunction::Basisfunction(const double *knot_u, const double *knot_v, double *controlpoint, int dim, int order_u, int order_v, double weight) {
 	dim_          = dim    ;
 	order_u_      = order_u;
 	order_v_      = order_v;
 	weight_       = weight ;
+	id_           = -1;
 	edge_index_   = NONE;
 	knot_u_       = new double[order_u+1];
 	knot_v_       = new double[order_v+1];
@@ -184,6 +197,25 @@ bool Basisfunction::overlaps(Element *el) const {
 	       knot_v_[order_v_] > el->vmin();
 }
 
+void Basisfunction::inheritEdgeTag(Basisfunction *f, bool verticalSplit, bool minorFunction) {
+	parameterEdge prevEdge = f->getEdgeIndex();
+	if(verticalSplit) {
+		edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & EAST));
+		edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & WEST));
+		if(minorFunction)
+			edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & SOUTH));
+		else
+			edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & NORTH));
+	} else {
+		edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & NORTH));
+		edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & SOUTH));
+		if(minorFunction)
+			edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & WEST));
+		else
+			edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & EAST));
+	}
+}
+
 bool Basisfunction::operator==(const Basisfunction &other) const {
 	for(int i=0; i<=order_u_; i++)
 		if(knot_u_[i] != other.knot_u_[i])
@@ -201,10 +233,40 @@ void Basisfunction::operator+=(const Basisfunction &other) {
 	weight_ = newWeight;
 }
 
+// convenience macro for reading formated input
+#define ASSERT_NEXT_CHAR(c) {ws(is); nextChar = is.get(); if(nextChar!=c) { std::cerr << "Error parsing basis function\n"; exit(324); } ws(is); }
 void Basisfunction::read(std::istream &is) {
+	char nextChar;
+
+	// read id tag
+	is >> id_;
+	ws(is);
+	ASSERT_NEXT_CHAR(':');
+
+	// read knot vectors
+	ASSERT_NEXT_CHAR('[');
+	for(int i=0; i<=order_u_; i++)
+		is >> knot_u_[i];
+	ASSERT_NEXT_CHAR(']');
+	ASSERT_NEXT_CHAR('x');
+	ASSERT_NEXT_CHAR('[');
+	for(int i=0; i<=order_v_; i++)
+		is >> knot_v_[i];
+	ASSERT_NEXT_CHAR(']');
+
+	// read control point
+	for(int i=0; i<dim_; i++)
+		is >> controlpoint_[i];
+
+	// read weight
+	ASSERT_NEXT_CHAR('(');
+	is >> weight_;
+	ASSERT_NEXT_CHAR(')');
 }
+#undef ASSERT_NEXT_CHAR
 
 void Basisfunction::write(std::ostream &os) const {
+	os << id_ << ":";
 	os << "[";
 	for(int i=0; i<order_u_+1; i++)
 		os << knot_u_[i] << " ";

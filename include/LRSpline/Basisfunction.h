@@ -7,6 +7,7 @@
 
 namespace LR {
 
+// forms a 4bit binary mask where each bit corresponds to a side and corners have 2bits 'on'
 enum parameterEdge {
 NONE       = 0,
 WEST       = 1,
@@ -25,7 +26,8 @@ class Element;
 class Basisfunction : public Go::Streamable {
 public:
 	// constructors
-	Basisfunction(double *knot_u, double *knot_v, double *controlpoint, int dim, int order_u, int order_v, double weight=1.0);
+	Basisfunction(int dim, int order_u, int order_v);
+	Basisfunction(const double *knot_u, const double *knot_v, double *controlpoint, int dim, int order_u, int order_v, double weight=1.0);
 	~Basisfunction();
 
 
@@ -41,11 +43,15 @@ public:
 	std::vector<Element*>::iterator supportedElementBegin() ;
 	std::vector<Element*>::iterator supportedElementEnd() ;
 
+	void inheritEdgeTag(Basisfunction *f, bool verticalSplit, bool minorFunction);
+
 	// get/set methods
 	void setEdge(parameterEdge edge_index);
 	void addEdge(parameterEdge edge_index);
 	parameterEdge getEdgeIndex() const;
 	void getControlPoint(Go::Point &pt) const;
+	void setId(int id)  { this->id_ = id; };
+	int getId() const   { return id_; };
 
 	// IO-functions
 	virtual void read(std::istream &is);
@@ -61,6 +67,7 @@ public:
 	double weight_;
 	parameterEdge edge_index_;
 	std::vector<Element*> support_;
+	int id_;
 
 };
 
