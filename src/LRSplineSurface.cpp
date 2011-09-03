@@ -30,14 +30,16 @@ LRSplineSurface::LRSplineSurface() {
 }
 
 LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
+#ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
+#endif
 	rational_ = surf->rational();
 	dim_      = surf->dimension();
 	order_u_  = surf->order_u();
 	order_v_  = surf->order_v();
 	start_u_  = surf->startparam_u();
-	start_v_  = surf->endparam_u();
-	end_u_    = surf->startparam_v();
+	start_v_  = surf->startparam_v();
+	end_u_    = surf->endparam_u();
 	end_v_    = surf->endparam_v();
 
 	int n1 = surf->numCoefs_u();
@@ -91,7 +93,9 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 }
 
 LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v, double *coef, int dim, bool rational) {
+#ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
+#endif
 	rational_ = rational;
 	dim_      = dim;
 	order_u_  = order_u;
@@ -158,7 +162,9 @@ void LRSplineSurface::point(Go::Point &pt, double u, double v) const {
 }
 
 void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int derivs) const {
+#ifdef TIME_LRSPLINE
 	PROFILE("Point()");
+#endif
 	Go::Point cp;
 	std::vector<double> basis_ev;
 
@@ -178,7 +184,9 @@ void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int
 }
 
 void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDerivsSf & result, int iEl ) const {
+#ifdef TIME_LRSPLINE
 	PROFILE("computeBasis()");
+#endif
 	std::vector<double> values;
 	std::vector<Basisfunction*>::const_iterator it, itStop, itStart;
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
@@ -209,11 +217,15 @@ void LRSplineSurface::insert_const_u_edge(double u, double start_v, double stop_
 }
 
 void LRSplineSurface::insert_line(bool const_u, double const_par, double start, double stop, int multiplicity) {
+#ifdef TIME_LRSPLINE
 	PROFILE("insert_line()");
+#endif
 	Meshline *newline;
 
 	{ // verify that this is a proper line (not merging or extending existing lines)
+#ifdef TIME_LRSPLINE
 	PROFILE("line verification");
+#endif
 	newline = new Meshline(!const_u, const_par, start, stop, multiplicity);
 	if(multiplicity != 1) {
 		std::cerr << "ERROR: LRSplineSurface::insert_const_u_edge() not supported for multiplicity != 1\n";
@@ -234,9 +246,13 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	int nNewFunctions     = 0; // number of newly created functions eligable for testing in STEP 2
 
 	{ // STEP 1: test EVERY function against the NEW meshline
+#ifdef TIME_LRSPLINE
 	PROFILE("STEP 1");
+#endif
 	{
+#ifdef TIME_LRSPLINE
 	PROFILE("S1-basissplit");
+#endif
 	for(int i=0; i<nOldFunctions-nRemovedFunctions; i++) {
 		if(newline->splits(basis_[i])) {
 			nNewFunctions += split( const_u, i, const_par );
@@ -246,7 +262,9 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	}
 	}
 	{
+#ifdef TIME_LRSPLINE
 	PROFILE("S1-elementsplit");
+#endif
 	for(uint i=0; i<element_.size(); i++) {
 		if(newline->splits(element_[i]))
 			element_.push_back(element_[i]->split(!newline->is_spanning_u(), newline->const_par_));
@@ -278,7 +296,9 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	}
 
 	{ // STEP 2: test every NEW function against ALL old meshlines
+#ifdef TIME_LRSPLINE
 	PROFILE("STEP 2");
+#endif
 	meshline_.push_back(newline);
 	std::vector<Meshline*>::iterator mit;
 	for(uint i=nOldFunctions-nRemovedFunctions-1; i<basis_.size(); i++) {
@@ -308,7 +328,9 @@ void LRSplineSurface::insert_const_v_edge(double v, double start_u, double stop_
 }
 
 int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot) {
+#ifdef TIME_LRSPLINE
 	PROFILE("split()");
+#endif
 
 	// create the new functions b1 and b2
 	Basisfunction b = *basis_[function_index];
@@ -437,7 +459,9 @@ void LRSplineSurface::getGlobalUniqueKnotVector(std::vector<double> &knot_u, std
 void LRSplineSurface::updateSupport(Basisfunction *f,
 	                                std::vector<Element*>::iterator start,
 	                                std::vector<Element*>::iterator end ) {
+#ifdef TIME_LRSPLINE
 	PROFILE("update support");
+#endif
 	std::vector<Element*>::iterator it;
 	for(it=start; it!=end; it++)
 		if(f->addSupport(*it)) // this tests for overlapping as well as updating  
@@ -456,7 +480,9 @@ void LRSplineSurface::generateIDs() const {
 }
 
 bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
+#ifdef TIME_LRSPLINE
 	PROFILE("Linear independent)");
+#endif
 	// try and figure out this thing by the projection matrix C
 
 	std::vector<double> knots_u, knots_v;
@@ -735,7 +761,9 @@ void LRSplineSurface::write(std::ostream &os) const {
 }
 
 void LRSplineSurface::writePostscriptMesh(std::ostream &out) const {
+#ifdef TIME_LRSPLINE
 	PROFILE("Write EPS");
+#endif
 	std::vector<double> knot_u, knot_v;
 	getGlobalUniqueKnotVector(knot_u, knot_v);
 	double min_span_u = knot_u[1] - knot_u[0];

@@ -26,8 +26,6 @@ int main(int argc, char **argv) {
 	enum refinement_scheme {UNIFORM, CORNER, DIAGONAL} refinement_scheme;
 
 	// set default parameter values
-	const double TOL = 1e-6;
-	const double max_n_linear_depence_testing = 1000;
 	int goalBasisFunctions = 15000;
 	int p1 = 3;
 	int p2 = 3;
