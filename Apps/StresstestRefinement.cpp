@@ -196,14 +196,16 @@ int main(int argc, char **argv) {
 	avgBasisToLine    /= lr.nBasisFunctions();
 
 	vector<Element*>::iterator eit;
-	double avgElementToBasis = 0;
-	int maxElementToBasis    = -1;
-	int minElementToBasis    = 9999999;
+	double avgElementToBasis       = 0;
+	double avgSquareElementToBasis = 0;
+	int maxElementToBasis          = -1;
+	int minElementToBasis          = 9999999;
 	for(eit=lr.elementBegin(); eit!=lr.elementEnd(); eit++) {
 		int nB = (*eit)->nBasisFunctions();
-		maxElementToBasis = (maxElementToBasis > nB) ? maxElementToBasis : nB;
-		minElementToBasis = (minElementToBasis < nB) ? minElementToBasis : nB;
-		avgElementToBasis += nB;
+		maxElementToBasis       = (maxElementToBasis > nB) ? maxElementToBasis : nB;
+		minElementToBasis       = (minElementToBasis < nB) ? minElementToBasis : nB;
+		avgElementToBasis       += nB;
+		avgSquareElementToBasis += nB*nB;
 	}
 	avgElementToBasis /= lr.nElements();
 	
@@ -217,9 +219,11 @@ int main(int argc, char **argv) {
 	cout << "Max number of Basisfuntion -> Meshline: " << maxBasisToLine << endl;
 	cout << "Avg number of Basisfuntion -> Meshline: " << avgBasisToLine << endl;
 	cout << endl;
-	cout << "Min number of Element -> Basisfunction: " << minElementToBasis << endl;
-	cout << "Max number of Element -> Basisfunction: " << maxElementToBasis << endl;
-	cout << "Avg number of Element -> Basisfunction: " << avgElementToBasis << endl;
+	cout << "Min number of        Element -> Basisfunction: " << minElementToBasis  << endl;
+	cout << "Max number of        Element -> Basisfunction: " << maxElementToBasis  << endl;
+	cout << "Avg number of        Element -> Basisfunction: " << avgElementToBasis  << endl;
+	cout << "Avg square number of Element -> Basisfunction: " << avgSquareElementToBasis
+	     << " (" << sqrt(avgSquareElementToBasis) << ")" << endl;
 
 
 
