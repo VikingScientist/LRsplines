@@ -31,7 +31,6 @@ public:
 	Basisfunction(const double *knot_u, const double *knot_v, double *controlpoint, int dim, int order_u, int order_v, double weight=1.0);
 	~Basisfunction();
 
-
 	double evaluate(double u, double v, bool u_from_right=true, bool v_from_right=true) const;
 	void evaluate(std::vector<double> &results, double u, double v, int derivs, bool u_from_right=true, bool v_from_right=true) const;
 
@@ -59,6 +58,10 @@ public:
 	int getId() const   { return id_; };
 	int nSupportedElements() { return support_.size(); };
 	int nPartialLines() { return partial_line_.size(); };
+	double umin() const { return knot_u_[0];        };
+	double umax() const { return knot_u_[order_u_]; };
+	double vmin() const { return knot_v_[0];        };
+	double vmax() const { return knot_v_[order_v_]; };
 
 	// IO-functions
 	virtual void read(std::istream &is);

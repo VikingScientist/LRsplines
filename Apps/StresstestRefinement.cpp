@@ -208,6 +208,7 @@ int main(int argc, char **argv) {
 		avgSquareElementToBasis += nB*nB;
 	}
 	avgElementToBasis /= lr.nElements();
+	avgSquareElementToBasis /= lr.nElements();
 	
 	cout << "Some statistics: " << endl;
 	cout << "-------------------------------------------------------------" << endl;

@@ -212,17 +212,58 @@ void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsS
 		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_u!=end_u_, param_v!=end_v_);
 }
 
+void LRSplineSurface::refineElement(int index) {
+	std::vector<int> ref_index(1, index);
+	refineElement(ref_index);
+}
+
+void LRSplineSurface::refineElement(std::vector<int> index) {
+	// span-u lines
+	std::vector<double> start_u(index.size());
+	std::vector<double> stop_u (index.size());
+	std::vector<double> mid_v  (index.size());
+
+	// span-v lines
+	std::vector<double> start_v(index.size());
+	std::vector<double> stop_v (index.size());
+	std::vector<double> mid_u  (index.size());
+
+	std::vector<Basisfunction*>::iterator it;
+	for(int i=0; i<index.size(); i++) {
+		double umin = element_[index[i]]->umin();
+		double umax = element_[index[i]]->umax();
+		double vmin = element_[index[i]]->vmin();
+		double vmax = element_[index[i]]->vmax();
+		for(it=element_[index[i]]->supportBegin(); it<element_[index[i]]->supportEnd(); it++) {
+			umin = (umin > (**it).umin()) ? (**it).umin() : umin;
+			umax = (umax < (**it).umax()) ? (**it).umax() : umax;
+			vmin = (vmin > (**it).vmin()) ? (**it).vmin() : vmin;
+			vmax = (vmax < (**it).vmax()) ? (**it).vmax() : vmax;
+		}
+		start_u[i] = umin;
+		stop_u[i]  = umax;
+		mid_v[i]   = (element_[index[i]]->vmin() + element_[index[i]]->vmax())/2.0;
+
+		start_v[i] = vmin;
+		stop_v[i]  = vmax;
+		mid_u[i]   = (element_[index[i]]->umin() + element_[index[i]]->umax())/2.0;
+	}
+	for(int i=0; i<index.size(); i++) {
+		this->insert_const_u_edge(mid_u[i], start_v[i], stop_v[i], 1);
+		this->insert_const_v_edge(mid_v[i], start_u[i], stop_u[i], 1);
+	}
+}
+
 void LRSplineSurface::insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity) {
 	insert_line(true, u, start_v, stop_v, multiplicity);
 }
 
 void LRSplineSurface::insert_line(bool const_u, double const_par, double start, double stop, int multiplicity) {
+	Meshline *newline;
 #ifdef TIME_LRSPLINE
 	PROFILE("insert_line()");
 #endif
-	Meshline *newline;
-
-	{ // verify that this is a proper line (not merging or extending existing lines)
+	{ // check if the line is an extension or a merging of existing lines
 #ifdef TIME_LRSPLINE
 	PROFILE("line verification");
 #endif
@@ -234,9 +275,12 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	for(uint i=0; i<meshline_.size(); i++) {
 		if( meshline_[i]->is_spanning_u() != const_u && meshline_[i]->const_par_ == const_par && 
 		    meshline_[i]->start_ <= stop && meshline_[i]->stop_ >= start)  {
-			std::cerr << "Meshline extension not implemented yet - just new lines currently\n";
-			std::cerr << "New line requeste:    " << *newline      << std::endl;
-			std::cerr << "Old line intersected: " << *meshline_[i] << std::endl;
+			// if newline overlaps any existing ones (may be multiple existing ones)
+			// let newline be the entire length of all merged and delete the unused ones
+		    	if(meshline_[i]->start_ < start) newline->start_ = meshline_[i]->start_;
+		    	if(meshline_[i]->stop_  > stop ) newline->stop_  = meshline_[i]->stop_;
+			meshline_.erase(meshline_.begin() + i);
+			i--;
 		}
 	}
 	}
@@ -254,7 +298,7 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	PROFILE("S1-basissplit");
 #endif
 	for(int i=0; i<nOldFunctions-nRemovedFunctions; i++) {
-		if(newline->splits(basis_[i])) {
+		if(newline->splits(basis_[i]) && !newline->containedIn(basis_[i])) {
 			nNewFunctions += split( const_u, i, const_par );
 			i--; // splitting deletes a basisfunction in the middle of the basis_ vector
 			nRemovedFunctions++;

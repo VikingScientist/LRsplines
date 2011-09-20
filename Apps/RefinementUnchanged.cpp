@@ -22,19 +22,24 @@ int main(int argc, char **argv) {
 	int n1 = 7;
 	int n2 = 7;
 	int dim = 4;
+	int nDiagonals = -1;
 	bool rat = false;
 	bool dumpFile = false;
 	char *inputFileName = NULL;
 	string parameters(" parameters: \n" \
-	                  "   -p1  <n>  polynomial ORDER (degree+1) in first parametric direction\n" \
-	                  "   -p2  <n>  polynomial order in second parametric direction\n" \
-	                  "   -n1  <n>  number of basis functions in first parametric direction\n" \
-	                  "   -n2  <n>  number of basis functions in second parametric direction\n" \
-	                  "   -dim <n>  dimension of the controlpoints\n" \
-	                  "   -dumpfile writes an eps- and txt-file of the LR-mesh\n"\
-	                  "   -help     display (this) help screen\n"\
+	                  "   -p1   <n>  polynomial ORDER (degree+1) in first parametric direction\n" \
+	                  "   -p2   <n>  polynomial order in second parametric direction\n" \
+	                  "   -n1   <n>  number of basis functions in first parametric direction\n" \
+	                  "   -n2   <n>  number of basis functions in second parametric direction\n" \
+	                  "   -dim  <n>  dimension of the controlpoints\n" \
+	                  "   -diag <n>  override inputfile and run diagonal testcase\n"\
+	                  "   -dumpfile  writes an eps- and txt-file of the LR-mesh\n"\
+	                  "   -help      display (this) help screen\n"\
 	                  " <refine inputfile>\n"\
-	                  "   inputfile describing meshline insertions\n");
+	                  "   inputfile describing meshline insertions.\n"\
+	                  "   FORMAT:\n"\
+	                  "     <numb. inserted lines>\n"\
+	                  "     <is_const_u> <const_par> <start> <stop>\n");
 	
 	// read input
 	for(int i=1; i<argc; i++) {
@@ -48,6 +53,8 @@ int main(int argc, char **argv) {
 			n2 = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-dim") == 0)
 			dim = atoi(argv[++i]);
+		else if(strcmp(argv[i], "-diag") == 0)
+			nDiagonals = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-dumpfile") == 0)
 			dumpFile = true;
 		else if(strcmp(argv[i], "-help") == 0) {
@@ -70,38 +77,41 @@ int main(int argc, char **argv) {
 	} else if(n2 < p2) {
 		cerr << "ERROR: n2 must be greater or equal to p2\n";
 		exit(2);
-	} else if(inputFileName == NULL) {
+	} else if(nDiagonals==-1 && inputFileName == NULL) {
 		cerr << "ERROR: Specify input file name\n";
+		cerr << "usage: " << argv[0] << "[parameters] <refine inputfile>" << endl << parameters;
 		exit(3);
 	}
 
 
-	// read input-file 
-	ifstream inputFile;
-	inputFile.open(inputFileName);
 	vector<bool>   is_const_u;
 	vector<double> const_par;
 	vector<double> start_par;
 	vector<double> end_par;
-	if( inputFile.is_open() ) {
-		int n;
-		inputFile >> n;
-		bool d;
-		double a,b,c;
-		for(int i=0; i<n; i++) {
-			inputFile >> d;
-			inputFile >> a;
-			inputFile >> b;
-			inputFile >> c;
-			is_const_u.push_back(d);
-			const_par.push_back(a);
-			start_par.push_back(b);
-			end_par.push_back(c);
+	if(nDiagonals==-1) {
+		// read input-file 
+		ifstream inputFile;
+		inputFile.open(inputFileName);
+		if( inputFile.is_open() ) {
+			int n;
+			inputFile >> n;
+			bool d;
+			double a,b,c;
+			for(int i=0; i<n; i++) {
+				inputFile >> d;
+				inputFile >> a;
+				inputFile >> b;
+				inputFile >> c;
+				is_const_u.push_back(d);
+				const_par.push_back(a);
+				start_par.push_back(b);
+					end_par.push_back(c);
+			}
+			inputFile.close();
+		} else {
+			cerr <<"ERROR: could not open file " << inputFileName << endl;
+			exit(3);
 		}
-
-	} else {
-		cerr <<"ERROR: could not open file " << inputFileName << endl;
-		exit(3);
 	}
 
 	// make a uniform integer knot vector
@@ -124,13 +134,25 @@ int main(int argc, char **argv) {
 	SplineSurface   ss(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
 	LRSplineSurface lr(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
 
-	for(uint i=0; i<is_const_u.size(); i++) {
-		if(is_const_u[i])
-			lr.insert_const_u_edge(const_par[i], start_par[i], end_par[i]);
-		else
-			lr.insert_const_v_edge(const_par[i], start_par[i], end_par[i]);
+	if(nDiagonals==-1) {
+		for(uint i=0; i<is_const_u.size(); i++) {
+			if(is_const_u[i])
+				lr.insert_const_u_edge(const_par[i], start_par[i], end_par[i]);
+			else
+				lr.insert_const_v_edge(const_par[i], start_par[i], end_par[i]);
+		}
+	} else {
+		for(int diagRuns=0; diagRuns<nDiagonals; diagRuns++) {
+			vector<Element*>::iterator it;
+			vector<int> diagonalElements;
+			int i=0;
+			for(it=lr.elementBegin(); it<lr.elementEnd(); it++, i++)
+				if((**it).umin() == (**it).vmin())
+					diagonalElements.push_back(i);
+			lr.refineElement(diagonalElements);
+		}
 	}
-
+	
 	// compare function values on edges, knots and in between the knots
 	// as well as all derivatives (up to first derivatives)
 	vector<Point> lr_pts(3), ss_pts(3);

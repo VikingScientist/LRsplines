@@ -28,6 +28,8 @@ public:
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf & result, int iEl=-1 ) const;
 
 	// refinement functions
+	void refineElement(int index);
+	void refineElement(std::vector<int> indices);
 	void insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	void insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
