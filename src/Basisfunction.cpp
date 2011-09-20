@@ -57,8 +57,8 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 
 	double ans_u[order_u_];
 	double ans_v[order_v_];
-	double diff_u;
-	double diff_v;
+	double diff_u = 0;
+	double diff_v = 0;
 
 	for(int i=0; i<order_u_; i++) {
 		if(u_from_right)
