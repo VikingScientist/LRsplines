@@ -212,6 +212,16 @@ void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsS
 		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_u!=end_u_, param_v!=end_v_);
 }
 
+int LRSplineSurface::getElementContaining(double u, double v) const {
+	for(uint i=0; i<element_.size(); i++)
+		if(element_[i]->umin() <= u && element_[i]->vmin() <= v) 
+			if((u < element_[i]->umax() || (u == end_u_ && u <= element_[i]->umax())) && 
+			   (v < element_[i]->vmax() || (v == end_v_ && v <= element_[i]->vmax())))
+				return i;
+		
+	return -1;
+}
+
 void LRSplineSurface::refineElement(int index) {
 	std::vector<int> ref_index(1, index);
 	refineElement(ref_index);
@@ -229,7 +239,7 @@ void LRSplineSurface::refineElement(std::vector<int> index) {
 	std::vector<double> mid_u  (index.size());
 
 	std::vector<Basisfunction*>::iterator it;
-	for(int i=0; i<index.size(); i++) {
+	for(uint i=0; i<index.size(); i++) {
 		double umin = element_[index[i]]->umin();
 		double umax = element_[index[i]]->umax();
 		double vmin = element_[index[i]]->vmin();
@@ -248,7 +258,7 @@ void LRSplineSurface::refineElement(std::vector<int> index) {
 		stop_v[i]  = vmax;
 		mid_u[i]   = (element_[index[i]]->umin() + element_[index[i]]->umax())/2.0;
 	}
-	for(int i=0; i<index.size(); i++) {
+	for(uint i=0; i<index.size(); i++) {
 		this->insert_const_u_edge(mid_u[i], start_v[i], stop_v[i], 1);
 		this->insert_const_v_edge(mid_v[i], start_u[i], stop_u[i], 1);
 	}
@@ -779,6 +789,7 @@ void LRSplineSurface::read(std::istream &is) {
 
 void LRSplineSurface::write(std::ostream &os) const {
 	generateIDs();
+	os << "# LRSPLINE\n";
 	os << "#\tp1\tp2\tNbasis\tNline\tNel\tdim\trat\n\t";
 	os << order_u_ << "\t";
 	os << order_v_ << "\t";

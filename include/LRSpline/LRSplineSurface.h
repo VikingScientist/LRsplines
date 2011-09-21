@@ -26,6 +26,7 @@ public:
 	virtual void point(std::vector<Go::Point> &pts, double upar, double vpar, int derivs) const;
 	void computeBasis (double param_u, double param_v, Go::BasisPtsSf & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf & result, int iEl=-1 ) const;
+	int getElementContaining(double u, double v) const;
 
 	// refinement functions
 	void refineElement(int index);
