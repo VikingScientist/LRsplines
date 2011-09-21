@@ -81,26 +81,32 @@ int main(int argc, char **argv) {
 
 	// compare function values on edges, knots and in between the knots
 	// as well as all derivatives (up to first derivatives)
-	vector<Point> lr_pts(3), ss_pts(3);
+	vector<Point> lr_pts(6), ss_pts(6);
 	vector<bool> assertion_passed;
 	vector<double> par_u_values;
 	vector<double> par_v_values;
 	for(double u=0; u<=n1-p1+1; u+=0.5) {
 		for(double v=0; v<=n2-p2+1; v+=0.5) {
-			lr.point(lr_pts, u,v, 1);
-			ss.point(ss_pts, u,v, 1, false, false);
+			lr.point(lr_pts, u,v, 2);
+			ss.point(ss_pts, u,v, 2);
 
 			bool correct = true;
-			for(int i=0; i<3; i++)  
+			for(int i=0; i<6; i++)  
 				for(int d=0; d<dim; d++)
-					if( fabs((lr_pts[i][d]-ss_pts[i][d])/ss_pts[i][d]) > TOL ) // relative error
+					if( fabs(lr_pts[i][d]-ss_pts[i][d]) > TOL ) // absolute error
 						correct = false;
-			cout << "   LR(" << u << ", " << v << ") = " << lr_pts[0] << endl;
-			cout << "   SS(" << u << ", " << v << ") = " << ss_pts[0] << endl;
-			cout << "dx LR(" << u << ", " << v << ") = " << lr_pts[1] << endl;
-			cout << "dx SS(" << u << ", " << v << ") = " << ss_pts[1] << endl;
-			cout << "dy LR(" << u << ", " << v << ") = " << lr_pts[2] << endl;
-			cout << "dy SS(" << u << ", " << v << ") = " << ss_pts[2] << endl;
+			cout << "     LR(" << u << ", " << v << ") = " << lr_pts[0] << endl;
+			cout << "     SS(" << u << ", " << v << ") = " << ss_pts[0] << endl;
+			cout << "dx   LR(" << u << ", " << v << ") = " << lr_pts[1] << endl;
+			cout << "dx   SS(" << u << ", " << v << ") = " << ss_pts[1] << endl;
+			cout << "dy   LR(" << u << ", " << v << ") = " << lr_pts[2] << endl;
+			cout << "dy   SS(" << u << ", " << v << ") = " << ss_pts[2] << endl;
+			cout << "d2x  LR(" << u << ", " << v << ") = " << lr_pts[3] << endl;
+			cout << "d2x  SS(" << u << ", " << v << ") = " << ss_pts[3] << endl;
+			cout << "dxdy LR(" << u << ", " << v << ") = " << lr_pts[4] << endl;
+			cout << "dxdy SS(" << u << ", " << v << ") = " << ss_pts[4] << endl;
+			cout << "d2y  LR(" << u << ", " << v << ") = " << lr_pts[5] << endl;
+			cout << "d2y  SS(" << u << ", " << v << ") = " << ss_pts[5] << endl;
 
 			// collect results for summary at the end
 			assertion_passed.push_back(correct);

@@ -183,6 +183,27 @@ void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int
 	}
 }
 
+void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDerivsSf2 & result, int iEl ) const {
+#ifdef TIME_LRSPLINE
+	PROFILE("computeBasis()");
+#endif
+	std::vector<double> values;
+	std::vector<Basisfunction*>::const_iterator it, itStop, itStart;
+	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
+	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
+	result.prepareDerivs(param_u, param_v, 0, -1, (itStop-itStart));
+	int i=0;
+	for(it=itStart; it!=itStop; it++, i++) {
+		(*it)->evaluate(values, param_u, param_v, 2, param_u!=end_u_, param_v!=end_v_);
+		result.basisValues[i]    = values[0];
+		result.basisDerivs_u[i]  = values[1];
+		result.basisDerivs_v[i]  = values[2];
+		result.basisDerivs_uu[i] = values[3];
+		result.basisDerivs_uv[i] = values[4];
+		result.basisDerivs_vv[i] = values[5];
+	}
+}
+
 void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDerivsSf & result, int iEl ) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("computeBasis()");

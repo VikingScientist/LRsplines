@@ -44,8 +44,8 @@ Basisfunction::~Basisfunction() {
 }
 
 void Basisfunction::evaluate(std::vector<double> &results, double u, double v, int derivs, bool u_from_right, bool v_from_right) const {
-	if(derivs > 1) {
-		std::cerr << "Basisfunction::evaluate() not implemented for more derivatives than 1\n";
+	if(derivs > 2) {
+		std::cerr << "Basisfunction::evaluate() not implemented for more derivatives than 2\n";
 		exit(325);
 	}
 	results.resize((derivs+1)*(derivs+2)/2);
@@ -59,6 +59,8 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 	double ans_v[order_v_];
 	double diff_u = 0;
 	double diff_v = 0;
+	double diff_2u[3];
+	double diff_2v[3];
 
 	for(int i=0; i<order_u_; i++) {
 		if(u_from_right)
@@ -68,6 +70,15 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 	}
 
 	for(int n=1; n<order_u_; n++) {
+		if(n==order_u_-2)
+			for(int j=0; j<=order_u_-n; j++)
+				diff_2u[j] = ans_u[j];
+		if(n>=order_u_-2) {
+			for(int j=0; j<order_u_-n; j++) {
+				diff_2u[j]  = (knot_u_[ j+n ]==knot_u_[ j ]) ? 0 : (       n        )/(knot_u_[j+n]  -knot_u_[ j ])*diff_2u[ j ];
+				diff_2u[j] -= (knot_u_[j+n+1]==knot_u_[j+1]) ? 0 : (       n        )/(knot_u_[j+n+1]-knot_u_[j+1])*diff_2u[j+1];
+			}
+		}
 		if(n==order_u_-1) {
 			int j=0;
 			diff_u  = (knot_u_[ j+n ]==knot_u_[ j ]) ? 0 : (   order_u_-1   )/(knot_u_[j+n]  -knot_u_[ j ])*ans_u[ j ];
@@ -86,6 +97,15 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 			ans_v[i] = (knot_v_[i] <  v && v <= knot_v_[i+1]) ? 1 : 0;
 	}
 	for(int n=1; n<order_v_; n++) {
+		if(n==order_v_-2)
+			for(int j=0; j<=order_v_-n; j++)
+				diff_2v[j] = ans_v[j];
+		if(n>=order_v_-2) {
+			for(int j=0; j<order_v_-n; j++) {
+				diff_2v[j]  = (knot_v_[ j+n ]==knot_v_[ j ]) ? 0 : (       n        )/(knot_v_[j+n]  -knot_v_[ j ])*diff_2v[ j ];
+				diff_2v[j] -= (knot_v_[j+n+1]==knot_v_[j+1]) ? 0 : (       n        )/(knot_v_[j+n+1]-knot_v_[j+1])*diff_2v[j+1];
+			}
+		}
 		if(n==order_v_-1) {
 			int j=0;
 			diff_v  = (knot_v_[ j+n ]==knot_v_[ j ]) ? 0 : (    order_v_-1  )/(knot_v_[j+n]  -knot_v_[ j ])*ans_v[ j ];
@@ -101,6 +121,11 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 	if(derivs>0) {
 		results[1] = diff_u  *ans_v[0]*weight_;
 		results[2] = ans_u[0]*diff_v  *weight_;
+	}
+	if(derivs>1) {
+		results[3] = diff_2u[0]*ans_v[0]  *weight_;
+		results[4] = diff_u    *diff_v    *weight_;
+		results[5] = ans_u[0]  *diff_2v[0]*weight_;
 	}
 }
 

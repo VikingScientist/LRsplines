@@ -81,20 +81,34 @@ int main(int argc, char **argv) {
 	for(double u=0; u<=n1-p1+1; u+=0.5) {
 		for(double v=0; v<=n2-p2+1; v+=0.5) {
 
-			BasisDerivsSf lr_basis;
+			BasisDerivsSf2 lr_basis;
 			lr.computeBasis(u,v, lr_basis);
-			double sum        = 0;
-			double sum_diff_u = 0;
-			double sum_diff_v = 0;
+			double sum         = 0;
+			double sum_diff_u  = 0;
+			double sum_diff_v  = 0;
+			double sum_diff_uu = 0;
+			double sum_diff_uv = 0;
+			double sum_diff_vv = 0;
 			for(uint i=0; i<lr_basis.basisValues.size(); i++) {
-				sum        += lr_basis.basisValues[i] ;
-				sum_diff_u += lr_basis.basisDerivs_u[i];
-				sum_diff_v += lr_basis.basisDerivs_v[i];
+				sum         += lr_basis.basisValues[i] ;
+				sum_diff_u  += lr_basis.basisDerivs_u[i];
+				sum_diff_v  += lr_basis.basisDerivs_v[i];
+				sum_diff_uu += lr_basis.basisDerivs_uu[i];
+				sum_diff_uv += lr_basis.basisDerivs_uv[i];
+				sum_diff_vv += lr_basis.basisDerivs_vv[i];
 			}
 			cout << "sum (" << u << ", " << v <<") minus one = " << sum-1.0 << endl;
-			cout << "sum diff u = " << sum_diff_u << endl;
-			cout << "sum diff v = " << sum_diff_v << endl << endl;
-			bool correct = !(fabs(sum-1.0) > TOL || fabs(sum_diff_u) > TOL || fabs(sum_diff_v) > TOL);
+			cout << "sum diff u  = " << sum_diff_u  << endl;
+			cout << "sum diff v  = " << sum_diff_v  << endl;
+			cout << "sum diff uu = " << sum_diff_uu << endl;
+			cout << "sum diff uv = " << sum_diff_uv << endl;
+			cout << "sum diff vv = " << sum_diff_vv << endl << endl;
+			bool correct = !(fabs(sum-1.0)     > TOL ||
+			                 fabs(sum_diff_u)  > TOL ||
+							 fabs(sum_diff_v)  > TOL ||
+							 fabs(sum_diff_uu) > TOL ||
+							 fabs(sum_diff_uv) > TOL ||
+							 fabs(sum_diff_vv) > TOL );
 
 			// collect results for summary at the end
 			assertion_passed.push_back(correct);
