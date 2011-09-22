@@ -22,8 +22,8 @@ public:
 	LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v, double *coef, int dim, bool rational=false);
 
 	// surface evaluation
-	virtual void point(Go::Point &pt, double u, double v) const;
-	virtual void point(std::vector<Go::Point> &pts, double upar, double vpar, int derivs) const;
+	virtual void point(Go::Point &pt, double u, double v, int iEl=-1) const;
+	virtual void point(std::vector<Go::Point> &pts, double upar, double vpar, int derivs, int iEl=-1) const;
 	void computeBasis (double param_u, double param_v, Go::BasisPtsSf     & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf  & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf2 & result, int iEl=-1 ) const;

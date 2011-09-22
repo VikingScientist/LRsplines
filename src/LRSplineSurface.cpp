@@ -150,19 +150,22 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 		updateSupport(basis_[i]);
 }
 
-void LRSplineSurface::point(Go::Point &pt, double u, double v) const {
+void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl) const {
 	Go::Point cp;
 	double basis_ev;
 	pt.resize(dim_);
 	pt *= 0;
-	for(uint i=0; i<basis_.size(); i++) {
-		basis_[i]->getControlPoint(cp);
-		basis_ev = basis_[i]->evaluate(u,v, u!=end_u_, v!=end_v_);
+	if(iEl == -1)
+		iEl = getElementContaining(u,v);
+	std::vector<Basisfunction*>::const_iterator it;
+	for(it=element_[iEl]->supportBegin(); it<element_[iEl]->supportEnd(); it++) {
+		(**it).getControlPoint(cp);
+		basis_ev = (**it).evaluate(u,v, u!=end_u_, v!=end_v_);
 		pt += basis_ev*cp;
 	}
 }
 
-void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int derivs) const {
+void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int derivs, int iEl) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("Point()");
 #endif
@@ -176,9 +179,12 @@ void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int
 		pts[i] *= 0;
 	}
 
-	for(uint i=0; i<basis_.size(); i++) {
-		basis_[i]->getControlPoint(cp);
-		basis_[i]->evaluate(basis_ev, u,v, derivs, u!=end_u_, v!=end_v_);
+	if(iEl == -1)
+		iEl = getElementContaining(u,v);
+	std::vector<Basisfunction*>::const_iterator it;
+	for(it=element_[iEl]->supportBegin(); it<element_[iEl]->supportEnd(); it++) {
+		(**it).getControlPoint(cp);
+		(**it).evaluate(basis_ev, u,v, derivs, u!=end_u_, v!=end_v_);
 		for(uint j=0; j<pts.size(); j++)
 			pts[j] += basis_ev[j]*cp;
 	}
