@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <boost/rational.hpp>
+#include <float.h>
 
 typedef unsigned int uint;
 
@@ -740,6 +741,11 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 }
 
 void LRSplineSurface::read(std::istream &is) {
+	start_u_ = DBL_MAX;
+	end_u_   = -DBL_MAX;
+	start_v_ = DBL_MAX;
+	end_v_   = -DBL_MAX;
+
 	// first get rid of comments and spaces
 	ws(is); 
 	char firstChar;
@@ -800,12 +806,28 @@ void LRSplineSurface::read(std::istream &is) {
 		firstChar = is.peek();
 	}
 
+	// read elements and calculate patch boundaries
 	for(int i=0; i<nElements; i++) {
 		element_[i] = new Element();
 		element_[i]->read(is);
 		element_[i]->updateBasisPointers(basis_);
+		start_u_ = (element_[i]->umin() < start_u_) ? element_[i]->umin() : start_u_;
+		end_u_   = (element_[i]->umax() > end_u_  ) ? element_[i]->umax() : end_u_  ;
+		start_v_ = (element_[i]->vmin() < start_v_) ? element_[i]->vmin() : start_v_;
+		end_v_   = (element_[i]->vmax() > end_v_  ) ? element_[i]->vmax() : end_v_  ;
 	}
 
+	// tag all edge functions
+	for(int i=0; i<nBasis; i++) {
+		if(basis_[i]->knot_u_[order_u_-1] == start_u_)
+			basis_[i]->addEdge(WEST);
+		else if(basis_[i]->knot_u_[1] == end_u_)
+			basis_[i]->addEdge(EAST);
+		if(basis_[i]->knot_v_[order_v_-1] == start_v_)
+			basis_[i]->addEdge(SOUTH);
+		else if(basis_[i]->knot_v_[1] == end_v_)
+			basis_[i]->addEdge(NORTH);
+	}
 }
 
 void LRSplineSurface::write(std::ostream &os) const {
