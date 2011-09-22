@@ -45,14 +45,10 @@ public:
 	std::vector<Meshline*>::iterator partialLineBegin() ;
 	std::vector<Meshline*>::iterator partialLineEnd() ;
 
-	void inheritEdgeTag(Basisfunction *f, bool verticalSplit, bool minorFunction);
 	void inheritPartialLine(Basisfunction *f);
 
 	// get/set methods
-	void setEdge(parameterEdge edge_index);
-	void addEdge(parameterEdge edge_index);
 	void addPartialLine(Meshline *line) { partial_line_.push_back(line); };
-	parameterEdge getEdgeIndex() const;
 	void getControlPoint(Go::Point &pt) const;
 	void setId(int id)  { this->id_ = id; };
 	int getId() const   { return id_; };
@@ -75,7 +71,6 @@ public:
 	int order_u_;
 	int order_v_;
 	double weight_;
-	parameterEdge edge_index_;
 	std::vector<Element*> support_;
 	std::vector<Meshline*> partial_line_;
 	int id_;

@@ -62,7 +62,7 @@ public:
 	Element* getElement(int i)                         { return element_[i]; };
 	Basisfunction* getBasisfunction(int i)             { return basis_[i]; };
 
-	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, bool corner=false) const;
+	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;
 
 	// input output methods
 	virtual void read(std::istream &is);

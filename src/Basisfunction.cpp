@@ -12,7 +12,6 @@ Basisfunction::Basisfunction(int dim, int order_u, int order_v) {
 	order_v_      = order_v;
 	weight_       = 1;
 	id_           = -1;
-	edge_index_   = NONE;
 	knot_u_       = new double[order_u+1];
 	knot_v_       = new double[order_v+1];
 	controlpoint_ = new double[dim];
@@ -24,7 +23,6 @@ Basisfunction::Basisfunction(const double *knot_u, const double *knot_v, double 
 	order_v_      = order_v;
 	weight_       = weight ;
 	id_           = -1;
-	edge_index_   = NONE;
 	knot_u_       = new double[order_u+1];
 	knot_v_       = new double[order_v+1];
 	controlpoint_ = new double[dim];
@@ -171,10 +169,6 @@ void Basisfunction::getControlPoint(Go::Point &pt) const {
 		pt[d] = controlpoint_[d];
 }
 
-void Basisfunction::setEdge(parameterEdge edge_index) {
-	edge_index_ = edge_index;
-}
-
 std::vector<Meshline*>::iterator Basisfunction::partialLineBegin()  {
 	return partial_line_.begin();
 }
@@ -189,14 +183,6 @@ std::vector<Element*>::iterator Basisfunction::supportedElementBegin()  {
 
 std::vector<Element*>::iterator Basisfunction::supportedElementEnd()  {
 	return support_.end();
-}
-
-void Basisfunction::addEdge(parameterEdge edge_index) {
-	edge_index_ = (parameterEdge) (edge_index_ | edge_index);
-}
-
-parameterEdge Basisfunction::getEdgeIndex() const {
-	return edge_index_;
 }
 
 bool Basisfunction::removeSupport(Element *el) {
@@ -236,25 +222,6 @@ void Basisfunction::inheritPartialLine(Basisfunction *f) {
 	for(it=f->partialLineBegin(); it != f->partialLineEnd(); it++)
 		if((*it)->touches(this)) 
 			partial_line_.push_back(*it);
-}
-
-void Basisfunction::inheritEdgeTag(Basisfunction *f, bool verticalSplit, bool minorFunction) {
-	parameterEdge prevEdge = f->getEdgeIndex();
-	if(verticalSplit) {
-		edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & EAST));
-		edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & WEST));
-		if(minorFunction)
-			edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & SOUTH));
-		else
-			edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & NORTH));
-	} else {
-		edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & NORTH));
-		edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & SOUTH));
-		if(minorFunction)
-			edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & WEST));
-		else
-			edge_index_ = (parameterEdge) (edge_index_ | (prevEdge & EAST));
-	}
 }
 
 bool Basisfunction::operator==(const Basisfunction &other) const {

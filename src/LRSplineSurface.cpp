@@ -51,15 +51,9 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 
 	basis_ = std::vector<Basisfunction*>(n1*n2);
 	int k=0;
-	for(int j=0; j<n2; j++) {
-		for(int i=0; i<n1; i++) {
+	for(int j=0; j<n2; j++)
+		for(int i=0; i<n1; i++)
 			basis_[k++] = new Basisfunction(&(*(knot_u+i)), &(*(knot_v+j)), &(*(coef+(j*n1+i)*(dim_+rational_))), dim_, order_u_, order_v_);
-			if(i == 0)    basis_[k-1]->addEdge(WEST);
-			if(i == n1-1) basis_[k-1]->addEdge(EAST);
-			if(j == 0)    basis_[k-1]->addEdge(SOUTH);
-			if(j == n2-1) basis_[k-1]->addEdge(NORTH);
-		}
-	}
 	int unique_u=0;
 	int unique_v=0;
 	for(int i=0; i<n1+order_u_; i++) {// const u, spanning v
@@ -108,15 +102,9 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 
 	basis_ = std::vector<Basisfunction*>(n1*n2);
 	int k=0;
-	for(int j=0; j<n2; j++) {
-		for(int i=0; i<n1; i++) {
+	for(int j=0; j<n2; j++)
+		for(int i=0; i<n1; i++)
 			basis_[k++] = new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim+rational), dim, order_u, order_v);
-			if(i == 0)    basis_[k-1]->addEdge(WEST);
-			if(i == n1-1) basis_[k-1]->addEdge(EAST);
-			if(j == 0)    basis_[k-1]->addEdge(SOUTH);
-			if(j == n2-1) basis_[k-1]->addEdge(NORTH);
-		}
-	}
 	int unique_u=0;
 	int unique_v=0;
 	for(int i=0; i<n1+order_u; i++) {// const u, spanning v
@@ -467,26 +455,62 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 		newFunctions++;
 		basis_.push_back(b1);
 		updateSupport(b1, b.supportedElementBegin(), b.supportedElementEnd());
-		b1->inheritEdgeTag(&b, !insert_in_u, true);
 		b1->inheritPartialLine(&b);
 	}
 	if(b2) {
 		newFunctions++;
 		basis_.push_back(b2);
 		updateSupport(b2, b.supportedElementBegin(), b.supportedElementEnd());
-		b2->inheritEdgeTag(&b, !insert_in_u, false);
 		b2->inheritPartialLine(&b);
 	}
 	basis_.erase(basis_.begin() + function_index);
 	return newFunctions;
 }
 
-void LRSplineSurface::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, bool corner) const {
+void LRSplineSurface::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth) const {
 	edgeFunctions.clear();
-	for(uint i=0; i<basis_.size(); i++)
-		if( (!corner && (edge &  basis_[i]->getEdgeIndex()))  ||
-		    ( corner && (edge == basis_[i]->getEdgeIndex()))  ) 
-			edgeFunctions.push_back(basis_[i]);
+	for(uint i=0; i<basis_.size(); i++) {
+		switch(edge) {
+		case WEST       :
+			if(basis_[i]->knot_u_[order_u_-depth] == start_u_)
+				edgeFunctions.push_back(basis_[i]);
+			break;
+		case EAST       :
+			if(basis_[i]->knot_u_[depth] == end_u_)
+				edgeFunctions.push_back(basis_[i]);
+			break;
+		case SOUTH      :
+			if(basis_[i]->knot_v_[order_v_-depth] == start_v_)
+				edgeFunctions.push_back(basis_[i]);
+			break;
+		case NORTH      :
+			if(basis_[i]->knot_v_[depth] == end_v_)
+				edgeFunctions.push_back(basis_[i]);
+			break;
+		case SOUTH_WEST :
+			if(basis_[i]->knot_u_[order_u_-depth] == start_u_ &&
+			   basis_[i]->knot_v_[order_v_-depth] == start_v_)
+				edgeFunctions.push_back(basis_[i]);
+			break;
+		case SOUTH_EAST :
+			if(basis_[i]->knot_u_[depth]          == end_u_ &&
+			   basis_[i]->knot_v_[order_v_-depth] == start_v_)
+				edgeFunctions.push_back(basis_[i]);
+			break;
+		case NORTH_WEST :
+			if(basis_[i]->knot_u_[order_u_-depth] == start_u_ &&
+			   basis_[i]->knot_v_[depth]          == end_v_)
+				edgeFunctions.push_back(basis_[i]);
+			break;
+		case NORTH_EAST :
+			if(basis_[i]->knot_u_[depth] == end_u_ &&
+			   basis_[i]->knot_v_[depth] == end_v_)
+				edgeFunctions.push_back(basis_[i]);
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 void LRSplineSurface::getGlobalKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const {
@@ -821,18 +845,6 @@ void LRSplineSurface::read(std::istream &is) {
 		end_u_   = (element_[i]->umax() > end_u_  ) ? element_[i]->umax() : end_u_  ;
 		start_v_ = (element_[i]->vmin() < start_v_) ? element_[i]->vmin() : start_v_;
 		end_v_   = (element_[i]->vmax() > end_v_  ) ? element_[i]->vmax() : end_v_  ;
-	}
-
-	// tag all edge functions
-	for(int i=0; i<nBasis; i++) {
-		if(basis_[i]->knot_u_[order_u_-1] == start_u_)
-			basis_[i]->addEdge(WEST);
-		else if(basis_[i]->knot_u_[1] == end_u_)
-			basis_[i]->addEdge(EAST);
-		if(basis_[i]->knot_v_[order_v_-1] == start_v_)
-			basis_[i]->addEdge(SOUTH);
-		else if(basis_[i]->knot_v_[1] == end_v_)
-			basis_[i]->addEdge(NORTH);
 	}
 }
 
