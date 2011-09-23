@@ -27,6 +27,11 @@ public:
 	void computeBasis (double param_u, double param_v, Go::BasisPtsSf     & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf  & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf2 & result, int iEl=-1 ) const;
+	void computeBasis (double param_u,
+	                   double param_v,
+	                   std::vector<std::vector<double> >& result,
+	                   int derivs=0,
+	                   int iEl=-1 ) const;
 	int getElementContaining(double u, double v) const;
 	// TODO: get rid of the iEl argument in evaluation signatures - it's too easy to mess it up (especially with derivatives at multiple-knot boundaries). 
 	//       Try and sort the Elements after all refinements and binary search for the containing point in logarithmic time

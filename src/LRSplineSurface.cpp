@@ -228,6 +228,22 @@ void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsS
 		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_u!=end_u_, param_v!=end_v_);
 }
 
+void LRSplineSurface::computeBasis (double param_u,
+                                    double param_v,
+                                    std::vector<std::vector<double> >& result,
+                                    int derivs,
+                                    int iEl ) const
+{
+	result.clear();
+	std::vector<Basisfunction*>::const_iterator it, itStop, itStart;
+	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
+	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
+	result.resize(itStop - itStart);
+	int i=0;
+	for(it=itStart; it!=itStop; it++, i++)
+		(*it)->evaluate(result[i], param_u, param_v, derivs, param_u!=end_u_, param_v!=end_v_);
+}
+
 int LRSplineSurface::getElementContaining(double u, double v) const {
 	for(uint i=0; i<element_.size(); i++)
 		if(element_[i]->umin() <= u && element_[i]->vmin() <= v) 
