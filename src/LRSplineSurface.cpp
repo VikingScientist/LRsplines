@@ -238,12 +238,12 @@ int LRSplineSurface::getElementContaining(double u, double v) const {
 	return -1;
 }
 
-void LRSplineSurface::refineElement(int index) {
+void LRSplineSurface::refineElement(int index, int multiplicity) {
 	std::vector<int> ref_index(1, index);
-	refineElement(ref_index);
+	refineElement(ref_index, multiplicity);
 }
 
-void LRSplineSurface::refineElement(std::vector<int> index) {
+void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity) {
 	// span-u lines
 	std::vector<double> start_u(index.size());
 	std::vector<double> stop_u (index.size());
@@ -275,8 +275,8 @@ void LRSplineSurface::refineElement(std::vector<int> index) {
 		mid_u[i]   = (element_[index[i]]->umin() + element_[index[i]]->umax())/2.0;
 	}
 	for(uint i=0; i<index.size(); i++) {
-		this->insert_const_u_edge(mid_u[i], start_v[i], stop_v[i], 1);
-		this->insert_const_v_edge(mid_v[i], start_u[i], stop_u[i], 1);
+		this->insert_const_u_edge(mid_u[i], start_v[i], stop_v[i], multiplicity);
+		this->insert_const_v_edge(mid_v[i], start_u[i], stop_u[i], multiplicity);
 	}
 }
 
@@ -294,17 +294,19 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	PROFILE("line verification");
 #endif
 	newline = new Meshline(!const_u, const_par, start, stop, multiplicity);
-	if(multiplicity != 1) {
-		std::cerr << "ERROR: LRSplineSurface::insert_const_u_edge() not supported for multiplicity != 1\n";
-		std::cerr << "       requested line: " << *newline << std::endl;
-	}
 	for(uint i=0; i<meshline_.size(); i++) {
-		if( meshline_[i]->is_spanning_u() != const_u && meshline_[i]->const_par_ == const_par && 
-		    meshline_[i]->start_ <= stop && meshline_[i]->stop_ >= start)  {
+		if(meshline_[i]->is_spanning_u() != const_u && meshline_[i]->const_par_ == const_par && 
+		   meshline_[i]->start_ <= stop && meshline_[i]->stop_ >= start)  {
 			// if newline overlaps any existing ones (may be multiple existing ones)
 			// let newline be the entire length of all merged and delete the unused ones
-		    	if(meshline_[i]->start_ < start) newline->start_ = meshline_[i]->start_;
-		    	if(meshline_[i]->stop_  > stop ) newline->stop_  = meshline_[i]->stop_;
+			if(meshline_[i]->start_ < start) newline->start_ = meshline_[i]->start_;
+			if(meshline_[i]->stop_  > stop ) newline->stop_  = meshline_[i]->stop_;
+			if(meshline_[i]->multiplicity_ != newline->multiplicity_) {
+				std::cerr << "ERROR: LRSplineSurface::insert_const_u_edge() trying to merge lines of different multiplicity\n";
+				std::cerr << "       requested line: " << *newline      << std::endl;
+				std::cerr << "       old line      : " << *meshline_[i] << std::endl;
+				exit(984332);
+			}
 			meshline_.erase(meshline_.begin() + i);
 			i--;
 		}
@@ -325,7 +327,7 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 #endif
 	for(int i=0; i<nOldFunctions-nRemovedFunctions; i++) {
 		if(newline->splits(basis_[i]) && !newline->containedIn(basis_[i])) {
-			nNewFunctions += split( const_u, i, const_par );
+			nNewFunctions += split( const_u, i, const_par, newline->multiplicity_ );
 			i--; // splitting deletes a basisfunction in the middle of the basis_ vector
 			nRemovedFunctions++;
 		}
@@ -375,7 +377,7 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 		for(mit=basis_[i]->partialLineBegin(); mit!=basis_[i]->partialLineEnd(); mit++) {
 			if((*mit)->splits(basis_[i]) && 
 			   !(*mit)->containedIn(basis_[i])) {
-				split( !(*mit)->is_spanning_u(), i, (*mit)->const_par_ );
+				split( !(*mit)->is_spanning_u(), i, (*mit)->const_par_, (*mit)->multiplicity_ );
 				i--; // splitting deletes a basisfunction in the middle of the basis_ vector
 				break;
 			}
@@ -397,7 +399,7 @@ void LRSplineSurface::insert_const_v_edge(double v, double start_u, double stop_
 	insert_line(false, v, start_u, stop_u, multiplicity);
 }
 
-int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot) {
+int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot, int multiplicity) {
 #ifdef TIME_LRSPLINE
 	PROFILE("split()");
 #endif
@@ -442,6 +444,9 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 			**it += *b1;
 			delete b1;
 			b1 = NULL;
+			// pretty sure you never end up here if multiplicity > 1
+			// this would mean there are some strange doubleknotline to singleknotline on
+			// the same vertical/horizontal line
 		} else if(b2 && *b2 == **it) {
 			**it += *b2;
 			delete b2;
@@ -449,21 +454,32 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 		}
 	}
 
+	// remove old functions
+	basis_.erase(basis_.begin() + function_index);
 	// add any brand new functions and detect their support elements
 	int newFunctions = 0;
 	if(b1) {
-		newFunctions++;
 		basis_.push_back(b1);
 		updateSupport(b1, b.supportedElementBegin(), b.supportedElementEnd());
 		b1->inheritPartialLine(&b);
+		bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && b1->knot_u_[order_u_]!=new_knot) ||
+		                                               (!insert_in_u && b1->knot_v_[order_v_]!=new_knot)  );
+		if(recursive_split)
+			newFunctions += split( insert_in_u, basis_.size()-1, new_knot, multiplicity-1);
+		else
+			newFunctions++;
 	}
 	if(b2) {
-		newFunctions++;
 		basis_.push_back(b2);
 		updateSupport(b2, b.supportedElementBegin(), b.supportedElementEnd());
 		b2->inheritPartialLine(&b);
+		bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && b2->knot_u_[0]!=new_knot) ||
+		                                               (!insert_in_u && b2->knot_v_[0]!=new_knot)  );
+		if(recursive_split)
+			newFunctions += split( insert_in_u, basis_.size()-1, new_knot, multiplicity-1);
+		else
+			newFunctions++;
 	}
-	basis_.erase(basis_.begin() + function_index);
 	return newFunctions;
 }
 

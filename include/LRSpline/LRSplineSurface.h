@@ -28,10 +28,12 @@ public:
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf  & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf2 & result, int iEl=-1 ) const;
 	int getElementContaining(double u, double v) const;
+	// TODO: get rid of the iEl argument in evaluation signatures - it's too easy to mess it up (especially with derivatives at multiple-knot boundaries). 
+	//       Try and sort the Elements after all refinements and binary search for the containing point in logarithmic time
 
 	// refinement functions
-	void refineElement(int index);
-	void refineElement(std::vector<int> indices);
+	void refineElement(int index, int multiplicity=1);
+	void refineElement(std::vector<int> indices, int multiplicity=1);
 	void insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	void insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
@@ -71,7 +73,7 @@ public:
 	void printElements(std::ostream &out) const;
 
 private:
-	int split(bool insert_in_u, int function_index, double new_knot);
+	int split(bool insert_in_u, int function_index, double new_knot, int multiplicity=1);
 	void insert_line(bool const_u, double const_par, double start, double stop, int multiplicity);
 	
 	bool rational_;

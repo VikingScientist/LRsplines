@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 	                  "   inputfile describing meshline insertions.\n"\
 	                  "   FORMAT:\n"\
 	                  "     <numb. inserted lines>\n"\
-	                  "     <is_const_u> <const_par> <start> <stop>\n");
+	                  "     <is_const_u> <const_par> <start> <stop> <mult>\n");
 	
 	// read input
 	for(int i=1; i<argc; i++) {
@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
 	vector<double> const_par;
 	vector<double> start_par;
 	vector<double> end_par;
+	vector<int> multiplicity;
 	if(nDiagonals==-1) {
 		// read input-file 
 		ifstream inputFile;
@@ -95,17 +96,20 @@ int main(int argc, char **argv) {
 		if( inputFile.is_open() ) {
 			int n;
 			inputFile >> n;
-			bool d;
+			bool e;
 			double a,b,c;
+			int d;
 			for(int i=0; i<n; i++) {
-				inputFile >> d;
+				inputFile >> e;
 				inputFile >> a;
 				inputFile >> b;
 				inputFile >> c;
-				is_const_u.push_back(d);
+				inputFile >> d;
+				is_const_u.push_back(e);
 				const_par.push_back(a);
 				start_par.push_back(b);
-					end_par.push_back(c);
+				end_par.push_back(c);
+				multiplicity.push_back(d);
 			}
 			inputFile.close();
 		} else {
@@ -137,9 +141,9 @@ int main(int argc, char **argv) {
 	if(nDiagonals==-1) {
 		for(uint i=0; i<is_const_u.size(); i++) {
 			if(is_const_u[i])
-				lr.insert_const_u_edge(const_par[i], start_par[i], end_par[i]);
+				lr.insert_const_u_edge(const_par[i], start_par[i], end_par[i], multiplicity[i]);
 			else
-				lr.insert_const_v_edge(const_par[i], start_par[i], end_par[i]);
+				lr.insert_const_v_edge(const_par[i], start_par[i], end_par[i], multiplicity[i]);
 		}
 	} else {
 		for(int diagRuns=0; diagRuns<nDiagonals; diagRuns++) {
@@ -174,12 +178,12 @@ int main(int argc, char **argv) {
 				double u = umin + ii*(umax-umin)/2.0;
 				double v = vmin + jj*(vmax-vmin)/2.0;
 				lr.point(lr_pts, u,v, 1);
-				ss.point(ss_pts, u,v, 1, false, false);
+				ss.point(ss_pts, u,v, 1);
 
 				bool correct = true;
 				for(int i=0; i<3; i++)  
 					for(int d=0; d<dim; d++)
-						if( fabs((lr_pts[i][d]-ss_pts[i][d])/ss_pts[i][d]) > TOL ) // relative error
+						if( fabs(lr_pts[i][d]-ss_pts[i][d]) > TOL ) // relative error
 							correct = false;
 				assert_function.push_back(correct);
 				par_u_values.push_back(u);
@@ -187,7 +191,7 @@ int main(int argc, char **argv) {
 
 				// test for partition of unity
 				BasisDerivsSf lr_basis;
-				lr.computeBasis(u,v, lr_basis, el_i);
+				lr.computeBasis(u,v, lr_basis);
 				double sum        = 0;
 				double sum_diff_u = 0;
 				double sum_diff_v = 0;
