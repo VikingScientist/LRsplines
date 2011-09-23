@@ -38,7 +38,7 @@ public:
 
 	// refinement functions
 	void refineElement(int index, int multiplicity=1);
-	void refineElement(std::vector<int> indices, int multiplicity=1);
+	void refineElement(std::vector<int> indices, int multiplicity=1, bool minimum_span=false);
 	void insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	void insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;

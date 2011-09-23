@@ -259,7 +259,7 @@ void LRSplineSurface::refineElement(int index, int multiplicity) {
 	refineElement(ref_index, multiplicity);
 }
 
-void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity) {
+void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bool minimum_span) {
 	// span-u lines
 	std::vector<double> start_u(index.size());
 	std::vector<double> stop_u (index.size());
@@ -276,11 +276,26 @@ void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity) {
 		double umax = element_[index[i]]->umax();
 		double vmin = element_[index[i]]->vmin();
 		double vmax = element_[index[i]]->vmax();
+		double min_du = 1e100; // that's a pretty large number!
+		double min_dv = 1e100;
 		for(it=element_[index[i]]->supportBegin(); it<element_[index[i]]->supportEnd(); it++) {
-			umin = (umin > (**it).umin()) ? (**it).umin() : umin;
-			umax = (umax < (**it).umax()) ? (**it).umax() : umax;
-			vmin = (vmin > (**it).vmin()) ? (**it).vmin() : vmin;
-			vmax = (vmax < (**it).vmax()) ? (**it).vmax() : vmax;
+			if(minimum_span) {
+				if( (**it).umax() - (**it).umin() < min_du) {
+					umin = (**it).umin();
+					umax = (**it).umax();
+					min_du = umax-umin;
+				}
+				if( (**it).vmax() - (**it).vmin() < min_dv) {
+					vmin = (**it).vmin();
+					vmax = (**it).vmax();
+					min_dv = vmax-vmin;
+				}
+			} else {
+				umin = (umin > (**it).umin()) ? (**it).umin() : umin;
+				umax = (umax < (**it).umax()) ? (**it).umax() : umax;
+				vmin = (vmin > (**it).vmin()) ? (**it).vmin() : vmin;
+				vmax = (vmax < (**it).vmax()) ? (**it).vmax() : vmax;
+			}
 		}
 		start_u[i] = umin;
 		stop_u[i]  = umax;
