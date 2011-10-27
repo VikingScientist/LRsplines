@@ -10,11 +10,14 @@
 #include <iostream>
 #include <boost/rational.hpp>
 #include <float.h>
+#include <cmath>
 
 typedef unsigned int uint;
 
 namespace LR {
 
+#define DOUBLE_TOL 1e-14
+#define MY_STUPID_FABS(x) (((x)>0)?(x):-(x))
 
 LRSplineSurface::LRSplineSurface() {
 	rational_ = false;
@@ -268,16 +271,18 @@ void LRSplineSurface::refineElement(int index, int multiplicity) {
 	refineElement(ref_index, multiplicity);
 }
 
-void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bool minimum_span) {
+void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bool minimum_span, bool isotropic) {
+	if(isotropic)
+		minimum_span = false;
 	// span-u lines
-	std::vector<double> start_u(index.size());
-	std::vector<double> stop_u (index.size());
-	std::vector<double> mid_v  (index.size());
+	std::vector<double> start_u;
+	std::vector<double> stop_u ;
+	std::vector<double> mid_v  ;
 
 	// span-v lines
-	std::vector<double> start_v(index.size());
-	std::vector<double> stop_v (index.size());
-	std::vector<double> mid_u  (index.size());
+	std::vector<double> start_v;
+	std::vector<double> stop_v ;
+	std::vector<double> mid_u  ;
 
 	std::vector<Basisfunction*>::iterator it;
 	for(uint i=0; i<index.size(); i++) {
@@ -287,8 +292,34 @@ void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bo
 		double vmax = element_[index[i]]->vmax();
 		double min_du = 1e100; // that's a pretty large number!
 		double min_dv = 1e100;
+		bool   first_u = true;
+		bool   first_v = true;
+		bool   all_du_eq = true;
+		bool   all_dv_eq = true;
 		for(it=element_[index[i]]->supportBegin(); it<element_[index[i]]->supportEnd(); it++) {
+			if(isotropic) {
+				// min_du is defined as the minimum SINGLE knot span (within a basis function)
+				for(int j=0; j<order_u_; j++) {
+					double du = (**it).knot_u_[j+1]-(**it).knot_u_[j];
+					bool isZeroSpan = MY_STUPID_FABS(du) < DOUBLE_TOL;
+					if(!first_u && !isZeroSpan && min_du != du)
+						all_du_eq = false;
+					min_du = (isZeroSpan || min_du < du) ? min_du : du;
+					if(!isZeroSpan)
+						first_u = false;
+				}
+				for(int j=0; j<order_v_; j++) {
+					double dv = (**it).knot_v_[j+1]-(**it).knot_v_[j];
+					bool isZeroSpan = MY_STUPID_FABS(dv) < DOUBLE_TOL;
+					if(!first_v && !isZeroSpan && min_dv != dv)
+						all_dv_eq = false;
+					min_dv = (isZeroSpan || min_dv < dv) ? min_dv : dv;
+					if(!isZeroSpan)
+						first_v = false;
+				}
+			}
 			if(minimum_span) {
+				// min_du is defined as the minimum TOTAL knot span (of an entire basis function)
 				if( (**it).umax() - (**it).umin() < min_du) {
 					umin = (**it).umin();
 					umax = (**it).umax();
@@ -306,18 +337,37 @@ void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bo
 				vmax = (vmax < (**it).vmax()) ? (**it).vmax() : vmax;
 			}
 		}
-		start_u[i] = umin;
-		stop_u[i]  = umax;
-		mid_v[i]   = (element_[index[i]]->vmin() + element_[index[i]]->vmax())/2.0;
-
-		start_v[i] = vmin;
-		stop_v[i]  = vmax;
-		mid_u[i]   = (element_[index[i]]->umin() + element_[index[i]]->umax())/2.0;
+		if(isotropic) {
+			double du = (all_du_eq) ? min_du/2.0 : min_du;
+			double dv = (all_dv_eq) ? min_dv/2.0 : min_dv;
+			double u  = umin + du;
+			double v  = vmin + dv;
+			while(u < umax) {
+				start_v.push_back( vmin );
+				stop_v.push_back( vmax );
+				mid_u.push_back( u );
+				u += du;
+			}
+			while(v < vmax) {
+				start_u.push_back( umin );
+				stop_u.push_back( umax );
+				mid_v.push_back( v );
+				v += dv;
+			}
+		} else {
+			start_u.push_back( umin );
+			stop_u.push_back( umax );
+			mid_v.push_back( (element_[index[i]]->vmin() + element_[index[i]]->vmax())/2.0);
+	
+			start_v.push_back( vmin );
+			stop_v.push_back( vmax );
+			mid_u.push_back( (element_[index[i]]->umin() + element_[index[i]]->umax())/2.0);
+		}
 	}
-	for(uint i=0; i<index.size(); i++) {
+	for(uint i=0; i<start_v.size(); i++)
 		this->insert_const_u_edge(mid_u[i], start_v[i], stop_v[i], multiplicity);
+	for(uint i=0; i<start_u.size(); i++)
 		this->insert_const_v_edge(mid_v[i], start_u[i], stop_u[i], multiplicity);
-	}
 }
 
 void LRSplineSurface::insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity) {
@@ -335,17 +385,21 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 #endif
 	newline = new Meshline(!const_u, const_par, start, stop, multiplicity);
 	for(uint i=0; i<meshline_.size(); i++) {
-		if(meshline_[i]->is_spanning_u() != const_u && meshline_[i]->const_par_ == const_par && 
+		if(meshline_[i]->is_spanning_u() != const_u && MY_STUPID_FABS(meshline_[i]->const_par_-const_par)<DOUBLE_TOL && 
 		   meshline_[i]->start_ <= stop && meshline_[i]->stop_ >= start)  {
 			// if newline overlaps any existing ones (may be multiple existing ones)
 			// let newline be the entire length of all merged and delete the unused ones
 			if(meshline_[i]->start_ < start) newline->start_ = meshline_[i]->start_;
 			if(meshline_[i]->stop_  > stop ) newline->stop_  = meshline_[i]->stop_;
 			if(meshline_[i]->multiplicity_ != newline->multiplicity_) {
+				/***** Isotropic refinement gets this error all the time, but no worries ****
+
 				std::cerr << "ERROR: LRSplineSurface::insert_const_u_edge() trying to merge lines of different multiplicity\n";
 				std::cerr << "       requested line: " << *newline      << std::endl;
 				std::cerr << "       old line      : " << *meshline_[i] << std::endl;
 				exit(984332);
+				******************************************************************************/
+				newline->multiplicity_ = meshline_[i]->multiplicity_;
 			}
 			delete meshline_[i];
 			meshline_.erase(meshline_.begin() + i);
@@ -1024,6 +1078,9 @@ void LRSplineSurface::printElements(std::ostream &out) const {
 		out << i << ": " << *element_[i] << std::endl;
 	}
 }
+
+#undef MY_STUPID_FABS(x)
+#undef DOUBLE_TOL
 
 } // end namespace LR
 

@@ -5,6 +5,9 @@
 
 namespace LR {
 
+#define DOUBLE_TOL 1e-14
+#define MY_STUPID_FABS(x) (((x)>0)?(x):-(x))
+
 Meshline::Meshline() {
 	span_u_line_  = false;
 	const_par_    = 0;
@@ -46,11 +49,11 @@ void Meshline::removePartialTouch(Basisfunction *basis) {
 bool Meshline::containedIn(Basisfunction *basis) const {
 	if(span_u_line_) {
 		for(int i=0; i<=basis->order_v_; i++)
-			if(basis->knot_v_[i] == const_par_)
+			if( MY_STUPID_FABS(basis->knot_v_[i] - const_par_) < DOUBLE_TOL )
 				return true;
 	} else { // span-v_line
 		for(int i=0; i<=basis->order_u_; i++)
-			if(basis->knot_u_[i] == const_par_)
+			if( MY_STUPID_FABS(basis->knot_u_[i] - const_par_) < DOUBLE_TOL)
 				return true;
 	}
 	return false;
@@ -162,6 +165,8 @@ void Meshline::write(std::ostream &os) const {
 		os << const_par_ << " x [" << start_ << ", " << stop_ << "] (" << multiplicity_ << ")";
 }
 
+#undef MY_STUPID_FABS(x)
+#undef DOUBLE_TOL
 
 } // end namespace LR
 
