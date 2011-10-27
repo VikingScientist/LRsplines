@@ -21,6 +21,28 @@ Meshline::Meshline(bool span_u_line, double const_par, double start, double stop
 	multiplicity_ =  multiplicity  ;
 }
 
+Meshline::~Meshline() {
+/*
+	for(uint i=0; i<touching_Basisfunction.size(); i++)
+		touching_Basisfunction[i]->removePartialLine((Meshline*) this);
+*/
+}
+
+void Meshline::addPartialTouch(Basisfunction *basis) {
+	// touching_Basisfunction.push_back(basis);
+}
+
+void Meshline::removePartialTouch(Basisfunction *basis) {
+/*
+	for(uint i=0; i<touching_Basisfunction.size(); i++) {
+		if( *touching_Basisfunction[i] == *basis) {
+			touching_Basisfunction.erase(touching_Basisfunction.begin() + i);
+			return;
+		}
+	}
+*/
+}
+
 bool Meshline::containedIn(Basisfunction *basis) const {
 	if(span_u_line_) {
 		for(int i=0; i<=basis->order_v_; i++)
@@ -88,6 +110,15 @@ bool Meshline::splits(Basisfunction *basis) const {
 
 bool Meshline::is_spanning_u() const {
 	return span_u_line_;
+}
+
+bool Meshline::operator==(const Meshline &other) const {
+	return span_u_line_  == other.span_u_line_ &&
+	       const_par_    == other.const_par_ &&
+	       start_        == other.start_ &&
+	       stop_         == other.stop_ &&
+	       multiplicity_ == other.multiplicity_;
+	
 }
 
 // convenience macro for reading formated input

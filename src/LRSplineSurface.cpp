@@ -138,6 +138,15 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 		updateSupport(basis_[i]);
 }
 
+LRSplineSurface::~LRSplineSurface() {
+	for(uint i=0; i<basis_.size(); i++)
+		delete basis_[i];
+	for(uint i=0; i<meshline_.size(); i++)
+		delete meshline_[i];
+	for(uint i=0; i<element_.size(); i++)
+		delete element_[i];
+}
+
 void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl) const {
 	Go::Point cp;
 	double basis_ev;
@@ -338,6 +347,7 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 				std::cerr << "       old line      : " << *meshline_[i] << std::endl;
 				exit(984332);
 			}
+			delete meshline_[i];
 			meshline_.erase(meshline_.begin() + i);
 			i--;
 		}
@@ -371,8 +381,8 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	for(uint i=0; i<element_.size(); i++) {
 		if(newline->splits(element_[i]))
 			element_.push_back(element_[i]->split(!newline->is_spanning_u(), newline->const_par_));
-		else if(newline->touches(element_[i]))
-			element_[i]->addPartialLine(newline);
+		// else if(newline->touches(element_[i]))
+			// element_[i]->addPartialLine(newline);
 	}
 	}
 	#if 0
@@ -405,9 +415,11 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	meshline_.push_back(newline);
 	std::vector<Meshline*>::iterator mit;
 	for(uint i=nOldFunctions-nRemovedFunctions-1; i<basis_.size(); i++) {
-		for(mit=basis_[i]->partialLineBegin(); mit!=basis_[i]->partialLineEnd(); mit++) {
+		//for(mit=basis_[i]->partialLineBegin(); mit!=basis_[i]->partialLineEnd(); mit++) {
+		for(mit=meshline_.begin(); mit<meshline_.end(); mit++) {
 			if((*mit)->splits(basis_[i]) && 
 			   !(*mit)->containedIn(basis_[i])) {
+				// basis_[i]->removePartialLine( (*mit) );
 				split( !(*mit)->is_spanning_u(), i, (*mit)->const_par_, (*mit)->multiplicity_ );
 				i--; // splitting deletes a basisfunction in the middle of the basis_ vector
 				break;
@@ -436,10 +448,10 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 #endif
 
 	// create the new functions b1 and b2
-	Basisfunction b = *basis_[function_index];
+	Basisfunction *b = basis_[function_index];
 	Basisfunction *b1, *b2;
-	double *knot = (insert_in_u) ? b.knot_u_  : b.knot_v_;
-	int     p    = (insert_in_u) ? b.order_u_ : b.order_v_;
+	double *knot = (insert_in_u) ? b->knot_u_  : b->knot_v_;
+	int     p    = (insert_in_u) ? b->order_u_ : b->order_v_;
 	int     insert_index = 0;
 	if(new_knot < knot[0] || knot[p] < new_knot)
 		return 0;
@@ -452,17 +464,17 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 	newKnot[0] = new_knot;
 	std::sort(newKnot, newKnot + p+2);
 	if(insert_in_u) {
-		b1 = new Basisfunction(newKnot  , b.knot_v_, b.controlpoint_, b.dim_, b.order_u_, b.order_v_, b.weight_*alpha1);
-		b2 = new Basisfunction(newKnot+1, b.knot_v_, b.controlpoint_, b.dim_, b.order_u_, b.order_v_, b.weight_*alpha2);
+		b1 = new Basisfunction(newKnot  , b->knot_v_, b->controlpoint_, b->dim_, b->order_u_, b->order_v_, b->weight_*alpha1);
+		b2 = new Basisfunction(newKnot+1, b->knot_v_, b->controlpoint_, b->dim_, b->order_u_, b->order_v_, b->weight_*alpha2);
 	} else { // insert in v
-		b1 = new Basisfunction(b.knot_u_, newKnot  , b.controlpoint_, b.dim_, b.order_u_, b.order_v_, b.weight_*alpha1);
-		b2 = new Basisfunction(b.knot_u_, newKnot+1, b.controlpoint_, b.dim_, b.order_u_, b.order_v_, b.weight_*alpha2);
+		b1 = new Basisfunction(b->knot_u_, newKnot  , b->controlpoint_, b->dim_, b->order_u_, b->order_v_, b->weight_*alpha1);
+		b2 = new Basisfunction(b->knot_u_, newKnot+1, b->controlpoint_, b->dim_, b->order_u_, b->order_v_, b->weight_*alpha2);
 	}
 
 	// search for existing function (to make search local b1 and b2 is contained in the *el element)
 	std::vector<Element*>::iterator el_it;
 	Element *el=NULL;
-	for(el_it=b.supportedElementBegin(); el_it<b.supportedElementEnd(); el_it++) {
+	for(el_it=b->supportedElementBegin(); el_it<b->supportedElementEnd(); el_it++) {
 		if(b1->overlaps(*el_it) && b2->overlaps(*el_it)) {
 			el = *el_it;
 			break;
@@ -491,8 +503,8 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 	int newFunctions = 0;
 	if(b1) {
 		basis_.push_back(b1);
-		updateSupport(b1, b.supportedElementBegin(), b.supportedElementEnd());
-		b1->inheritPartialLine(&b);
+		updateSupport(b1, b->supportedElementBegin(), b->supportedElementEnd());
+		b1->inheritPartialLine(b);
 		bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && b1->knot_u_[order_u_]!=new_knot) ||
 		                                               (!insert_in_u && b1->knot_v_[order_v_]!=new_knot)  );
 		if(recursive_split)
@@ -502,8 +514,8 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 	}
 	if(b2) {
 		basis_.push_back(b2);
-		updateSupport(b2, b.supportedElementBegin(), b.supportedElementEnd());
-		b2->inheritPartialLine(&b);
+		updateSupport(b2, b->supportedElementBegin(), b->supportedElementEnd());
+		b2->inheritPartialLine(b);
 		bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && b2->knot_u_[0]!=new_knot) ||
 		                                               (!insert_in_u && b2->knot_v_[0]!=new_knot)  );
 		if(recursive_split)
@@ -511,6 +523,7 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 		else
 			newFunctions++;
 	}
+	delete b;
 	return newFunctions;
 }
 

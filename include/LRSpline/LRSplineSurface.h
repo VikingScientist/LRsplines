@@ -20,6 +20,7 @@ public:
 	LRSplineSurface();
 	LRSplineSurface(Go::SplineSurface *surf);
 	LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v, double *coef, int dim, bool rational=false);
+	~LRSplineSurface();
 
 	// surface evaluation
 	virtual void point(Go::Point &pt, double u, double v, int iEl=-1) const;

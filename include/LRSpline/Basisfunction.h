@@ -46,9 +46,10 @@ public:
 	std::vector<Meshline*>::iterator partialLineEnd() ;
 
 	void inheritPartialLine(Basisfunction *f);
+	void removePartialLine(Meshline *m);
 
 	// get/set methods
-	void addPartialLine(Meshline *line) { partial_line_.push_back(line); };
+	void addPartialLine(Meshline *line);
 	void getControlPoint(Go::Point &pt) const;
 	void setId(int id)  { this->id_ = id; };
 	int getId() const   { return id_; };

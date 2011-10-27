@@ -36,6 +36,8 @@ Basisfunction::~Basisfunction() {
 	PROFILE("Function destruction");
 	for(uint i=0; i<support_.size(); i++)
 		support_[i]->removeSupportFunction( (Basisfunction*) this);
+	// for(uint i=0; i<partial_line_.size(); i++)
+		// partial_line_[i]->removePartialTouch( (Basisfunction*) this);
 	delete[] knot_u_;
 	delete[] knot_v_;
 	delete[] controlpoint_;
@@ -140,6 +142,14 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 		for(int vDeriv=0; vDeriv<=totDeriv; vDeriv++)
 			results[ip++] = diff_u[totDeriv-vDeriv][0] * diff_v[vDeriv][0] * weight_;
 	
+	// clean up memory allocations
+	for(int i=1; i<derivs+1; i++) {
+		delete[] diff_u[i];
+		delete[] diff_v[i];
+	}
+	delete[] diff_u;
+	delete[] diff_v;
+	
 }
 
 double Basisfunction::evaluate(double u, double v, bool u_from_right, bool v_from_right) const {
@@ -234,9 +244,27 @@ bool Basisfunction::overlaps(Element *el) const {
 
 void Basisfunction::inheritPartialLine(Basisfunction *f) {
 	std::vector<Meshline*>::iterator it;
-	for(it=f->partialLineBegin(); it != f->partialLineEnd(); it++)
-		if((*it)->touches(this)) 
+	for(it=f->partialLineBegin(); it != f->partialLineEnd(); it++) {
+		if((*it)->touches(this))  {
 			partial_line_.push_back(*it);
+			// (*it)->addPartialTouch((Basisfunction*) this);
+		}
+	}
+}
+
+void Basisfunction::addPartialLine(Meshline *line) {
+	// partial_line_.push_back(line);
+	// line->addPartialTouch((Basisfunction*) this); 
+};
+
+void Basisfunction::removePartialLine(Meshline *m) {
+	for(uint i=0; i<partial_line_.size(); i++) {
+		if(*partial_line_[i] == *m) {
+			partial_line_[i]->removePartialTouch( (Basisfunction*) this);
+			partial_line_.erase(partial_line_.begin() + i);
+			return;
+		}
+	}
 }
 
 bool Basisfunction::operator==(const Basisfunction &other) const {
