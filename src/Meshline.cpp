@@ -165,7 +165,7 @@ void Meshline::write(std::ostream &os) const {
 		os << const_par_ << " x [" << start_ << ", " << stop_ << "] (" << multiplicity_ << ")";
 }
 
-#undef MY_STUPID_FABS(x)
+#undef MY_STUPID_FABS
 #undef DOUBLE_TOL
 
 } // end namespace LR

@@ -75,7 +75,7 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 			mult++;
 		}
 		unique_v++;
-		meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n2], mult) );
+		meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n1], mult) );
 	}
 	for(int j=0; j<unique_v-1; j++) {
 		for(int i=0; i<unique_u-1; i++) {
@@ -389,6 +389,11 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 		   meshline_[i]->start_ <= stop && meshline_[i]->stop_ >= start)  {
 			// if newline overlaps any existing ones (may be multiple existing ones)
 			// let newline be the entire length of all merged and delete the unused ones
+			if(meshline_[i]->start_ <= start && 
+			   meshline_[i]->stop_  >= stop ) {
+				delete newline;
+				return;
+			}
 			if(meshline_[i]->start_ < start) newline->start_ = meshline_[i]->start_;
 			if(meshline_[i]->stop_  > stop ) newline->stop_  = meshline_[i]->stop_;
 			if(meshline_[i]->multiplicity_ != newline->multiplicity_) {
@@ -1023,7 +1028,7 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out) const {
 	// print eps header
 	out << "%!PS-Adobe-3.0 EPSF-3.0\n";
 	out << "%%Creator: LRSplineHelpers.cpp object\n";
-	out << "%%Title: LR-spline index domain\n";
+	out << "%%Title: LR-spline parameter domain\n";
 	out << "%%CreationDate: " << date << std::endl;
 	out << "%%Origin: 0 0\n";
 	out << "%%BoundingBox: " << xmin << " " << ymin << " " << xmax << " " << ymax << std::endl;
@@ -1072,6 +1077,72 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out) const {
 	out << "%%EOF\n";
 }
 
+void LRSplineSurface::writePostscriptElements(std::ostream &out) const {
+#ifdef TIME_LRSPLINE
+	PROFILE("Write EPS");
+#endif
+	Go::Point corner[4];
+
+	// get date
+	time_t t = time(0);
+	tm* lt = localtime(&t);
+	char date[11];
+	sprintf(date, "%02d/%02d/%04d", lt->tm_mday, lt->tm_mon + 1, lt->tm_year+1900);
+
+	// get bounding box
+	point(corner[0], start_u_, start_v_);
+	point(corner[1], start_u_, end_v_);
+	point(corner[2], end_u_,   end_v_);
+	point(corner[3], end_u_,   start_v_);
+
+	int x[2];
+	int y[2];
+	x[0] = x[1] = corner[0][0];
+	y[0] = y[1] = corner[0][1];
+	for(int i=0; i<4; i++) {
+		x[0] = (corner[i][0] < x[0]) ? corner[i][0] : x[0];
+		x[1] = (corner[i][0] > x[1]) ? corner[i][0] : x[1];
+		y[0] = (corner[i][1] < y[0]) ? corner[i][1] : y[0];
+		y[1] = (corner[i][1] > y[1]) ? corner[i][1] : y[1];
+	}
+
+	int dx = x[1]-x[0];
+	int dy = y[1]-y[0];
+	double scale = (dx>dy) ? 1000.0/dx : 1000.0/dy;
+
+	int xmin = (x[0] - dx/100.0)*scale;
+	int ymin = (y[0] - dy/100.0)*scale;
+	int xmax = (x[1]   + dx/100.0)*scale;
+	int ymax = (y[1]   + dy/100.0)*scale;
+
+	// print eps header
+	out << "%!PS-Adobe-3.0 EPSF-3.0\n";
+	out << "%%Creator: LRSplineHelpers.cpp object\n";
+	out << "%%Title: LR-spline physical domain\n";
+	out << "%%CreationDate: " << date << std::endl;
+	out << "%%Origin: 0 0\n";
+	out << "%%BoundingBox: " << xmin << " " << ymin << " " << xmax << " " << ymax << std::endl;
+
+	out << "0 setgray\n";
+	out << "1 setlinewidth\n";
+
+	for(uint iEl=0; iEl<element_.size(); iEl++) {
+		point(corner[0], element_[iEl]->umin(), element_[iEl]->vmin(), iEl);
+		point(corner[1], element_[iEl]->umin(), element_[iEl]->vmax(), iEl);
+		point(corner[2], element_[iEl]->umax(), element_[iEl]->vmax(), iEl);
+		point(corner[3], element_[iEl]->umax(), element_[iEl]->vmin(), iEl);
+		out << "newpath\n";
+		out <<  corner[0][0]*scale << " " << corner[0][1]*scale << " moveto\n";
+		out <<  corner[1][0]*scale << " " << corner[1][1]*scale << " lineto\n";
+		out <<  corner[2][0]*scale << " " << corner[2][1]*scale << " lineto\n";
+		out <<  corner[3][0]*scale << " " << corner[3][1]*scale << " lineto\n";
+		out << "closepath\n";
+		out << "stroke\n";
+	}
+
+	out << "%%EOF\n";
+}
+
 void LRSplineSurface::printElements(std::ostream &out) const {
 	for(uint i=0; i<element_.size(); i++) {
 		if(i<10) out << " ";
@@ -1079,7 +1150,7 @@ void LRSplineSurface::printElements(std::ostream &out) const {
 	}
 }
 
-#undef MY_STUPID_FABS(x)
+#undef MY_STUPID_FABS
 #undef DOUBLE_TOL
 
 } // end namespace LR

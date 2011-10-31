@@ -76,6 +76,7 @@ public:
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
 	void writePostscriptMesh(std::ostream &out) const;
+	void writePostscriptElements(std::ostream &out) const;
 	void printElements(std::ostream &out) const;
 
 private:
