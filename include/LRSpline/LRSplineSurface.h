@@ -7,6 +7,13 @@
 #include <GoTools/geometry/SplineSurface.h>
 #include "Basisfunction.h"
 
+enum refinementStrategy {
+	LR_SAFE = 0,
+	LR_MINSPAN = 1,
+	LR_ISOTROPIC_EL = 2,
+	LR_ISOTROPIC_FUNC = 3,
+};
+
 
 namespace LR {
 
@@ -38,8 +45,15 @@ public:
 	//       Try and sort the Elements after all refinements and binary search for the containing point in logarithmic time
 
 	// refinement functions
-	void refineElement(int index, int multiplicity=1);
+	void refineBasisFunctions(std::vector<int> indices, int multiplicity=1);
+	void refineElement(int index, int multiplicity=1, bool minimum_span=false);
 	void refineElement(std::vector<int> indices, int multiplicity=1, bool minimum_span=false, bool isotropic=false);
+	void refine(std::vector<int> sorted_list, double beta, int multiplicity=1, enum refinementStrategy strat=LR_SAFE, int symmetry=1);
+	void regularize(int multiplicity=1);
+	void setMaxTjoints(int n);
+	void setMaxAspectRatio(double ratio, int multiplicity=1, bool minimum_span=false);
+
+	// (private) refinement functions
 	void insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	void insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;

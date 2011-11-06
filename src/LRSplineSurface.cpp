@@ -5,11 +5,11 @@
 #include "LRSpline/Element.h"
 #include "LRSpline/Profiler.h"
 #include <algorithm>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <boost/rational.hpp>
-#include <float.h>
+#include <cfloat>
 #include <cmath>
 
 typedef unsigned int uint;
@@ -18,6 +18,7 @@ namespace LR {
 
 #define DOUBLE_TOL 1e-14
 #define MY_STUPID_FABS(x) (((x)>0)?(x):-(x))
+
 
 LRSplineSurface::LRSplineSurface() {
 	rational_ = false;
@@ -266,9 +267,66 @@ int LRSplineSurface::getElementContaining(double u, double v) const {
 	return -1;
 }
 
-void LRSplineSurface::refineElement(int index, int multiplicity) {
+void LRSplineSurface::refineBasisFunctions(std::vector<int> index, int multiplicity) {
+	// span-u lines
+	std::vector<double> start_u;
+	std::vector<double> stop_u ;
+	std::vector<double> mid_v  ;
+
+	// span-v lines
+	std::vector<double> start_v;
+	std::vector<double> stop_v ;
+	std::vector<double> mid_u  ;
+	for(uint i=0; i<index.size(); i++) {
+		Basisfunction *b = basis_[index[i]];
+		double umin = b->umin();
+		double umax = b->umax();
+		double vmin = b->vmin();
+		double vmax = b->vmax();
+
+		// find the largest knotspan in this function
+		double max_du = 0;
+		double max_dv = 0;
+		for(int j=0; j<order_u_; j++) {
+			double du = b->knot_u_[j+1]-b->knot_u_[j];
+			bool isZeroSpan =  MY_STUPID_FABS(du) < DOUBLE_TOL ;
+			max_du = (isZeroSpan || max_du>du) ? max_du : du;
+		}
+		for(int j=0; j<order_v_; j++) {
+			double dv = b->knot_v_[j+1]-b->knot_v_[j];
+			bool isZeroSpan =  MY_STUPID_FABS(dv) < DOUBLE_TOL ;
+			max_dv = (isZeroSpan || max_dv>dv) ? max_dv : dv;
+		}
+
+		// to keep as "square" basis function as possible, only insert
+		// into the largest knot spans
+		for(int j=0; j<order_u_; j++) {
+			double du = b->knot_u_[j+1]-b->knot_u_[j];
+			if( MY_STUPID_FABS(du-max_du) < DOUBLE_TOL ) {
+				start_v.push_back( vmin );
+				stop_v.push_back( vmax );
+				mid_u.push_back( (b->knot_u_[j] + b->knot_u_[j+1])/2.0);
+			}
+		}
+		for(int j=0; j<order_v_; j++) {
+			double dv = b->knot_v_[j+1]-b->knot_v_[j];
+			if( MY_STUPID_FABS(dv-max_dv) < DOUBLE_TOL ) {
+				start_u.push_back( umin );
+				stop_u.push_back( umax );
+				mid_v.push_back( (b->knot_v_[j] + b->knot_v_[j+1])/2.0);
+			}
+		}
+	}
+
+	for(uint i=0; i<start_v.size(); i++)
+		this->insert_const_u_edge(mid_u[i], start_v[i], stop_v[i], multiplicity);
+	for(uint i=0; i<start_u.size(); i++)
+		this->insert_const_v_edge(mid_v[i], start_u[i], stop_u[i], multiplicity);
+}
+
+void LRSplineSurface::refineElement(int index, int multiplicity, bool minimum_span) {
 	std::vector<int> ref_index(1, index);
-	refineElement(ref_index, multiplicity);
+	refineElement(ref_index, multiplicity, minimum_span);
 }
 
 void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bool minimum_span, bool isotropic) {
@@ -292,10 +350,14 @@ void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bo
 		double vmax = element_[index[i]]->vmax();
 		double min_du = 1e100; // that's a pretty large number!
 		double min_dv = 1e100;
+		double max_du = 0;   
+		double max_dv = 0;
 		bool   first_u = true;
 		bool   first_v = true;
 		bool   all_du_eq = true;
 		bool   all_dv_eq = true;
+		bool   only_insert_span_u_line = (vmax-vmin) >= 2*(umax-umin);
+		bool   only_insert_span_v_line = (umax-umin) >= 2*(vmax-vmin);
 		for(it=element_[index[i]]->supportBegin(); it<element_[index[i]]->supportEnd(); it++) {
 			if(isotropic) {
 				// min_du is defined as the minimum SINGLE knot span (within a basis function)
@@ -305,6 +367,7 @@ void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bo
 					if(!first_u && !isZeroSpan && min_du != du)
 						all_du_eq = false;
 					min_du = (isZeroSpan || min_du < du) ? min_du : du;
+					max_du = (isZeroSpan || max_du > du) ? max_du : du;
 					if(!isZeroSpan)
 						first_u = false;
 				}
@@ -314,6 +377,7 @@ void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bo
 					if(!first_v && !isZeroSpan && min_dv != dv)
 						all_dv_eq = false;
 					min_dv = (isZeroSpan || min_dv < dv) ? min_dv : dv;
+					max_dv = (isZeroSpan || max_dv > dv) ? max_dv : dv;
 					if(!isZeroSpan)
 						first_v = false;
 				}
@@ -338,36 +402,294 @@ void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bo
 			}
 		}
 		if(isotropic) {
-			double du = (all_du_eq) ? min_du/2.0 : min_du;
-			double dv = (all_dv_eq) ? min_dv/2.0 : min_dv;
-			double u  = umin + du;
-			double v  = vmin + dv;
-			while(u < umax) {
+			// double du = (all_du_eq) ? min_du/2.0 : max_du/2.0;
+			// double dv = (all_dv_eq) ? min_dv/2.0 : max_dv/2.0;
+			double du = max_du/2.0;
+			double dv = max_dv/2.0;
+			du = (du > dv) ? du : dv;
+			dv = (du > dv) ? du : dv;
+			// double u  = umin + du;
+			// double v  = vmin + dv;
+			double u  = umin;
+			double v  = vmin;
+			while(u <= umax && !only_insert_span_v_line) {
 				start_v.push_back( vmin );
 				stop_v.push_back( vmax );
 				mid_u.push_back( u );
 				u += du;
 			}
-			while(v < vmax) {
+			while(v <= vmax && !only_insert_span_u_line) {
 				start_u.push_back( umin );
 				stop_u.push_back( umax );
 				mid_v.push_back( v );
 				v += dv;
 			}
 		} else {
-			start_u.push_back( umin );
-			stop_u.push_back( umax );
-			mid_v.push_back( (element_[index[i]]->vmin() + element_[index[i]]->vmax())/2.0);
+			if(!only_insert_span_v_line) {
+				start_u.push_back( umin );
+				stop_u.push_back( umax );
+				mid_v.push_back( (element_[index[i]]->vmin() + element_[index[i]]->vmax())/2.0);
+			}
 	
-			start_v.push_back( vmin );
-			stop_v.push_back( vmax );
-			mid_u.push_back( (element_[index[i]]->umin() + element_[index[i]]->umax())/2.0);
+			if(!only_insert_span_u_line) {
+				start_v.push_back( vmin );
+				stop_v.push_back( vmax );
+				mid_u.push_back( (element_[index[i]]->umin() + element_[index[i]]->umax())/2.0);
+			}
 		}
 	}
 	for(uint i=0; i<start_v.size(); i++)
 		this->insert_const_u_edge(mid_u[i], start_v[i], stop_v[i], multiplicity);
 	for(uint i=0; i<start_u.size(); i++)
 		this->insert_const_v_edge(mid_v[i], start_u[i], stop_u[i], multiplicity);
+
+	// setMaxAspectRatio(2.0, multiplicity);
+}
+
+void LRSplineSurface::refine(std::vector<int> sorted_list, double beta, int multiplicity, enum refinementStrategy strat, int symmetry) {
+	// span-u lines
+	std::vector<std::vector<double> > start_u;
+	std::vector<std::vector<double> > stop_u ;
+	std::vector<std::vector<double> > mid_v  ;
+
+	// span-v lines
+	std::vector<std::vector<double> > start_v;
+	std::vector<std::vector<double> > stop_v ;
+	std::vector<std::vector<double> > mid_u  ;
+
+	std::vector<Basisfunction*>::iterator it;
+	for(uint i=0; i<sorted_list.size(); i++) { // this could probably be very much smaller loop, but how small?
+
+		// for each function or element we define a SET of new knotlines needed
+		std::vector<double>  loc_start_v;
+		std::vector<double>  loc_stop_v ;
+		std::vector<double>  loc_mid_u  ;
+
+		std::vector<double>  loc_start_u;
+		std::vector<double>  loc_stop_u ;
+		std::vector<double>  loc_mid_v  ;
+
+		if(strat == LR_ISOTROPIC_FUNC) {
+			Basisfunction *b = basis_[sorted_list[i]];
+			double umin = b->umin();
+			double umax = b->umax();
+			double vmin = b->vmin();
+			double vmax = b->vmax();
+
+			// find the largest knotspan in this function
+			double max_du = 0;
+			double max_dv = 0;
+			for(int j=0; j<order_u_; j++) {
+				double du = b->knot_u_[j+1]-b->knot_u_[j];
+				bool isZeroSpan =  MY_STUPID_FABS(du) < DOUBLE_TOL ;
+				max_du = (isZeroSpan || max_du>du) ? max_du : du;
+			}
+			for(int j=0; j<order_v_; j++) {
+				double dv = b->knot_v_[j+1]-b->knot_v_[j];
+				bool isZeroSpan =  MY_STUPID_FABS(dv) < DOUBLE_TOL ;
+				max_dv = (isZeroSpan || max_dv>dv) ? max_dv : dv;
+			}
+
+			// to keep as "square" basis function as possible, only insert
+			// into the largest knot spans
+			for(int j=0; j<order_u_; j++) {
+				double du = b->knot_u_[j+1]-b->knot_u_[j];
+				if( MY_STUPID_FABS(du-max_du) < DOUBLE_TOL ) {
+					loc_start_v.push_back( vmin );
+					loc_stop_v.push_back( vmax );
+					loc_mid_u.push_back( (b->knot_u_[j] + b->knot_u_[j+1])/2.0);
+				}
+			}
+			for(int j=0; j<order_v_; j++) {
+				double dv = b->knot_v_[j+1]-b->knot_v_[j];
+				if( MY_STUPID_FABS(dv-max_dv) < DOUBLE_TOL ) {
+					loc_start_u.push_back( umin );
+					loc_stop_u.push_back( umax );
+					loc_mid_v.push_back( (b->knot_v_[j] + b->knot_v_[j+1])/2.0);
+				}
+			}
+		} else {
+			double umin = element_[sorted_list[i]]->umin();
+			double umax = element_[sorted_list[i]]->umax();
+			double vmin = element_[sorted_list[i]]->vmin();
+			double vmax = element_[sorted_list[i]]->vmax();
+			double min_du = 1e100; // that's a pretty large number!
+			double min_dv = 1e100;
+			double max_du = 0;   
+			double max_dv = 0;
+			bool   first_u = true;
+			bool   first_v = true;
+			bool   all_du_eq = true;
+			bool   all_dv_eq = true;
+			bool   only_insert_span_u_line = (vmax-vmin) >= 2*(umax-umin);
+			bool   only_insert_span_v_line = (umax-umin) >= 2*(vmax-vmin);
+			for(it=element_[sorted_list[i]]->supportBegin(); it<element_[sorted_list[i]]->supportEnd(); it++) {
+				if(strat == LR_ISOTROPIC_EL) {
+					// min_du is defined as the minimum SINGLE knot span (within a basis function)
+					for(int j=0; j<order_u_; j++) {
+						double du = (**it).knot_u_[j+1]-(**it).knot_u_[j];
+						bool isZeroSpan = MY_STUPID_FABS(du) < DOUBLE_TOL;
+						if(!first_u && !isZeroSpan && min_du != du)
+							all_du_eq = false;
+						min_du = (isZeroSpan || min_du < du) ? min_du : du;
+						max_du = (isZeroSpan || max_du > du) ? max_du : du;
+						if(!isZeroSpan)
+							first_u = false;
+					}
+					for(int j=0; j<order_v_; j++) {
+						double dv = (**it).knot_v_[j+1]-(**it).knot_v_[j];
+						bool isZeroSpan = MY_STUPID_FABS(dv) < DOUBLE_TOL;
+						if(!first_v && !isZeroSpan && min_dv != dv)
+							all_dv_eq = false;
+						min_dv = (isZeroSpan || min_dv < dv) ? min_dv : dv;
+						max_dv = (isZeroSpan || max_dv > dv) ? max_dv : dv;
+						if(!isZeroSpan)
+							first_v = false;
+					}
+				} else if(strat == LR_MINSPAN) {
+					// min_du is defined as the minimum TOTAL knot span (of an entire basis function)
+					if( (**it).umax() - (**it).umin() < min_du) {
+						umin = (**it).umin();
+						umax = (**it).umax();
+						min_du = umax-umin;
+					}
+					if( (**it).vmax() - (**it).vmin() < min_dv) {
+						vmin = (**it).vmin();
+						vmax = (**it).vmax();
+						min_dv = vmax-vmin;
+					}
+				} else if(strat == LR_SAFE) {
+					umin = (umin > (**it).umin()) ? (**it).umin() : umin;
+					umax = (umax < (**it).umax()) ? (**it).umax() : umax;
+					vmin = (vmin > (**it).vmin()) ? (**it).vmin() : vmin;
+					vmax = (vmax < (**it).vmax()) ? (**it).vmax() : vmax;
+				}
+			}
+			if(strat == LR_ISOTROPIC_EL) {
+				double du = max_du/2.0;
+				double dv = max_dv/2.0;
+				du = (du > dv) ? du : dv;
+				dv = (du > dv) ? du : dv;
+				double u  = umin;
+				double v  = vmin;
+				while(u <= umax && !only_insert_span_v_line) {
+					loc_start_v.push_back( vmin );
+					loc_stop_v.push_back( vmax );
+					loc_mid_u.push_back( u );
+					u += du;
+				}
+				while(v <= vmax && !only_insert_span_u_line) {
+					loc_start_u.push_back( umin );
+					loc_stop_u.push_back( umax );
+					loc_mid_v.push_back( v );
+					v += dv;
+				}
+			} else { // SAFE or MINSPAN
+				if(!only_insert_span_v_line) {
+					loc_start_u.push_back( umin );
+					loc_stop_u.push_back( umax );
+					loc_mid_v.push_back( (element_[sorted_list[i]]->vmin() + element_[sorted_list[i]]->vmax())/2.0);
+				}
+		
+				if(!only_insert_span_u_line) {
+					loc_start_v.push_back( vmin );
+					loc_stop_v.push_back( vmax );
+					loc_mid_u.push_back( (element_[sorted_list[i]]->umin() + element_[sorted_list[i]]->umax())/2.0);
+				}
+			}
+		}
+		start_u.push_back( loc_start_u);
+		stop_u.push_back(  loc_stop_u );
+		mid_v.push_back(   loc_mid_v  );
+		start_v.push_back( loc_start_v);
+		stop_v.push_back(  loc_stop_v );
+		mid_u.push_back(   loc_mid_u  );
+	}
+
+	uint target_n_functions = ceil(basis_.size()*(1+beta));
+	uint i=0;
+	while( (basis_.size() < target_n_functions || i%symmetry != 0) && i < start_u.size() ) {
+		for(uint j=0; j<start_v[i].size(); j++)
+			this->insert_const_u_edge(mid_u[i][j], start_v[i][j], stop_v[i][j], multiplicity);
+		for(uint j=0; j<start_u[i].size(); j++)
+			this->insert_const_v_edge(mid_v[i][j], start_u[i][j], stop_u[i][j], multiplicity);
+		i++;
+	}
+	uint nFunc;
+	do {
+		nFunc = basis_.size();
+		this->regularize(multiplicity);
+	} while(nFunc != basis_.size());
+
+}
+
+void LRSplineSurface::regularize(int multiplicity) {
+	std::vector<double>  start_v;
+	std::vector<double>  stop_v ;
+	std::vector<double>  const_u  ;
+
+	std::vector<double>  start_u;
+	std::vector<double>  stop_u ;
+	std::vector<double>  const_v  ;
+	for(uint i=0; i<element_.size(); i++) {
+		double umin = element_[i]->umin();
+		double umax = element_[i]->umax();
+		double vmin = element_[i]->vmin();
+		double vmax = element_[i]->vmax();
+		std::vector<double> left, right, top, bottom;
+		for(uint j=0; j<meshline_.size(); j++) {
+			Meshline *m = meshline_[j];
+			if(      m->span_u_line_ &&
+			         m->const_par_ > vmin &&
+			         m->const_par_ < vmax) {
+				if(m->start_ == umax)
+					right.push_back(m->const_par_);
+				else if(m->stop_ == umin)
+					left.push_back(m->const_par_);
+			} else if(!m->span_u_line_ &&
+			          m->const_par_ > umin &&
+			          m->const_par_ < umax) {
+				if(m->start_ == vmax)
+					top.push_back(m->const_par_);
+				else if(m->stop_ == vmin)
+					bottom.push_back(m->const_par_);
+			}
+		}
+		for(uint j=0; j<left.size(); j++)
+			for(uint k=0; k<right.size(); k++)
+				if(left[j] == right[k]) {
+					const_v.push_back(left[j]);
+					start_u.push_back(umin);
+					stop_u.push_back(umax);
+				}
+		for(uint j=0; j<top.size(); j++)
+			for(uint k=0; k<bottom.size(); k++)
+				if(top[j] == bottom[k]) {
+					const_u.push_back(top[j]);
+					start_v.push_back(vmin);
+					stop_v.push_back(vmax);
+				}
+	}
+	for(uint i=0; i<const_u.size(); i++)
+		insert_const_u_edge(const_u[i], start_v[i], stop_v[i], multiplicity);
+	for(uint i=0; i<const_v.size(); i++)
+		insert_const_v_edge(const_v[i], start_u[i], stop_u[i], multiplicity);
+}
+
+void LRSplineSurface::setMaxTjoints(int n) {
+	
+}
+
+void LRSplineSurface::setMaxAspectRatio(double ratio, int multiplicity, bool minimum_span) {
+	for(uint i=0; i<element_.size(); i++) {
+		double umin = element_[i]->umin();
+		double umax = element_[i]->umax();
+		double vmin = element_[i]->vmin();
+		double vmax = element_[i]->vmax();
+		if(umax-umin > ratio*(vmax-vmin) ||
+		   vmax-vmin > ratio*(umax-umin) )
+			refineElement(i, multiplicity, minimum_span);
+	}
 }
 
 void LRSplineSurface::insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity) {
