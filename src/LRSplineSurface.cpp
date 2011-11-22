@@ -52,7 +52,6 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 	std::vector<double>::iterator coef  = surf->coefs_begin();
 	std::vector<double>::const_iterator knot_u = surf->basis(0).begin();
 	std::vector<double>::const_iterator knot_v = surf->basis(1).begin();
-
 	basis_ = std::vector<Basisfunction*>(n1*n2);
 	int k=0;
 	for(int j=0; j<n2; j++)
@@ -62,7 +61,7 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 	int unique_v=0;
 	for(int i=0; i<n1+order_u_; i++) {// const u, spanning v
 		int mult = 1;
-		while(i<n1+order_u_ && knot_u[i]==knot_u[i+1]) {
+		while(i+1<n1+order_u_ && knot_u[i]==knot_u[i+1]) {
 			i++;
 			mult++;
 		}
@@ -71,7 +70,7 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 	}
 	for(int i=0; i<n2+order_v_; i++) {// const v, spanning u
 		int mult = 1;
-		while(i<n2+order_v_ && knot_v[i]==knot_v[i+1]) {
+		while(i+1<n2+order_v_ && knot_v[i]==knot_v[i+1]) {
 			i++;
 			mult++;
 		}
@@ -155,7 +154,7 @@ void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl) const {
 	Go::Point cp;
 	double basis_ev;
 	pt.resize(dim_);
-	pt *= 0;
+	pt.setValue(0.0);
 	if(iEl == -1)
 		iEl = getElementContaining(u,v);
 	std::vector<Basisfunction*>::const_iterator it;
@@ -177,7 +176,7 @@ void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int
 	pts.resize((derivs+1)*(derivs+2)/2);
 	for(uint i=0; i<pts.size(); i++) {
 		pts[i].resize(dim_);
-		pts[i] *= 0;
+		pts[i].setValue(0.0);
 	}
 
 	if(iEl == -1)
