@@ -89,8 +89,9 @@ public:
 	// input output methods
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
-	void writePostscriptMesh(std::ostream &out) const;
-	void writePostscriptElements(std::ostream &out) const;
+	void writePostscriptMesh(std::ostream &out, bool close=true, bool colorDiag=false) const;
+	void writePostscriptElements(std::ostream &out, bool close=true, bool colorDiag=false) const;
+	void writePostscriptFunctionSpace(std::ostream &out, bool colorDiag=false) const;
 	void printElements(std::ostream &out) const;
 
 private:
