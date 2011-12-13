@@ -4,6 +4,19 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 ENABLE_LANGUAGE(CXX)
 
+INCLUDE(CheckCXXCompilerFlag)
+
+IF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+# check if compiler supports c++-0x
+  CHECK_CXX_COMPILER_FLAG("-std=gnu++0x" HAVE_0x)
+  IF(HAVE_0x)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
+  ELSE(HAVE_0x)
+    MESSAGE("A compiler with c++-0x support is needed")
+    EXIT(1)
+  ENDIF(HAVE_0x)
+ENDIF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+
 #IF(${CMAKE_BUILD_TYPE} MATCHES "Release")
 #  ENABLE_TESTING()
 #ENDIF(${CMAKE_BUILD_TYPE} MATCHES "Release")
@@ -13,18 +26,13 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
                       ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 # Required packages
-FIND_PACKAGE(Boost REQUIRED)
 FIND_PACKAGE(GoTools REQUIRED)
 
 # Required libraries
-SET(DEPLIBS ${GoTools_LIBRARIES} ${Boost_LIBRARIES})
+SET(DEPLIBS ${GoTools_LIBRARIES})
 
 # Required include directories
-SET(INCLUDES
-  ${Boost_INCLUDE_DIRS}
-  ${GoTools_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}/include
-)
+SET(INCLUDES ${GoTools_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include)
 
 INCLUDE_DIRECTORIES(${INCLUDES})
 
@@ -43,28 +51,22 @@ FILE(GLOB_RECURSE LRSPLINE_SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp)
 ADD_LIBRARY(LRSpline ${LRSPLINE_SRCS})
 
 # Make some Apps
-FILE(GLOB_RECURSE Tensor_SRCS ${PROJECT_SOURCE_DIR}/Apps/TensorComparison.cpp)
-ADD_EXECUTABLE(TensorComparison ${Tensor_SRCS})
+ADD_EXECUTABLE(TensorComparison ${PROJECT_SOURCE_DIR}/Apps/TensorComparison.cpp)
 TARGET_LINK_LIBRARIES(TensorComparison LRSpline ${DEPLIBS})
 
-FILE(GLOB_RECURSE UnityPart_SRCS ${PROJECT_SOURCE_DIR}/Apps/PartitionOfUnityTest.cpp)
-ADD_EXECUTABLE(PartitionOfUnityTest ${UnityPart_SRCS})
+ADD_EXECUTABLE(PartitionOfUnityTest ${PROJECT_SOURCE_DIR}/Apps/PartitionOfUnityTest.cpp)
 TARGET_LINK_LIBRARIES(PartitionOfUnityTest LRSpline ${DEPLIBS})
 
-FILE(GLOB_RECURSE Refinement_SRCS ${PROJECT_SOURCE_DIR}/Apps/RefinementUnchanged.cpp)
-ADD_EXECUTABLE(RefinementUnchanged ${Refinement_SRCS})
+ADD_EXECUTABLE(RefinementUnchanged ${PROJECT_SOURCE_DIR}/Apps/RefinementUnchanged.cpp)
 TARGET_LINK_LIBRARIES(RefinementUnchanged LRSpline ${DEPLIBS})
 
-FILE(GLOB_RECURSE Stresstest_SRCS ${PROJECT_SOURCE_DIR}/Apps/StresstestRefinement.cpp)
-ADD_EXECUTABLE(StresstestRefinement ${Stresstest_SRCS})
+ADD_EXECUTABLE(StresstestRefinement ${PROJECT_SOURCE_DIR}/Apps/StresstestRefinement.cpp)
 TARGET_LINK_LIBRARIES(StresstestRefinement LRSpline ${DEPLIBS})
 
-FILE(GLOB_RECURSE ReadWrite_SRCS ${PROJECT_SOURCE_DIR}/Apps/TestReadWrite.cpp)
-ADD_EXECUTABLE(TestReadWrite ${ReadWrite_SRCS})
+ADD_EXECUTABLE(TestReadWrite ${PROJECT_SOURCE_DIR}/Apps/TestReadWrite.cpp)
 TARGET_LINK_LIBRARIES(TestReadWrite LRSpline ${DEPLIBS})
 
-FILE(GLOB_RECURSE ReadWrite_SRCS ${PROJECT_SOURCE_DIR}/Apps/Diagonal.cpp)
-ADD_EXECUTABLE(Diagonal ${ReadWrite_SRCS})
+ADD_EXECUTABLE(Diagonal ${PROJECT_SOURCE_DIR}/Apps/Diagonal.cpp)
 TARGET_LINK_LIBRARIES(Diagonal LRSpline ${DEPLIBS})
 
 # # Regression tests
