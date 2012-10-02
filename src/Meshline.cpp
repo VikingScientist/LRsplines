@@ -61,17 +61,18 @@ void Meshline::removePartialTouch(Basisfunction *basis) {
 */
 }
 
-bool Meshline::containedIn(Basisfunction *basis) const {
+int Meshline::nKnotsIn(Basisfunction *basis) const {
+	int hits = 0;
 	if(span_u_line_) {
 		for(int i=0; i<=basis->order_v_; i++)
 			if( MY_STUPID_FABS(basis->knot_v_[i] - const_par_) < DOUBLE_TOL )
-				return true;
+				hits++;
 	} else { // span-v_line
 		for(int i=0; i<=basis->order_u_; i++)
 			if( MY_STUPID_FABS(basis->knot_u_[i] - const_par_) < DOUBLE_TOL)
-				return true;
+				hits++;
 	}
-	return false;
+	return hits;
 }
 
 bool Meshline::touches(Element *el) const {

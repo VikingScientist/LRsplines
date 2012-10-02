@@ -17,7 +17,7 @@ public:
 	~Meshline();
 	Meshline* copy();
 
-	bool containedIn(Basisfunction *basis) const;
+	int nKnotsIn(Basisfunction *basis) const;
 	bool splits(Basisfunction *basis) const;
 	bool touches(Basisfunction *basis) const;
 	bool splits(Element *el) const;

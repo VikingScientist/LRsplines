@@ -793,8 +793,21 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 			// let newline be the entire length of all merged and delete the unused ones
 			if(meshline_[i]->start_ <= start && 
 			   meshline_[i]->stop_  >= stop ) {
-				delete newline;
-				return;
+				if(meshline_[i]->multiplicity_ != newline->multiplicity_) {
+					if(meshline_[i]->start_ == start && 
+					   meshline_[i]->stop_  == stop ) {
+						meshline_[i]->multiplicity_ = multiplicity; // this is just to avoid hitting the if-bracket below. meshline_[i] deleted later anyway
+					} else {
+						std::cerr << "ERROR: LRSplineSurface::insert_line() trying to increase multiplicity of partial line\n";
+						std::cerr << "       requested line: " << *newline      << std::endl;
+						std::cerr << "       old line      : " << *meshline_[i] << std::endl;
+						exit(12459032);
+					}
+
+				} else { // line exist already, do nothing
+					delete newline;
+					return;
+				}
 			}
 			if(meshline_[i]->start_ < start) newline->start_ = meshline_[i]->start_;
 			if(meshline_[i]->stop_  > stop ) newline->stop_  = meshline_[i]->stop_;
@@ -828,10 +841,13 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	PROFILE("S1-basissplit");
 #endif
 	for(int i=0; i<nOldFunctions-nRemovedFunctions; i++) {
-		if(newline->splits(basis_[i]) && !newline->containedIn(basis_[i])) {
-			nNewFunctions += split( const_u, i, const_par, newline->multiplicity_ );
-			i--; // splitting deletes a basisfunction in the middle of the basis_ vector
-			nRemovedFunctions++;
+		if(newline->splits(basis_[i])) {
+			int nKnots;
+			if( (nKnots=newline->nKnotsIn(basis_[i]) != newline->multiplicity_) ) {
+				nNewFunctions += split( const_u, i, const_par, newline->multiplicity_-nKnots );
+				i--; // splitting deletes a basisfunction in the middle of the basis_ vector
+				nRemovedFunctions++;
+			}
 		}
 	}
 	}
@@ -842,31 +858,8 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	for(uint i=0; i<element_.size(); i++) {
 		if(newline->splits(element_[i]))
 			element_.push_back(element_[i]->split(!newline->is_spanning_u(), newline->const_par_));
-		// else if(newline->touches(element_[i]))
-			// element_[i]->addPartialLine(newline);
 	}
 	}
-	#if 0
-	this->generateIDs();
-	int element_size = element_.size(); 
-	for(uint i=0; i<element_size; i++) {
-		if(newline->splits(element_[i])) {
-			for(int j=0; j<element_[i]->nBasisFunctions(); j++) {
-				Basisfunction *f = element_[i]->supportFunction(j);
-				if(!newline->containedIn(f) && newline->splits(f)) {
-					nNewFunctions += split( const_u, element_[i]->supportFunction(j)->getId(), const_par );
-					nRemovedFunctions++;
-					j--; // split destroys a Basisfunction which updates the elementpointers
-					     // and subsequently removes one basisfunction from the support list
-					this->generateIDs();
-				}
-			}
-			element_.push_back(element_[i]->split(!newline->is_spanning_u(), newline->const_par_));
-		} else if(newline->touches(element_[i])) {
-			element_[i]->addPartialLine(newline);
-		}
-	}
-	#endif
 	}
 
 	{ // STEP 2: test every NEW function against ALL old meshlines
@@ -878,23 +871,16 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	for(uint i=nOldFunctions-nRemovedFunctions-1; i<basis_.size(); i++) {
 		//for(mit=basis_[i]->partialLineBegin(); mit!=basis_[i]->partialLineEnd(); mit++) {
 		for(mit=meshline_.begin(); mit<meshline_.end(); mit++) {
-			if((*mit)->splits(basis_[i]) && 
-			   !(*mit)->containedIn(basis_[i])) {
-				// basis_[i]->removePartialLine( (*mit) );
-				split( !(*mit)->is_spanning_u(), i, (*mit)->const_par_, (*mit)->multiplicity_ );
-				i--; // splitting deletes a basisfunction in the middle of the basis_ vector
-				break;
+			if((*mit)->splits(basis_[i])) {
+				int nKnots;
+				if( (nKnots=(*mit)->nKnotsIn(basis_[i])) != (*mit)->multiplicity_ ) {
+					// basis_[i]->removePartialLine( (*mit) );
+					split( !(*mit)->is_spanning_u(), i, (*mit)->const_par_, (*mit)->multiplicity_-nKnots);
+					i--; // splitting deletes a basisfunction in the middle of the basis_ vector
+					break;
+				}
 			}
 		}
-		/*
-		for(uint j=0; j<meshline_.size(); j++) {
-			if(meshline_[j]->splits(basis_[i]) && 
-			   !meshline_[j]->containedIn(basis_[i])) {
-				split( !meshline_[j]->is_spanning_u(), i, meshline_[j]->const_par_ );
-				i--; // splitting deletes a basisfunction in the middle of the basis_ vector
-			}
-		}
-		*/
 	}
 	}
 }
