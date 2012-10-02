@@ -49,12 +49,18 @@ public:
 	//       Try and sort the Elements after all refinements and binary search for the containing point in logarithmic time
 
 	// refinement functions
-	void refineBasisFunctions(std::vector<int> indices, int multiplicity=1);
-	void refineElement(int index, int multiplicity=1, bool minimum_span=false);
-	void refineElement(std::vector<int> indices, int multiplicity=1, bool minimum_span=false, bool isotropic=false);
-	void refine(std::vector<int> sorted_list, double beta, int multiplicity=1, enum refinementStrategy strat=LR_SAFE, int symmetry=1, std::vector<Meshline*>* newLines=NULL);
-	void setMaxTjoints(int n)       { maxTjoints_     = n;       };
-	void setCloseGaps(bool doClose) { doCloseGaps_    = doClose; };
+	void refineBasisFunction(int index);
+	void refineBasisFunction(std::vector<int> &indices);
+	void refineElement(int index);
+	void refineElement(std::vector<int> &indices);
+	void refineByDimensionIncrease(std::vector<double> &error, double beta);
+
+	// set refinement state parameters
+	void setRefStrat(enum refinementStrategy strat) { refStrat_        = strat;    };
+	void setRefSymmetry(int symmetry)               { this->symmetry_  = symmetry; };
+	void setRefMultiplicity(int mult)               { refKnotlineMult_ = mult;     };
+	void setMaxTjoints(int n)                       { maxTjoints_      = n;        };
+	void setCloseGaps(bool doClose)                 { doCloseGaps_     = doClose;  };
 	void setMaxAspectRatio(double r, bool aposterioriFix=true) {
 		maxAspectRatio_ = r;
 		doAspectRatioFix_ = aposterioriFix;
@@ -63,17 +69,24 @@ public:
 	// (private) refinement functions
 	Meshline* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	Meshline* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
+	void getFullspanLines(  int iEl,    std::vector<Meshline*>& lines);
+	void getMinspanLines(   int iEl,    std::vector<Meshline*>& lines);
+	void getStructMeshLines(int iBasis, std::vector<Meshline*>& lines);
+	void aPosterioriFixes() ;
+	void closeGaps(            std::vector<Meshline*>* newLines=NULL);
+	void enforceMaxTjoints(    std::vector<Meshline*>* newLines=NULL);
+	void enforceMaxAspectRatio(std::vector<Meshline*>* newLines=NULL);
+
+	// linear independence methods
 	bool isLinearIndepByOverloading(bool verbose) ;
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
 	bool isLinearIndepByFloatingPointMappingMatrix(bool verbose) const ;
 	void getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const ;
+
 	void updateSupport(Basisfunction *f) ;
 	void updateSupport(Basisfunction *f,
 	                   std::vector<Element*>::iterator start,
 	                   std::vector<Element*>::iterator end ) ;
-	void closeGaps(                          int multiplicity=1,                          std::vector<Meshline*>* newLines=NULL);
-	void enforceMaxTjoints(           int n, int multiplicity=1,                          std::vector<Meshline*>* newLines=NULL);
-	void enforceMaxAspectRatio(double ratio, int multiplicity=1, bool minimum_span=false, std::vector<Meshline*>* newLines=NULL);
 	
 	void generateIDs() const;
 
@@ -145,10 +158,13 @@ private:
 	double end_v_;
 
 	// refinement parameters
-	int maxTjoints_;
-	bool doCloseGaps_;
-	bool doAspectRatioFix_;
-	double maxAspectRatio_;
+	enum refinementStrategy refStrat_;
+	int                     refKnotlineMult_;
+	int                     symmetry_;
+	int                     maxTjoints_;
+	bool                    doCloseGaps_;
+	bool                    doAspectRatioFix_;
+	double                  maxAspectRatio_;
 
 	// plotting parameters
 	double element_red;
