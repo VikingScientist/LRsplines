@@ -1176,7 +1176,6 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 	for(uint i=0; i<knots_v.size()-1; i++)
 		if(knots_v[i+1]-knots_v[i] < smallKnotV && knots_v[i+1] != knots_v[i])
 			smallKnotV = knots_v[i+1]-knots_v[i];
-	double eps = (smallKnotU<smallKnotV) ? smallKnotU/1000 : smallKnotV/1000;
 
 	for (int i = 0; i < nmb_bas; ++i) {
 		int startU, startV;
@@ -1204,8 +1203,8 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 			if(locKnotU[j+1] != knots_u[curU]) {
 				std::vector<boost::rational<long long> > newRowU(rowU.size()+1, boost::rational<long long>(0));
 				for(uint k=0; k<rowU.size(); k++) {
-					#define U(x) ((int) (locKnotU[x+k]/smallKnotU + eps))
-					int z = (int) (knots_u[curU] / smallKnotU + eps);
+					#define U(x) ((long long) (locKnotU[x+k]/smallKnotU + 0.5))
+					long long z = (long long) (knots_u[curU] / smallKnotU + 0.5);
 					int p = order_u_-1;
 					if(z < U(0) || z > U(p+1)) {
 						newRowU[k] = rowU[k];
@@ -1226,8 +1225,8 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 			if(locKnotV[j+1] != knots_v[curV]) {
 				std::vector<boost::rational<long long> > newRowV(rowV.size()+1, boost::rational<long long>(0));
 				for(uint k=0; k<rowV.size(); k++) {
-					#define V(x) ((int) (locKnotV[x+k]/smallKnotV + eps))
-					int z = (int) (knots_v[curV] / smallKnotV + eps);
+					#define V(x) ((long long) (locKnotV[x+k]/smallKnotV + 0.5))
+					long long z = (long long) (knots_v[curV] / smallKnotV + 0.5);
 					int p = order_v_-1;
 					if(z < V(0) || z > V(p+1)) {
 						newRowV[k] = rowV[k];
