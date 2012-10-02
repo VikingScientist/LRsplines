@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
 	bool floatingPointCheck       = false;
 	bool isInteger                = false;
 	bool dumpNullSpace            = false;
+	bool overload                 = false;
 	double beta                   = 0.10;
 	double maxAspectRatio         = -1;
 	int maxTjoints                = -1;
@@ -35,6 +36,7 @@ int main(int argc, char **argv) {
 	string parameters(" parameters: \n" \
 	                  "   -refine <s>   test refinement given by input file <s>\n"\
 	                  "   -verbose      verbose output\n"\
+	                  "   -overload     use overload method instead of global mapping matrix\n"\
 	                  "   -float        use matrix of doubles instead of default rationals\n"\
 	                  "   -integer      force all knots to be integer values\n"\
 	                  "   -dumpfile     writes an eps- and lr-file of the LR-mesh\n"\
@@ -64,6 +66,8 @@ int main(int argc, char **argv) {
 			isInteger = true;
 		else if(strcmp(argv[i], "-refine") == 0)
 			refineFileName = argv[++i];
+		else if(strcmp(argv[i], "-overload") == 0)
+			overload = true;
 		else if(strcmp(argv[i], "-nullspace") == 0)
 			dumpNullSpace = true;
 		else if(strcmp(argv[i], "-help") == 0) {
@@ -203,7 +207,9 @@ int main(int argc, char **argv) {
 				
 				if(floatingPointCheck)
 					isLinearIndep = lr_original->isLinearIndepByFloatingPointMappingMatrix(false);
-				else 
+				else if(overload) 
+					isLinearIndep = lr_original->isLinearIndepByOverloading(false);
+				else
 					isLinearIndep = lr_original->isLinearIndepByMappingMatrix(false);
 				if( ! isLinearIndep) {
 					printf("Nelements = %5d Nbasis = %5d \n", lr_original->nElements(), lr_original->nBasisFunctions());
@@ -218,6 +224,8 @@ int main(int argc, char **argv) {
 	if(!one_by_one) {
 		if(floatingPointCheck)
 			isLinearIndep = lr->isLinearIndepByFloatingPointMappingMatrix(verbose);
+		else if(overload) 
+			isLinearIndep = lr->isLinearIndepByOverloading(verbose);
 		else 
 			isLinearIndep = lr->isLinearIndepByMappingMatrix(verbose);
 	}

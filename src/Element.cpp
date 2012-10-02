@@ -11,6 +11,7 @@ Element::Element() {
 	stop_u_  =  0;
 	stop_v_  =  0;
 	id_      = -1;
+	overloadCount = 0;
 }
 
 Element::Element(double start_u, double start_v, double stop_u, double stop_v) {
@@ -20,6 +21,7 @@ Element::Element(double start_u, double start_v, double stop_u, double stop_v) {
 	stop_u_  = stop_u ;
 	stop_v_  = stop_v ;
 	id_      = -1;
+	overloadCount = 0;
 }
 
 void Element::removeSupportFunction(Basisfunction *f) {
@@ -169,6 +171,7 @@ bool Element::isOverloaded()  const {
 	return false;
 }
 
+/*
 int Element::overloadedBasisCount() const {
 	int ans = 0;
 	for(uint i=0; i<support_.size(); i++)
@@ -176,5 +179,6 @@ int Element::overloadedBasisCount() const {
 			ans++;
 	return ans;
 }
+*/
 
 } // end namespace LR

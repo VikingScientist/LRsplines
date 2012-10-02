@@ -53,6 +53,7 @@ public:
 	void removePartialLine(Meshline *m);
 
 	bool isOverloaded() const;
+	int getOverloadCount() const;
 
 	// get/set methods
 	void addPartialLine(Meshline *line);

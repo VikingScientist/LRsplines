@@ -38,7 +38,11 @@ public:
 	void setVmax(double v)                           { stop_v_  = v; };
 
 	bool isOverloaded() const;
-	int overloadedBasisCount() const;
+	// int overloadedBasisCount() const;
+	void resetOverloadCount()    { overloadCount = 0;      }
+	int incrementOverloadCount() { return overloadCount++; }
+	int getOverloadCount() const { return overloadCount;   }
+
 
 	void addPartialLine(Meshline *line);
 	void updateBasisPointers(std::vector<Basisfunction*> &basis) ;
@@ -55,6 +59,8 @@ private:
 
 	std::vector<Basisfunction*> support_;
 	std::vector<int> support_ids_; // temporary storage for the read() method only
+
+	int overloadCount ;
 	
 };
 

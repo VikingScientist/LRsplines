@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <boost/rational.hpp>
 #include <cfloat>
@@ -38,6 +39,12 @@ LRSplineSurface::LRSplineSurface() {
 	element_red       = 0.5;
 	element_green     = 0.5;
 	element_blue      = 0.5;
+	basis_red         = 1.0;
+	basis_green       = 0.83;
+	basis_blue        = 0.0;
+	selected_basis_red    = 1.0;
+	selected_basis_green  = 0.2;
+	selected_basis_blue   = 0.05;
 }
 
 LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
@@ -59,6 +66,12 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 	element_red       = 0.5;
 	element_green     = 0.5;
 	element_blue      = 0.5;
+	basis_red         = 1.0;
+	basis_green       = 0.83;
+	basis_blue        = 0.0;
+	selected_basis_red    = 1.0;
+	selected_basis_green  = 0.2;
+	selected_basis_blue   = 0.05;
 
 	int n1 = surf->numCoefs_u();
 	int n2 = surf->numCoefs_v();
@@ -123,6 +136,12 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 	element_red       = 0.5;
 	element_green     = 0.5;
 	element_blue      = 0.5;
+	basis_red         = 1.0;
+	basis_green       = 0.83;
+	basis_blue        = 0.0;
+	selected_basis_red    = 1.0;
+	selected_basis_green  = 0.2;
+	selected_basis_blue   = 0.05;
 
 	basis_ = std::vector<Basisfunction*>(n1*n2);
 	int k=0;
@@ -1355,6 +1374,88 @@ void LRSplineSurface::generateIDs() const {
 		element_[i]->setId(i);
 }
 
+bool LRSplineSurface::isLinearIndepByOverloading(bool verbose) {
+	std::vector<Basisfunction*>           overloaded;
+	std::vector<Element*>::iterator       eit;
+	std::vector<int>                      singleElms;
+	std::vector<int>                      multipleElms;
+	std::vector<int>                      singleBasis;
+	std::vector<int>                      multipleBasis;
+	// reset overload counts and initialize overloaded basisfunction set
+	for(uint i=0; i<element_.size(); i++)
+		element_[i]->resetOverloadCount();
+	for(uint i=0; i<basis_.size(); i++)
+		if(basis_[i]->isOverloaded())
+			overloaded.push_back(basis_[i]);
+	
+	int lastOverloadCount = overloaded.size();
+	int iterationCount = 0 ;
+	do {
+		lastOverloadCount = overloaded.size();
+		// reset overload counts and plotting vectors
+		for(uint i=0; i<element_.size(); i++)
+			element_[i]->resetOverloadCount();
+		singleBasis.clear();
+		multipleBasis.clear();
+		singleElms.clear();
+		multipleElms.clear();
+		for(uint i=0; i<overloaded.size(); i++)
+			for(eit=overloaded[i]->supportedElementBegin(); eit<overloaded[i]->supportedElementEnd(); eit++)
+				(*eit)->incrementOverloadCount();
+		for(uint i=0; i<element_.size(); i++) {
+			if(element_[i]->getOverloadCount() > 1)
+				multipleElms.push_back(i);
+			if(element_[i]->getOverloadCount() == 1)
+				singleElms.push_back(i);
+		}
+		for(uint i=0; i<overloaded.size(); i++) {
+			if(overloaded[i]->getOverloadCount() > 1)
+				multipleBasis.push_back(overloaded[i]->getId());
+			if(overloaded[i]->getOverloadCount() == 1) {
+				singleBasis.push_back(overloaded[i]->getId());
+				overloaded.erase(overloaded.begin() + i);
+				i--;
+			}
+		}
+		int nOverloadedBasis = overloaded.size();
+		int nOverloadedElms  = singleElms.size() + multipleElms.size();
+		if(verbose) {
+			std::cout << "Iteration #"<< iterationCount << "\n";
+			std::cout << "Overloaded elements  : " << nOverloadedElms
+		          	<< " ( " << singleElms.size() << " + "
+				  	<< multipleElms.size() << ")\n";
+			std::cout << "Overloaded B-splines : " << lastOverloadCount
+		          	<< " ( " << overloaded.size() << " + "
+				  	<< (lastOverloadCount-overloaded.size()) << ")\n";
+			std::cout << "-----------------------------------------------\n\n";
+
+			char filename[256];
+			std::ofstream out;
+			sprintf(filename, "elements_%03d.eps", iterationCount);
+			out.open(filename);
+			setElementColor(0.6, 0.6, 0.6);
+			writePostscriptElements(out, 2,2,false, &singleElms);
+			setElementColor(0.9, 0.3, 0.15);
+			writePostscriptElements(out, 2,2,true,  &multipleElms);
+			out.close();
+		
+			sprintf(filename, "functions_%03d.eps", iterationCount);
+			out.open(filename);
+			setBasisColor(0.6, 0.6, 0.6);
+			setSelectedBasisColor(0.9, 0.83, 0.05);
+			writePostscriptFunctionSpace(out, &singleBasis, true, false);
+			setSelectedBasisColor(1.0, 0.10, 0.00);
+			writePostscriptFunctionSpace(out,  &multipleBasis, false, true);
+			out.close();
+		}
+
+
+		iterationCount++;
+	} while((uint) lastOverloadCount != overloaded.size());
+
+	return overloaded.size() == 0;
+}
+
 bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("Linear independent)");
@@ -1631,9 +1732,19 @@ void LRSplineSurface::getNullSpace(std::vector<std::vector<boost::rational<long 
 		for(uint i1=0; i1<rowU.size(); i1++)
 			for(uint i2=0; i2<rowV.size(); i2++)
 				Ct[(startV+i2)*n1 + (startU+i1)][i] = rowV[i2]*rowU[i1];
-
 	}
 
+
+	std::ofstream out;
+	out.open("Ct.m");
+	out << "A = [";
+	for(uint i=0; i<Ct.size(); i++) {
+		for(uint j=0; j<Ct[i].size(); j++)
+			if(Ct[i][j] > 0)
+				out << i << " " << j << " " << Ct[i][j] << ";\n";
+	}
+	out << "];" << std::endl;
+	out.close();
 	// gauss-jordan elimination
 	int zeroColumns = 0;
 	for(uint i=0; i<Ct.size() && i+zeroColumns<Ct[i].size(); i++) {
@@ -1926,6 +2037,18 @@ void LRSplineSurface::setElementColor(double r, double g, double b)  {
 	element_red   = r;
 	element_green = g;
 	element_blue  = b;
+}
+
+void LRSplineSurface::setBasisColor(double r, double g, double b)  {
+	basis_red   = r;
+	basis_green = g;
+	basis_blue  = b;
+}
+
+void LRSplineSurface::setSelectedBasisColor(double r, double g, double b) { 
+	selected_basis_red   = r;
+	selected_basis_green = g;
+	selected_basis_blue  = b;
 }
 
 void LRSplineSurface::read(std::istream &is) {
@@ -2335,8 +2458,9 @@ void LRSplineSurface::writePostscriptMeshWithControlPoints(std::ostream &out, in
 	out << "%%EOF\n";
 }
 
-void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vector<int> *colorBasis) const {
-	writePostscriptMesh(out, false);
+void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vector<int> *colorBasis, bool drawAll, bool close) const {
+	if(drawAll)
+		writePostscriptMesh(out, false);
 
 	int dx = end_u_ - start_u_;
 	int dy = end_v_ - start_v_;
@@ -2387,17 +2511,27 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 				if(i == (uint) colorBasis->at(j))
 					doColor = true;
 
-		if(doColor)
-			out << "1  0   0 setrgbcolor \n";
-		else
-			out << "1 0.83 0 setrgbcolor \n";
-		out << avg_u*scale << " " << avg_v*scale << " " << du*scaleSize << " " << dv*scaleSize << " 0 360 ellipse\n";
-		out << "closepath fill\n";
-		out << "0 setgray\n";
-		out << avg_u*scale << " " << avg_v*scale << " " << du*scaleSize << " " << dv*scaleSize << " 0 360 ellipse\n";
-		out << "closepath stroke\n";
+		if(doColor) {
+			out << selected_basis_red   << " ";
+			out << selected_basis_green << " ";
+			out << selected_basis_blue  << " ";
+			out << "setrgbcolor \n";
+		} else {
+			out << basis_red   << " ";
+			out << basis_green << " ";
+			out << basis_blue  << " ";
+			out << "setrgbcolor \n";
+		}
+		if(drawAll || doColor) {
+			out << avg_u*scale << " " << avg_v*scale << " " << du*scaleSize << " " << dv*scaleSize << " 0 360 ellipse\n";
+			out << "closepath fill\n";
+			out << "0 setgray\n";
+			out << avg_u*scale << " " << avg_v*scale << " " << du*scaleSize << " " << dv*scaleSize << " 0 360 ellipse\n";
+			out << "closepath stroke\n";
+		}
 	}
-	out << "%%EOF\n";
+	if(close)
+		out << "%%EOF\n";
 }
 
 void LRSplineSurface::printElements(std::ostream &out) const {

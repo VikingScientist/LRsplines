@@ -63,6 +63,7 @@ public:
 	// (private) refinement functions
 	Meshline* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	Meshline* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
+	bool isLinearIndepByOverloading(bool verbose) ;
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
 	bool isLinearIndepByFloatingPointMappingMatrix(bool verbose) const ;
 	void getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const ;
@@ -117,11 +118,13 @@ public:
 
 	// input output methods
 	void setElementColor(double r, double g, double b) ;
+	void setBasisColor(double r, double g, double b) ;
+	void setSelectedBasisColor(double r, double g, double b) ;
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
 	void writePostscriptMesh(std::ostream &out, bool close=true, std::vector<int> *colorElements=NULL) const;
 	void writePostscriptElements(std::ostream &out, int nu=2, int nv=2, bool close=true, std::vector<int> *colorElements=NULL) const;
-	void writePostscriptFunctionSpace(std::ostream &out, std::vector<int> *colorBasis=NULL) const;
+	void writePostscriptFunctionSpace(std::ostream &out, std::vector<int> *colorBasis=NULL, bool drawAll=true, bool close=true) const;
 	void writePostscriptMeshWithControlPoints(std::ostream &out, int nu=2, int nv=2) const ;
 	void printElements(std::ostream &out) const;
 
@@ -151,6 +154,12 @@ private:
 	double element_red;
 	double element_green;
 	double element_blue;
+	double basis_red;
+	double basis_green;
+	double basis_blue;
+	double selected_basis_red;
+	double selected_basis_green;
+	double selected_basis_blue;
 
 };
 

@@ -186,9 +186,9 @@ int main(int argc, char **argv) {
 		if((*eit)->isOverloaded()) {
 			nOverloadedElms++;
 			overloadedElements.push_back((*eit)->getId());
-			int nCount = (*eit)->overloadedBasisCount();
-			if(nCount >= 2)
-				multipleOverloadedElements.push_back((*eit)->getId());
+			// int nCount = (*eit)->overloadedBasisCount();
+			// if(nCount >= 2)
+				// multipleOverloadedElements.push_back((*eit)->getId());
 		}
 	}
 	avgElementToBasis /= lr.nElements();

@@ -4,6 +4,7 @@
 #include "LRSpline/Meshline.h"
 #include <algorithm>
 #include <cfloat>
+#include <climits>
 #include <set>
 
 namespace LR {
@@ -496,6 +497,13 @@ bool Basisfunction::isOverloaded()  const {
 		if(! support_[i]->isOverloaded() )
 			return false;
 	return true;
+}
+
+int Basisfunction::getOverloadCount() const {
+	int ans = INT_MAX;
+	for(uint i=0; i<support_.size(); i++) 
+		ans = (ans < support_[i]->getOverloadCount()) ? ans : support_[i]->getOverloadCount();
+	return ans;
 }
 
 } // end namespace LR
