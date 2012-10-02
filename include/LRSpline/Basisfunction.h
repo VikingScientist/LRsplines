@@ -3,6 +3,7 @@
 
 #include <GoTools/utils/Point.h>
 #include <GoTools/geometry/Streamable.h>
+#include <vector>
 
 namespace LR {
 
