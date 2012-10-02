@@ -1,0 +1,4 @@
+-p1 4 -p2 4 -n1 10 -n2 10 cross_1_5_m1.inp
+
+  Linear independent :     OK
+    all assertions passed

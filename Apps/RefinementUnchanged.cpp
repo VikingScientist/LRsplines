@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
 				cout << "dx SS(" << u << ", " << v << ") = " << ss_pts[1] << endl;
 				cout << "dy LR(" << u << ", " << v << ") = " << lr_pts[2] << endl;
 				cout << "dy SS(" << u << ", " << v << ") = " << ss_pts[2] << endl;
-				cout << "sum (" << u << ", " << v << ") minus one = " << sum-1.0 << endl;
+				cout << "sum ("  << u << ", " << v << ") minus one = " << sum-1.0 << endl;
 				cout << "sum diff u = " << sum_diff_u << endl;
 				cout << "sum diff v = " << sum_diff_v << endl;
 				
