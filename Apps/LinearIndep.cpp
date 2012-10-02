@@ -101,7 +101,6 @@ int main(int argc, char **argv) {
 		lr->makeIntegerKnots();
 
 	bool isLinearIndep = true;
-	int meshlineFail   = -1;
 	if(refineFileName != NULL) {
 		ifstream refineFile;
 		refineFile.open(refineFileName);
@@ -264,8 +263,8 @@ int main(int argc, char **argv) {
 			std::cout << "Nullspace: " << nullspace.size() << " x " << nullspace[0].size() << std::endl;
 			cout << "Number of null vectors: " << nullspace.size() << endl;
 			cout << "Vector sizes:           " << nullspace[0].size() << endl;
-			for(int i=0; i<nullspace[0].size(); i++) {
-				for(int j=0; j<nullspace.size(); j++)
+			for(uint i=0; i<nullspace[0].size(); i++) {
+				for(uint j=0; j<nullspace.size(); j++)
 					cout << nullspace[j][i] << "\t";
 				cout << endl;
 			}

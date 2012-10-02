@@ -473,10 +473,6 @@ void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bo
 		double min_dv = 1e100;
 		double max_du = 0;   
 		double max_dv = 0;
-		bool   first_u = true;
-		bool   first_v = true;
-		bool   all_du_eq = true;
-		bool   all_dv_eq = true;
 		bool   only_insert_span_u_line = (vmax-vmin) >= 2*(umax-umin);
 		bool   only_insert_span_v_line = (umax-umin) >= 2*(vmax-vmin);
 		for(it=element_[index[i]]->supportBegin(); it<element_[index[i]]->supportEnd(); it++) {
@@ -485,22 +481,14 @@ void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bo
 				for(int j=0; j<order_u_; j++) {
 					double du = (**it).knot_u_[j+1]-(**it).knot_u_[j];
 					bool isZeroSpan = MY_STUPID_FABS(du) < DOUBLE_TOL;
-					if(!first_u && !isZeroSpan && min_du != du)
-						all_du_eq = false;
 					min_du = (isZeroSpan || min_du < du) ? min_du : du;
 					max_du = (isZeroSpan || max_du > du) ? max_du : du;
-					if(!isZeroSpan)
-						first_u = false;
 				}
 				for(int j=0; j<order_v_; j++) {
 					double dv = (**it).knot_v_[j+1]-(**it).knot_v_[j];
 					bool isZeroSpan = MY_STUPID_FABS(dv) < DOUBLE_TOL;
-					if(!first_v && !isZeroSpan && min_dv != dv)
-						all_dv_eq = false;
 					min_dv = (isZeroSpan || min_dv < dv) ? min_dv : dv;
 					max_dv = (isZeroSpan || max_dv > dv) ? max_dv : dv;
-					if(!isZeroSpan)
-						first_v = false;
 				}
 			}
 			if(minimum_span) {
@@ -523,8 +511,6 @@ void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bo
 			}
 		}
 		if(isotropic) {
-			// double du = (all_du_eq) ? min_du/2.0 : max_du/2.0;
-			// double dv = (all_dv_eq) ? min_dv/2.0 : max_dv/2.0;
 			double du = max_du/2.0;
 			double dv = max_dv/2.0;
 			du = (du > dv) ? du : dv;
@@ -640,10 +626,6 @@ void LRSplineSurface::refine(std::vector<int> sorted_list, double beta, int mult
 			int    best_stopI  = order_u_+2;
 			int    best_startJ = order_v_+2;
 			int    best_stopJ  = order_v_+2;
-			bool   first_u = true;
-			bool   first_v = true;
-			bool   all_du_eq = true;
-			bool   all_dv_eq = true;
 			bool   only_insert_span_u_line = (vmax-vmin) >= maxAspectRatio_*(umax-umin);
 			bool   only_insert_span_v_line = (umax-umin) >= maxAspectRatio_*(vmax-vmin);
 			for(it=element_[sorted_list[i]]->supportBegin(); it<element_[sorted_list[i]]->supportEnd(); it++) {
@@ -652,22 +634,14 @@ void LRSplineSurface::refine(std::vector<int> sorted_list, double beta, int mult
 					for(int j=0; j<order_u_; j++) {
 						double du = (**it).knot_u_[j+1]-(**it).knot_u_[j];
 						bool isZeroSpan = MY_STUPID_FABS(du) < DOUBLE_TOL;
-						if(!first_u && !isZeroSpan && min_du != du)
-							all_du_eq = false;
 						min_du = (isZeroSpan || min_du < du) ? min_du : du;
 						max_du = (isZeroSpan || max_du > du) ? max_du : du;
-						if(!isZeroSpan)
-							first_u = false;
 					}
 					for(int j=0; j<order_v_; j++) {
 						double dv = (**it).knot_v_[j+1]-(**it).knot_v_[j];
 						bool isZeroSpan = MY_STUPID_FABS(dv) < DOUBLE_TOL;
-						if(!first_v && !isZeroSpan && min_dv != dv)
-							all_dv_eq = false;
 						min_dv = (isZeroSpan || min_dv < dv) ? min_dv : dv;
 						max_dv = (isZeroSpan || max_dv > dv) ? max_dv : dv;
-						if(!isZeroSpan)
-							first_v = false;
 					}
 				} else if(strat == LR_MINSPAN) {
 					double lowu  = (**it).umin();
@@ -892,7 +866,7 @@ void LRSplineSurface::enforceMaxTjoints(int n, int multiplicity, std::vector<Mes
 			Meshline *m;
 			double best = DBL_MAX;
 			int bi      = -1;
-			if(left.size() > n) {
+			if(left.size() > (uint) n) {
 				for(uint j=0; j<left.size(); j++) {
 					if(MY_STUPID_FABS(left[j] - (vmin+vmax)/2) < best) {
 						best = MY_STUPID_FABS(left[j] - (vmin+vmax)/2);
@@ -905,7 +879,7 @@ void LRSplineSurface::enforceMaxTjoints(int n, int multiplicity, std::vector<Mes
 				someFix = true;
 				continue;
 			}
-			if(right.size() > n) {
+			if(right.size() > (uint) n) {
 				for(uint j=0; j<right.size(); j++) {
 					if(MY_STUPID_FABS(right[j] - (vmin+vmax)/2) < best) {
 						best = MY_STUPID_FABS(right[j] - (vmin+vmax)/2);
@@ -918,7 +892,7 @@ void LRSplineSurface::enforceMaxTjoints(int n, int multiplicity, std::vector<Mes
 				someFix = true;
 				continue;
 			}
-			if(top.size() > n) {
+			if(top.size() > (uint) n) {
 				for(uint j=0; j<top.size(); j++) {
 					if(MY_STUPID_FABS(top[j] - (umin+umax)/2) < best) {
 						best = MY_STUPID_FABS(top[j] - (umin+umax)/2);
@@ -931,7 +905,7 @@ void LRSplineSurface::enforceMaxTjoints(int n, int multiplicity, std::vector<Mes
 				someFix = true;
 				continue;
 			}
-			if(bottom.size() > n) {
+			if(bottom.size() > (uint) n) {
 				for(uint j=0; j<bottom.size(); j++) {
 					if(MY_STUPID_FABS(bottom[j] - (umin+umax)/2) < best) {
 						best = MY_STUPID_FABS(bottom[j] - (umin+umax)/2);
@@ -1938,7 +1912,6 @@ void LRSplineSurface::getDiagonalElements(std::vector<int> &result) const  {
 
 void LRSplineSurface::getDiagonalBasisfunctions(std::vector<int> &result) const  {
 	result.clear();
-	bool is_diag = true;
 	for(uint i=0; i<basis_.size(); i++)  {
 		bool isDiag = true;
 		for(int j=0; j<order_u_+1; j++)
@@ -2197,10 +2170,9 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 		for(uint iEl=0; iEl<element_.size(); iEl++) {
 			bool doColor = false;
 			for(uint j=0; j<colorElements->size(); j++)
-				if(iEl == colorElements->at(j))
+				if(iEl == (uint) colorElements->at(j))
 					doColor = true;
 			if(doColor) {
-				Element* e = element_[iEl];
 				double umin = element_[iEl]->umin();
 				double umax = element_[iEl]->umax();
 				double vmin = element_[iEl]->vmin();
@@ -2412,7 +2384,7 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 		bool doColor = false;
 		if(colorBasis != NULL)
 			for(uint j=0; j<colorBasis->size(); j++)
-				if(i == colorBasis->at(j))
+				if(i == (uint) colorBasis->at(j))
 					doColor = true;
 
 		if(doColor)
