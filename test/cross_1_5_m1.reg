@@ -2,3 +2,8 @@
 
   Linear independent :     OK
     all assertions passed
+Key LR-spline information:
+  number of basis functions: 103
+  number of mesh lines     : 18
+  number of elements       : 58
+

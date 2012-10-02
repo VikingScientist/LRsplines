@@ -2,4 +2,8 @@
 
   Linear independent :     FAIL
     test FAILED
+Key LR-spline information:
+  number of basis functions: 82
+  number of mesh lines     : 20
+  number of elements       : 61
 

@@ -1,4 +1,9 @@
--p1 4 -p2 4 -n1 10 -n2 10 -dumpfile cross_1_5_m2.inp
+-p1 4 -p2 4 -n1 10 -n2 10 cross_1_5_m2.inp
 
   Linear independent :     OK
     all assertions passed
+Key LR-spline information:
+  number of basis functions: 108
+  number of mesh lines     : 18
+  number of elements       : 58
+
