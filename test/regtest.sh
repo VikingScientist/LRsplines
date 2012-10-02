@@ -7,10 +7,12 @@ readarray < $2
 $mysim $MAPFILE 2>&1 > templog
 globres=1
 IFS=$'\n'
+i=0
 for line in `cat $2`
 do
   test -z "$line" && continue
-  echo "$line" | grep -q ".inp" && continue
+  $((i++))
+  test $i = 1 && continue # skip first line of regression file
   result=0
   if grep -q "$line" templog 
     then result=1 

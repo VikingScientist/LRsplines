@@ -16,14 +16,16 @@ using namespace std;
 int main(int argc, char **argv) {
 
 	// set default parameter values
-	int p      = 3;
-	int N      = 6;
-	int m      = 1;
-	int scheme = 0;
+	int p         = 3;
+	int N         = 6;
+	int m         = 1;
+	int scheme    = 0;
+	bool dumpfile = false;
 	string parameters(" parameters: \n" \
 	                  "   -p      <n> polynomial DEGREE (order-1) of the basis\n" \
 	                  "   -n      <n> number of iterations\n" \
 	                  "   -m      <n> knot multiplicity\n" \
+	                  "   -dumpfile   create .eps and .m files of the meshes\n" \
 	                  "   -scheme <n> refinement scheme (0=FULLSPAN, 1=MINSPAN, 2=STRUCT)\n" \
 	                  "   -help    display (this) help information\n");
 	
@@ -37,6 +39,8 @@ int main(int argc, char **argv) {
 			N = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-m") == 0)
 			m = atoi(argv[++i]);
+		else if(strcmp(argv[i], "-dumpfile") == 0)
+			dumpfile = true;
 		else if(strcmp(argv[i], "-help") == 0) {
 			cout << "usage: " << argv[0] << endl << parameters;
 			exit(0);
@@ -53,11 +57,13 @@ int main(int argc, char **argv) {
 		scheme = 2;
 
 	// clear previous result from file
-	ofstream clear_out;
-	clear_out.open("dof.m");
-	clear_out.close();
-	clear_out.open("elements.m");
-	clear_out.close();
+	if(dumpfile) {
+		ofstream clear_out;
+		clear_out.open("dof.m");
+		clear_out.close();
+		clear_out.open("elements.m");
+		clear_out.close();
+	}
 
 
 
@@ -97,43 +103,45 @@ int main(int argc, char **argv) {
 		}
 
 		// draw result files (with next refinement-step-diagonal shaded)
-		vector<int> diagElms, diagFuncs;
-		lr.getDiagonalElements(diagElms);
-		lr.getDiagonalBasisfunctions(diagFuncs);
-		char filename[128];
+		if(dumpfile) {
+			vector<int> diagElms, diagFuncs;
+			lr.getDiagonalElements(diagElms);
+			lr.getDiagonalBasisfunctions(diagFuncs);
+			char filename[128];
 
-		sprintf(filename, "index_%02d.eps", n+1);
-		ofstream out;
-		out.open(filename);
-		if(scheme < 2)
-			lr.writePostscriptMesh(out, true, &diagElms);
-		else
-			lr.writePostscriptMesh(out);
-		out.close();
+			sprintf(filename, "index_%02d.eps", n+1);
+			ofstream out;
+			out.open(filename);
+			if(scheme < 2)
+				lr.writePostscriptMesh(out, true, &diagElms);
+			else
+				lr.writePostscriptMesh(out);
+			out.close();
 
-		sprintf(filename, "parameter_%02d.eps", n+1);
-		out.open(filename);
-		if(scheme < 2)
-			lr.writePostscriptElements(out, 2,2, true, &diagElms);
-		else 
-			lr.writePostscriptElements(out, 2,2, true);
-		out.close();
+			sprintf(filename, "parameter_%02d.eps", n+1);
+			out.open(filename);
+			if(scheme < 2)
+				lr.writePostscriptElements(out, 2,2, true, &diagElms);
+			else 
+				lr.writePostscriptElements(out, 2,2, true);
+			out.close();
 
-		sprintf(filename, "func_%02d.eps", n+1);
-		out.open(filename);
-		if(scheme == 2)
-			lr.writePostscriptFunctionSpace(out, &diagFuncs);
-		else
-			lr.writePostscriptFunctionSpace(out);
-		out.close();
-		
-		out.open("dof.m", ios::app);
-		out << lr.nBasisFunctions() << endl;
-		out.close();
+			sprintf(filename, "func_%02d.eps", n+1);
+			out.open(filename);
+			if(scheme == 2)
+				lr.writePostscriptFunctionSpace(out, &diagFuncs);
+			else
+				lr.writePostscriptFunctionSpace(out);
+			out.close();
+			
+			out.open("dof.m", ios::app);
+			out << lr.nBasisFunctions() << endl;
+			out.close();
 
-		out.open("elements.m", ios::app);
-		out << lr.nElements() << endl;
-		out.close();
+			out.open("elements.m", ios::app);
+			out << lr.nElements() << endl;
+			out.close();
+		}
 	}
 	
 	vector<int> overloadedBasis;
@@ -219,17 +227,18 @@ int main(int argc, char **argv) {
 	}
 
 
-	ofstream out;
-
-	out.open("overloaded_elements.eps");
-	lr.writePostscriptMesh(out, false, &overloadedElements);
-	lr.setElementColor(0.9, 0.3, 0.15);
-	lr.writePostscriptMesh(out, true,  &multipleOverloadedElements);
-	out.close();
-
-	out.open("overloaded_functions.eps");
-	lr.writePostscriptFunctionSpace(out, &overloadedBasis);
-	out.close();
-
+	if(dumpfile) {
+		ofstream out;
+	
+		out.open("overloaded_elements.eps");
+		lr.writePostscriptMesh(out, false, &overloadedElements);
+		lr.setElementColor(0.9, 0.3, 0.15);
+		lr.writePostscriptMesh(out, true,  &multipleOverloadedElements);
+		out.close();
+	
+		out.open("overloaded_functions.eps");
+		lr.writePostscriptFunctionSpace(out, &overloadedBasis);
+		out.close();
+	}
 }
 

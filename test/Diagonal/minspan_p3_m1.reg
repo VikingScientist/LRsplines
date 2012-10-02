@@ -1,0 +1,6 @@
+-p 3 -n 6 -m 1 -scheme 1
+
+Number of basisfunctions: 366
+Number of elements      : 512
+Number of meshlines     : 130
+Is linearly independent : False
