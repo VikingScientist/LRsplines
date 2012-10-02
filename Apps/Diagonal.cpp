@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 
 		sprintf(filename, "parameter_%02d.eps", n+1);
 		out.open(filename);
-		lr.writePostscriptElements(out, true, (scheme < 2));
+		lr.writePostscriptElements(out, 2,2, true, (scheme < 2));
 		out.close();
 
 		sprintf(filename, "func_%02d.eps", n+1);

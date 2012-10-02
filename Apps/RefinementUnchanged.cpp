@@ -318,8 +318,13 @@ int main(int argc, char **argv) {
 
 		ofstream domainfile;
 		domainfile.open("domain.eps");
-		lr->writePostscriptElements(domainfile);
+		lr->writePostscriptElements(domainfile, 10, 10);
 		domainfile.close();
+
+		ofstream controlmesh;
+		controlmesh.open("controlmesh.eps");
+		lr->writePostscriptMeshWithControlPoints(controlmesh, 10, 10);
+		controlmesh.close();
 	
 		ofstream lrfile;
 		lrfile.open("lrspline.txt");
@@ -327,7 +332,7 @@ int main(int argc, char **argv) {
 		lrfile.close();
 
 		cout << endl;
-		cout << "Written mesh to mesh.eps, functions.eps, domain.eps and lrspline.txt\n";
+		cout << "Written mesh to mesh.eps, functions.eps, domain.eps, controlmesh.eps and lrspline.txt\n";
 	}
 
 	/*

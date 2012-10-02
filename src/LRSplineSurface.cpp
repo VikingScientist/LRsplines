@@ -1485,11 +1485,10 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, bool co
 		out << "%%EOF\n";
 }
 
-void LRSplineSurface::writePostscriptElements(std::ostream &out, bool close, bool colorDiag) const {
+void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv, bool close, bool colorDiag) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("Write EPS");
 #endif
-	Go::Point corner[4];
 
 	// get date
 	time_t t = time(0);
@@ -1497,31 +1496,29 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, bool close, boo
 	char date[11];
 	sprintf(date, "%02d/%02d/%04d", lt->tm_mday, lt->tm_mon + 1, lt->tm_year+1900);
 
-	// get bounding box
-	point(corner[0], start_u_, start_v_);
-	point(corner[1], start_u_, end_v_);
-	point(corner[2], end_u_,   end_v_);
-	point(corner[3], end_u_,   start_v_);
-
-	int x[2];
-	int y[2];
-	x[0] = x[1] = corner[0][0];
-	y[0] = y[1] = corner[0][1];
-	for(int i=0; i<4; i++) {
-		x[0] = (corner[i][0] < x[0]) ? corner[i][0] : x[0];
-		x[1] = (corner[i][0] > x[1]) ? corner[i][0] : x[1];
-		y[0] = (corner[i][1] < y[0]) ? corner[i][1] : y[0];
-		y[1] = (corner[i][1] > y[1]) ? corner[i][1] : y[1];
+	// get bounding box (max/min of the control points)
+	double x[2];
+	double y[2];
+	x[0] = 1e7;
+	x[1] = -1e7;
+	y[0] = 1e7;
+	y[1] = -1e7;
+	for(uint i=0; i<basis_.size(); i++) {
+		double *cp = basis_[i]->controlpoint_;
+		x[0] = (cp[0] < x[0]) ? cp[0] : x[0];
+		x[1] = (cp[0] > x[1]) ? cp[0] : x[1];
+		y[0] = (cp[1] < y[0]) ? cp[1] : y[0];
+		y[1] = (cp[1] > y[1]) ? cp[1] : y[1];
 	}
 
-	int dx = x[1]-x[0];
-	int dy = y[1]-y[0];
+	double dx = x[1]-x[0];
+	double dy = y[1]-y[0];
 	double scale = (dx>dy) ? 1000.0/dx : 1000.0/dy;
 
-	int xmin = (x[0] - dx/100.0)*scale;
-	int ymin = (y[0] - dy/100.0)*scale;
-	int xmax = (x[1]   + dx/100.0)*scale;
-	int ymax = (y[1]   + dy/100.0)*scale;
+	int xmin = (x[0] - dx/50.0)*scale;
+	int ymin = (y[0] - dy/50.0)*scale;
+	int xmax = (x[1] + dx/50.0)*scale;
+	int ymax = (y[1] + dy/50.0)*scale;
 
 	// print eps header
 	out << "%!PS-Adobe-3.0 EPSF-3.0\n";
@@ -1535,10 +1532,21 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, bool close, boo
 	out << "1 setlinewidth\n";
 
 	for(uint iEl=0; iEl<element_.size(); iEl++) {
-		point(corner[0], element_[iEl]->umin(), element_[iEl]->vmin(), iEl);
+		double umin = element_[iEl]->umin();
+		double umax = element_[iEl]->umax();
+		double vmin = element_[iEl]->vmin();
+		double vmax = element_[iEl]->vmax();
+
+
+/*       DIAGONAL TEST REFINEMENT
+ *       used to color the diagonal elements (only 2x2 evaluation points)
+ *       maybe dust off this and color arbitrary elements at a later point
+ */
+/*		point(corner[0], element_[iEl]->umin(), element_[iEl]->vmin(), iEl);
 		point(corner[1], element_[iEl]->umin(), element_[iEl]->vmax(), iEl);
 		point(corner[2], element_[iEl]->umax(), element_[iEl]->vmax(), iEl);
 		point(corner[3], element_[iEl]->umax(), element_[iEl]->vmin(), iEl);
+		
 		if(colorDiag && element_[iEl]->umin() == element_[iEl]->vmin()) {
 			out << ".5 setgray\n";
 			if(element_[iEl]->umin() == element_[iEl]->vmin()) {
@@ -1552,17 +1560,95 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, bool close, boo
 			}
 			out << "0 setgray\n";
 		}
+*/
+
+		Go::Point pt;
+		point(pt, umin, vmin, iEl);
 		out << "newpath\n";
-		out <<  corner[0][0]*scale << " " << corner[0][1]*scale << " moveto\n";
-		out <<  corner[1][0]*scale << " " << corner[1][1]*scale << " lineto\n";
-		out <<  corner[2][0]*scale << " " << corner[2][1]*scale << " lineto\n";
-		out <<  corner[3][0]*scale << " " << corner[3][1]*scale << " lineto\n";
+		out <<  pt[0]*scale << " " << pt[1]*scale << " moveto\n";
+		for(int i=1; i<nu; i++) {
+			double u = umin + (umax-umin)*i/(nu-1);
+			double v = vmin;
+			point(pt, u, v, iEl);
+			out <<  pt[0]*scale << " " << pt[1]*scale << " lineto\n";
+		}
+		for(int i=1; i<nv; i++) {
+			double u = umax;
+			double v = vmin + (vmax-vmin)*i/(nv-1);
+			point(pt, u, v, iEl);
+			out <<  pt[0]*scale << " " << pt[1]*scale << " lineto\n";
+		}
+		for(int i=nu; i-->1; ) {
+			double u = umin + (umax-umin)*i/(nu-1);
+			double v = vmax;
+			point(pt, u, v, iEl);
+			out <<  pt[0]*scale << " " << pt[1]*scale << " lineto\n";
+		}
+		for(int i=nv; i-->1; ) {
+			double u = umin;
+			double v = vmin + (vmax-vmin)*i/(nv-1);
+			point(pt, u, v, iEl);
+			out <<  pt[0]*scale << " " << pt[1]*scale << " lineto\n";
+		}
 		out << "closepath\n";
 		out << "stroke\n";
 	}
 
 	if(close)
 		out << "%%EOF\n";
+}
+
+void LRSplineSurface::writePostscriptMeshWithControlPoints(std::ostream &out, int nu, int nv) const {
+	writePostscriptElements(out, nu, nv, false);
+
+	// get bounding box (max/min of the control points)
+	double x[2];
+	double y[2];
+	x[0] = 1e7;
+	x[1] = -1e7;
+	y[0] = 1e7;
+	y[1] = -1e7;
+	for(uint i=0; i<basis_.size(); i++) {
+		double *cp = basis_[i]->controlpoint_;
+		x[0] = (cp[0] < x[0]) ? cp[0] : x[0];
+		x[1] = (cp[0] > x[1]) ? cp[0] : x[1];
+		y[0] = (cp[1] < y[0]) ? cp[1] : y[0];
+		y[1] = (cp[1] > y[1]) ? cp[1] : y[1];
+	}
+
+	double dx = x[1]-x[0];
+	double dy = y[1]-y[0];
+	double scale = (dx>dy) ? 1000.0/dx : 1000.0/dy;
+
+	double circleSize = 15.0;
+	
+	// create the ellipse function
+	out << "/ellipse {\n";
+	out << "/endangle exch def\n";
+	out << "/startangle exch def\n";
+	out << "/yrad exch def\n";
+	out << "/xrad exch def\n";
+	out << "/y exch def\n";
+	out << "/x exch def\n";
+	out << "/savematrix matrix currentmatrix def\n";
+	out << "x y translate\n";
+	out << "xrad yrad scale\n";
+	out << "0 0 1 startangle endangle arc\n";
+	out << "savematrix setmatrix\n";
+	out << "} def\n";
+
+	for(uint i=0; i<basis_.size(); i++) {
+		double cp_x = basis_[i]->controlpoint_[0];
+		double cp_y = basis_[i]->controlpoint_[1];
+
+		out << "0.45 0.45 0.45 setrgbcolor \n";
+		out << cp_x*scale << " " << cp_y*scale << " " << circleSize << " " << circleSize << " 0 360 ellipse\n";
+		out << "closepath fill\n";
+		out << "0 setgray\n";
+		out << cp_x*scale << " " << cp_y*scale << " " << circleSize << " " << circleSize << " 0 360 ellipse\n";
+		out << "closepath stroke\n";
+	}
+	out << "%%EOF\n";
 }
 
 void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, bool colorDiag) const {
