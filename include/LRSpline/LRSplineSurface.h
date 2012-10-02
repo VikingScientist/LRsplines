@@ -59,6 +59,7 @@ public:
 	void insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	void insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
+	bool isLinearIndepByMappingMatrix2(bool verbose) const ;
 	void updateSupport(Basisfunction *f) ;
 	void updateSupport(Basisfunction *f,
 	                   std::vector<Element*>::iterator start,
@@ -86,6 +87,8 @@ public:
 	void rebuildDimension(int dimvalue) ;
 
 
+	std::vector<Meshline*>::iterator meshlineBegin()               { return meshline_.begin(); };
+	std::vector<Meshline*>::iterator meshlineEnd()                 { return meshline_.end(); };
 	std::vector<Element*>::iterator elementBegin()                 { return element_.begin(); };
 	std::vector<Element*>::iterator elementEnd()                   { return element_.end(); };
 	std::vector<Basisfunction*>::iterator basisBegin()             { return basis_.begin(); };
