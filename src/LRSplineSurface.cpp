@@ -1391,8 +1391,8 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 	std::vector<std::vector<boost::rational<long long> > > C;  // rational projection matrix 
 
 	// scaling factor to ensure that all knots are integers (assuming all multiplum of smallest knot span)
-	double smallKnotU = 1e300;
-	double smallKnotV = 1e300;
+	double smallKnotU = DBL_MAX;
+	double smallKnotV = DBL_MAX;
 	for(uint i=0; i<knots_u.size()-1; i++)
 		if(knots_u[i+1]-knots_u[i] < smallKnotU && knots_u[i+1] != knots_u[i])
 			smallKnotU = knots_u[i+1]-knots_u[i];
@@ -1472,7 +1472,6 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 
 		C.push_back(totalRow);
 	}
-	verbose = false;
 
 	if(verbose && sparseVerbose) {
 		for(uint i=0; i<C.size(); i++) {
@@ -1494,15 +1493,6 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		std::cout << std::endl;
 	}
 	
-	std::cout << "\n\n\n\nC = [";
-	for(int i=0; i<C.size(); i++) {
-		for(int j=0; j<C[0].size(); j++) {
-			std::cout << C[i][j] << " ";
-		}
-		std::cout << ";\n";
-	}
-	std::cout << "];\n\n\n";
-
 	// gauss-jordan elimination
 	int zeroColumns = 0;
 	for(uint i=0; i<C.size() && i+zeroColumns<C[i].size(); i++) {
