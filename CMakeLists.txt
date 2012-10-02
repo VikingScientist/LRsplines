@@ -31,7 +31,7 @@ FIND_PACKAGE(Boost REQUIRED)
 SET(DEPLIBS ${GoTools_LIBRARIES} ${BOOST_LIBRARIES})
 
 # Required include directories
-SET(INCLUDES ${GoTools_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include
+SET(INCLUDES ${PROJECT_SOURCE_DIR}/include ${GoTools_INCLUDE_DIRS} 
              ${BOOST_INCLUDES})
 
 INCLUDE_DIRECTORIES(${INCLUDES})
@@ -86,7 +86,10 @@ ELSE(WIN32)
   INSTALL(TARGETS LRSpline DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
   # headers
-  FILE(GLOB_RECURSE LRSPLINE_HEADERS include/LRSpline/*.h)
+  FILE(GLOB LRSPLINE_HEADERS include/LRSpline/Basisfunction.h
+                             include/LRSpline/Element.h
+                             include/LRSpline/Meshline.h
+                             include/LRSpline/LRSplineSurface.h)
   INSTALL(FILES ${LRSPLINE_HEADERS}
     DESTINATION ${CMAKE_INSTALL_PREFIX}/include/LRSpline)
 ENDIF(WIN32)
