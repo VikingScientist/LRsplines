@@ -97,6 +97,9 @@ public:
 	void rebuildDimension(int dimvalue) ;
 	double makeIntegerKnots();
 
+	void getDiagonalElements(      std::vector<int> &result) const ;
+	void getDiagonalBasisfunctions(std::vector<int> &result) const ;
+
 
 	std::vector<Meshline*>::iterator meshlineBegin()               { return meshline_.begin(); };
 	std::vector<Meshline*>::iterator meshlineEnd()                 { return meshline_.end(); };
@@ -115,9 +118,9 @@ public:
 	// input output methods
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
-	void writePostscriptMesh(std::ostream &out, bool close=true, bool colorDiag=false) const;
-	void writePostscriptElements(std::ostream &out, int nu=2, int nv=2, bool close=true, bool colorDiag=false) const;
-	void writePostscriptFunctionSpace(std::ostream &out, bool colorDiag=false) const;
+	void writePostscriptMesh(std::ostream &out, bool close=true, std::vector<int> *colorElements=NULL) const;
+	void writePostscriptElements(std::ostream &out, int nu=2, int nv=2, bool close=true, std::vector<int> *colorElements=NULL) const;
+	void writePostscriptFunctionSpace(std::ostream &out, std::vector<int> *colorBasis=NULL) const;
 	void writePostscriptMeshWithControlPoints(std::ostream &out, int nu=2, int nv=2) const ;
 	void printElements(std::ostream &out) const;
 

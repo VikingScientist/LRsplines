@@ -158,4 +158,15 @@ void Element::write(std::ostream &os) const {
 	os << support_.back()->getId() << "}";
 }
 
+bool Element::isOverloaded()  const {
+	int n = support_.size();
+	if(n > 0) {
+		int p1 = support_.front()->order_u();
+		int p2 = support_.front()->order_v();
+		if(n > p1*p2)
+			return true;
+	}
+	return false;
+}
+
 } // end namespace LR

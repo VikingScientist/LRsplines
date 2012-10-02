@@ -1920,6 +1920,26 @@ double LRSplineSurface::makeIntegerKnots() {
 	return scale;
 }
 
+void LRSplineSurface::getDiagonalElements(std::vector<int> &result) const  {
+	result.clear();
+	for(uint i=0; i<element_.size(); i++) 
+		if(element_[i]->umin() == element_[i]->vmin())
+			result.push_back(i);
+}
+
+void LRSplineSurface::getDiagonalBasisfunctions(std::vector<int> &result) const  {
+	result.clear();
+	bool is_diag = true;
+	for(uint i=0; i<basis_.size(); i++)  {
+		bool isDiag = true;
+		for(int j=0; j<order_u_+1; j++)
+			if(basis_[i]->knot_u_[j] != basis_[i]->knot_v_[j])
+				isDiag = false;
+		if(isDiag)
+			result.push_back(i);
+	}
+}
+
 void LRSplineSurface::read(std::istream &is) {
 	start_u_ =  DBL_MAX;
 	end_u_   = -DBL_MAX;
@@ -2027,7 +2047,7 @@ void LRSplineSurface::write(std::ostream &os) const {
 		os << **eit << std::endl;
 }
 
-void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, bool colorDiag) const {
+void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, std::vector<int> *colorElements) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("Write EPS");
 #endif
@@ -2066,39 +2086,19 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, bool co
 	out << "%%BoundingBox: " << xmin << " " << ymin << " " << xmax << " " << ymax << std::endl;
 
 	// Fill diagonal elements when refining
-	if(colorDiag) {
+	if(colorElements != NULL) {
 		out << ".5 setgray\n";
-		for(uint i=0; i<element_.size(); i++) {
-			Element* e = element_[i];
-			if(e->umin() == e->vmin()) {
-				out << "newpath\n";
-				out <<  e->umin()*scale << " " << e->vmin()*scale << " moveto\n";
-				out <<  e->umax()*scale << " " << e->vmin()*scale << " lineto\n";
-				out <<  e->umax()*scale << " " << e->vmax()*scale << " lineto\n";
-				out <<  e->umin()*scale << " " << e->vmax()*scale << " lineto\n";
-				out << "closepath\n";
-				out << "fill\n";
-			}
+		for(uint i=0; i<colorElements->size(); i++) {
+			Element* e = element_[colorElements->at(i)];
+			out << "newpath\n";
+			out <<  e->umin()*scale << " " << e->vmin()*scale << " moveto\n";
+			out <<  e->umax()*scale << " " << e->vmin()*scale << " lineto\n";
+			out <<  e->umax()*scale << " " << e->vmax()*scale << " lineto\n";
+			out <<  e->umin()*scale << " " << e->vmax()*scale << " lineto\n";
+			out << "closepath\n";
+			out << "fill\n";
 		}
 	}
-
-/****   USED FOR COLORING OF THE DIAGONAL ELEMENTS SUBJECT TO REFINEMENT (DIAGONAL TEST CASE) ******
-	std::vector<BoundingBox> elements = lr->getSegments();
-	Point high, low;
-	out << ".5 setgray\n";
-	for(uint i=0; i<colored.size(); i++) {
-		low  = elements[colored[i]].low();
-		high = elements[colored[i]].high();
-
-		out << "newpath\n";
-		out <<  draw_i_pos[f->i]*scale           << " " <<  draw_j_pos[f->j]*scale << " moveto\n";
-		out << draw_i_pos[(f->i+f->width)]*scale << " " <<  draw_j_pos[f->j]*scale << " lineto\n";
-		out << draw_i_pos[(f->i+f->width)]*scale << " " << draw_j_pos[(f->j+f->height)]*scale << " lineto\n";
-		out <<  draw_i_pos[f->i]*scale           << " " << draw_j_pos[(f->j+f->height)]*scale << " lineto\n";
-		out << "closepath\n";
-		out << "fill\n";
-	}
-******************************************************************************************************/
 
 	out << "0 setgray\n";
 	out << "1 setlinewidth\n";
@@ -2127,7 +2127,7 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, bool co
 		out << "%%EOF\n";
 }
 
-void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv, bool close, bool colorDiag) const {
+void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv, bool close, std::vector<int> *colorElements) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("Write EPS");
 #endif
@@ -2169,6 +2169,55 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 	out << "%%CreationDate: " << date << std::endl;
 	out << "%%Origin: 0 0\n";
 	out << "%%BoundingBox: " << xmin << " " << ymin << " " << xmax << " " << ymax << std::endl;
+	
+	// Fill diagonal elements when refining
+	if(colorElements != NULL) {
+		out << ".5 setgray\n";
+		for(uint iEl=0; iEl<element_.size(); iEl++) {
+			bool doColor = false;
+			for(uint j=0; j<colorElements->size(); j++)
+				if(iEl == colorElements->at(j))
+					doColor = true;
+			if(doColor) {
+				Element* e = element_[iEl];
+				double umin = element_[iEl]->umin();
+				double umax = element_[iEl]->umax();
+				double vmin = element_[iEl]->vmin();
+				double vmax = element_[iEl]->vmax();
+
+				Go::Point pt;
+				point(pt, umin, vmin, iEl);
+				out << "newpath\n";
+				out <<  pt[0]*scale << " " << pt[1]*scale << " moveto\n";
+				for(int i=1; i<nu; i++) { // SOUTH side
+					double u = umin + (umax-umin)*i/(nu-1);
+					double v = vmin;
+					point(pt, u, v, iEl, false, true);
+					out <<  pt[0]*scale << " " << pt[1]*scale << " lineto\n";
+				}
+				for(int i=1; i<nv; i++) { // EAST side
+					double u = umax;
+					double v = vmin + (vmax-vmin)*i/(nv-1);
+					point(pt, u, v, iEl, false, false);
+					out <<  pt[0]*scale << " " << pt[1]*scale << " lineto\n";
+				}
+				for(int i=nu-1; i-->0; ) { // NORTH side
+					double u = umin + (umax-umin)*i/(nu-1);
+					double v = vmax;
+					point(pt, u, v, iEl, true, false);
+					out <<  pt[0]*scale << " " << pt[1]*scale << " lineto\n";
+				}
+				for(int i=nv-1; i-->1; ) { // WEST side
+					double u = umin;
+					double v = vmin + (vmax-vmin)*i/(nv-1);
+					point(pt, u, v, iEl, true, false);
+					out <<  pt[0]*scale << " " << pt[1]*scale << " lineto\n";
+				}
+				out << "closepath\n";
+				out << "fill\n";
+			}
+		}
+	}
 
 	out << "0 setgray\n";
 	out << "1 setlinewidth\n";
@@ -2293,7 +2342,7 @@ void LRSplineSurface::writePostscriptMeshWithControlPoints(std::ostream &out, in
 	out << "%%EOF\n";
 }
 
-void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, bool colorDiag) const {
+void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vector<int> *colorBasis) const {
 	writePostscriptMesh(out, false);
 
 	int dx = end_u_ - start_u_;
@@ -2339,11 +2388,13 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, bool color
 		avg_u /= (order_u_-1);
 		avg_v /= (order_v_-1);
 
-		bool is_diag = true;
-		for(int j=0; j<order_u_+1; j++)
-			is_diag = is_diag && basis_[i]->knot_u_[j] == basis_[i]->knot_v_[j];
-				
-		if(colorDiag && is_diag)
+		bool doColor = false;
+		if(colorBasis != NULL)
+			for(uint j=0; j<colorBasis->size(); j++)
+				if(i == colorBasis->at(j))
+					doColor = true;
+
+		if(doColor)
 			out << "1  0   0 setrgbcolor \n";
 		else
 			out << "1 0.83 0 setrgbcolor \n";

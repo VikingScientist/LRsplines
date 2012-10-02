@@ -491,5 +491,11 @@ void Basisfunction::write(std::ostream &os) const {
 	os << "(" << weight_ << ")";
 }
 
+bool Basisfunction::isOverloaded()  const {
+	for(uint i=0; i<support_.size(); i++) 
+		if(! support_[i]->isOverloaded() )
+			return false;
+	return true;
+}
 
 } // end namespace LR

@@ -100,22 +100,35 @@ int main(int argc, char **argv) {
 		else if(scheme == 2)
 			lr.refineBasisFunctions(indices, m);
 
+		vector<int> diagElms, diagFuncs;
+		lr.getDiagonalElements(diagElms);
+		lr.getDiagonalBasisfunctions(diagFuncs);
+
 		char filename[128];
 
 		sprintf(filename, "index_%02d.eps", n+1);
 		ofstream out;
 		out.open(filename);
-		lr.writePostscriptMesh(out, true, (scheme < 2));
+		if(scheme < 2)
+			lr.writePostscriptMesh(out, true, &diagElms);
+		else
+			lr.writePostscriptMesh(out);
 		out.close();
 
 		sprintf(filename, "parameter_%02d.eps", n+1);
 		out.open(filename);
-		lr.writePostscriptElements(out, 2,2, true, (scheme < 2));
+		if(scheme < 2)
+			lr.writePostscriptElements(out, 2,2, true, &diagElms);
+		else 
+			lr.writePostscriptElements(out, 2,2, true);
 		out.close();
 
 		sprintf(filename, "func_%02d.eps", n+1);
 		out.open(filename);
-		lr.writePostscriptFunctionSpace(out, (scheme == 2));
+		if(scheme == 2)
+			lr.writePostscriptFunctionSpace(out, &diagFuncs);
+		else
+			lr.writePostscriptFunctionSpace(out);
 		out.close();
 		
 		out.open("dof.m", ios::app);
@@ -126,6 +139,69 @@ int main(int argc, char **argv) {
 		out << lr.nElements() << endl;
 		out.close();
 	}
+
+	// harvest some statistics and display these results
+	vector<Basisfunction*>::iterator bit;
+	double avgBasisToElement = 0;
+	double avgBasisToLine    = 0;
+	int maxBasisToElement    = -1;
+	int minBasisToElement    = 9999999;
+	int maxBasisToLine       = -1;
+	int minBasisToLine       = 9999999;
+	int nOverloadedElms      = 0;
+	int nOverloadedBasis     = 0;
+	for(bit=lr.basisBegin(); bit!=lr.basisEnd(); bit++) {
+		int nE = (*bit)->nSupportedElements();
+		int nL = (*bit)->nPartialLines();
+		maxBasisToElement = (maxBasisToElement > nE) ? maxBasisToElement : nE;
+		minBasisToElement = (minBasisToElement < nE) ? minBasisToElement : nE;
+		avgBasisToElement += nE;
+		maxBasisToLine = (maxBasisToLine > nL) ? maxBasisToLine : nL;
+		minBasisToLine = (minBasisToLine < nL) ? minBasisToLine : nL;
+		avgBasisToLine += nL;
+		if((*bit)->isOverloaded())
+			nOverloadedBasis++;
+	}
+	avgBasisToElement /= lr.nBasisFunctions();
+	avgBasisToLine    /= lr.nBasisFunctions();
+
+	vector<Element*>::iterator eit;
+	double avgElementToBasis       = 0;
+	double avgSquareElementToBasis = 0;
+	int maxElementToBasis          = -1;
+	int minElementToBasis          = 9999999;
+	for(eit=lr.elementBegin(); eit!=lr.elementEnd(); eit++) {
+		int nB = (*eit)->nBasisFunctions();
+		maxElementToBasis       = (maxElementToBasis > nB) ? maxElementToBasis : nB;
+		minElementToBasis       = (minElementToBasis < nB) ? minElementToBasis : nB;
+		avgElementToBasis       += nB;
+		avgSquareElementToBasis += nB*nB;
+		if((*eit)->isOverloaded())
+			nOverloadedElms++;
+	}
+	avgElementToBasis /= lr.nElements();
+	avgSquareElementToBasis /= lr.nElements();
+	
+	cout << "Some statistics: " << endl;
+	cout << "-------------------------------------------------------------" << endl;
+	cout << "Min number of Basisfuntion -> Element: " << minBasisToElement << endl;
+	cout << "Max number of Basisfuntion -> Element: " << maxBasisToElement << endl;
+	cout << "Avg number of Basisfuntion -> Element: " << avgBasisToElement << endl;
+	cout << endl;
+	cout << "Min number of Basisfuntion -> Meshline: " << minBasisToLine << endl;
+	cout << "Max number of Basisfuntion -> Meshline: " << maxBasisToLine << endl;
+	cout << "Avg number of Basisfuntion -> Meshline: " << avgBasisToLine << endl;
+	cout << endl;
+	cout << "Min number of        Element -> Basisfunction: " << minElementToBasis  << endl;
+	cout << "Max number of        Element -> Basisfunction: " << maxElementToBasis  << endl;
+	cout << "Avg number of        Element -> Basisfunction: " << avgElementToBasis  << endl;
+	cout << "Avg square number of Element -> Basisfunction: " << avgSquareElementToBasis
+	     << " (" << sqrt(avgSquareElementToBasis) << ")" << endl;
+	cout << endl;
+	cout << "Number of overloaded Basisfunctions : " << nOverloadedBasis  << endl;
+	cout << "Number of overloaded Elements       : " << nOverloadedElms   << endl;
+
+
 
 }
 

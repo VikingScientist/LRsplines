@@ -52,6 +52,8 @@ public:
 	void inheritPartialLine(Basisfunction *f);
 	void removePartialLine(Meshline *m);
 
+	bool isOverloaded() const;
+
 	// get/set methods
 	void addPartialLine(Meshline *line);
 	void getControlPoint(Go::Point &pt) const;
