@@ -139,8 +139,12 @@ int main(int argc, char **argv) {
 		out << lr.nElements() << endl;
 		out.close();
 	}
+	
+	vector<int> overloadedBasis;
+	vector<int> overloadedElements;
 
 	// harvest some statistics and display these results
+	lr.generateIDs();
 	vector<Basisfunction*>::iterator bit;
 	double avgBasisToElement = 0;
 	double avgBasisToLine    = 0;
@@ -159,8 +163,10 @@ int main(int argc, char **argv) {
 		maxBasisToLine = (maxBasisToLine > nL) ? maxBasisToLine : nL;
 		minBasisToLine = (minBasisToLine < nL) ? minBasisToLine : nL;
 		avgBasisToLine += nL;
-		if((*bit)->isOverloaded())
+		if((*bit)->isOverloaded()) {
 			nOverloadedBasis++;
+			overloadedBasis.push_back((*bit)->getId());
+		}
 	}
 	avgBasisToElement /= lr.nBasisFunctions();
 	avgBasisToLine    /= lr.nBasisFunctions();
@@ -176,13 +182,19 @@ int main(int argc, char **argv) {
 		minElementToBasis       = (minElementToBasis < nB) ? minElementToBasis : nB;
 		avgElementToBasis       += nB;
 		avgSquareElementToBasis += nB*nB;
-		if((*eit)->isOverloaded())
+		if((*eit)->isOverloaded()) {
 			nOverloadedElms++;
+			overloadedElements.push_back((*eit)->getId());
+		}
 	}
 	avgElementToBasis /= lr.nElements();
 	avgSquareElementToBasis /= lr.nElements();
 	
 	cout << "Some statistics: " << endl;
+	cout << "-------------------------------------------------------------" << endl;
+	cout << "Number of basisfunctions: " << lr.nBasisFunctions()  << endl;
+	cout << "Number of elements      : " << lr.nElements()        << endl;
+	cout << "Number of meshlines     : " << lr.nMeshlines()       << endl;
 	cout << "-------------------------------------------------------------" << endl;
 	cout << "Min number of Basisfuntion -> Element: " << minBasisToElement << endl;
 	cout << "Max number of Basisfuntion -> Element: " << maxBasisToElement << endl;
@@ -200,8 +212,21 @@ int main(int argc, char **argv) {
 	cout << endl;
 	cout << "Number of overloaded Basisfunctions : " << nOverloadedBasis  << endl;
 	cout << "Number of overloaded Elements       : " << nOverloadedElms   << endl;
+	cout << "-------------------------------------------------------------" << endl;
+	if(lr.nBasisFunctions() < 1300) {
+	cout << "Is linearly independent : " << ((lr.isLinearIndepByMappingMatrix(false) )? "True":"False") << endl;
+	cout << "-------------------------------------------------------------" << endl;
+	}
 
 
+	ofstream out;
+	out.open("overloaded_elements.eps");
+	lr.writePostscriptMesh(out, true, &overloadedElements);
+	out.close();
+
+	out.open("overloaded_functions.eps");
+	lr.writePostscriptFunctionSpace(out, &overloadedBasis);
+	out.close();
 
 }
 
