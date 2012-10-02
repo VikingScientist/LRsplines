@@ -142,6 +142,7 @@ int main(int argc, char **argv) {
 	
 	vector<int> overloadedBasis;
 	vector<int> overloadedElements;
+	vector<int> multipleOverloadedElements;
 
 	// harvest some statistics and display these results
 	lr.generateIDs();
@@ -185,6 +186,9 @@ int main(int argc, char **argv) {
 		if((*eit)->isOverloaded()) {
 			nOverloadedElms++;
 			overloadedElements.push_back((*eit)->getId());
+			int nCount = (*eit)->overloadedBasisCount();
+			if(nCount >= 2)
+				multipleOverloadedElements.push_back((*eit)->getId());
 		}
 	}
 	avgElementToBasis /= lr.nElements();
@@ -220,8 +224,11 @@ int main(int argc, char **argv) {
 
 
 	ofstream out;
+
 	out.open("overloaded_elements.eps");
-	lr.writePostscriptMesh(out, true, &overloadedElements);
+	lr.writePostscriptMesh(out, false, &overloadedElements);
+	lr.setElementColor(0.9, 0.3, 0.15);
+	lr.writePostscriptMesh(out, true,  &multipleOverloadedElements);
 	out.close();
 
 	out.open("overloaded_functions.eps");

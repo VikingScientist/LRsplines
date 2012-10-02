@@ -169,4 +169,12 @@ bool Element::isOverloaded()  const {
 	return false;
 }
 
+int Element::overloadedBasisCount() const {
+	int ans = 0;
+	for(uint i=0; i<support_.size(); i++)
+		if(support_[i]->isOverloaded())
+			ans++;
+	return ans;
+}
+
 } // end namespace LR

@@ -35,6 +35,9 @@ LRSplineSurface::LRSplineSurface() {
 	doCloseGaps_      = true;
 	maxAspectRatio_   = 2.0;
 	doAspectRatioFix_ = false;
+	element_red       = 0.5;
+	element_green     = 0.5;
+	element_blue      = 0.5;
 }
 
 LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
@@ -53,6 +56,9 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 	doCloseGaps_      = true;
 	maxAspectRatio_   = 2.0;
 	doAspectRatioFix_ = false;
+	element_red       = 0.5;
+	element_green     = 0.5;
+	element_blue      = 0.5;
 
 	int n1 = surf->numCoefs_u();
 	int n2 = surf->numCoefs_v();
@@ -114,6 +120,9 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 	doCloseGaps_      = true;
 	maxAspectRatio_   = 2.0;
 	doAspectRatioFix_ = false;
+	element_red       = 0.5;
+	element_green     = 0.5;
+	element_blue      = 0.5;
 
 	basis_ = std::vector<Basisfunction*>(n1*n2);
 	int k=0;
@@ -1940,6 +1949,12 @@ void LRSplineSurface::getDiagonalBasisfunctions(std::vector<int> &result) const 
 	}
 }
 
+void LRSplineSurface::setElementColor(double r, double g, double b)  {
+	element_red   = r;
+	element_green = g;
+	element_blue  = b;
+}
+
 void LRSplineSurface::read(std::istream &is) {
 	start_u_ =  DBL_MAX;
 	end_u_   = -DBL_MAX;
@@ -2087,7 +2102,10 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, std::ve
 
 	// Fill diagonal elements when refining
 	if(colorElements != NULL) {
-		out << ".5 setgray\n";
+		out << element_red   << " ";
+		out << element_green << " ";
+		out << element_blue  << " ";
+		out << "setrgbcolor \n";
 		for(uint i=0; i<colorElements->size(); i++) {
 			Element* e = element_[colorElements->at(i)];
 			out << "newpath\n";
@@ -2172,7 +2190,10 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 	
 	// Fill diagonal elements when refining
 	if(colorElements != NULL) {
-		out << ".5 setgray\n";
+		out << element_red   << " ";
+		out << element_green << " ";
+		out << element_blue  << " ";
+		out << "setrgbcolor \n";
 		for(uint iEl=0; iEl<element_.size(); iEl++) {
 			bool doColor = false;
 			for(uint j=0; j<colorElements->size(); j++)

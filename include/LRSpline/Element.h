@@ -38,6 +38,7 @@ public:
 	void setVmax(double v)                           { stop_v_  = v; };
 
 	bool isOverloaded() const;
+	int overloadedBasisCount() const;
 
 	void addPartialLine(Meshline *line);
 	void updateBasisPointers(std::vector<Basisfunction*> &basis) ;

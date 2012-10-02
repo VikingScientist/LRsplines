@@ -116,6 +116,7 @@ public:
 	
 
 	// input output methods
+	void setElementColor(double r, double g, double b) ;
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
 	void writePostscriptMesh(std::ostream &out, bool close=true, std::vector<int> *colorElements=NULL) const;
@@ -145,6 +146,11 @@ private:
 	bool doCloseGaps_;
 	bool doAspectRatioFix_;
 	double maxAspectRatio_;
+
+	// plotting parameters
+	double element_red;
+	double element_green;
+	double element_blue;
 
 };
 
