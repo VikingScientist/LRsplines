@@ -1,4 +1,4 @@
--p1 3 -p2 3 -n1 9 -n2 8 -knot1 0 0 0 1 2 3 6 8 9 10 10 10 -knot2 0 0 0 1 2 4 6 7 8 8 8 -dim 3 linear_dependant.inp
+-p1 3 -p2 3 -n1 9 -n2 8 -knot1 0 0 0 1 2 3 6 8 9 10 10 10 -knot2 0 0 0 1 2 4 6 7 8 8 8 -dim 3 LinDep_elongation.inp
 
   Linear independent :     FAIL
     test FAILED

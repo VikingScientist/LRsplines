@@ -32,6 +32,10 @@ public:
 	int nBasisFunctions() const           { return support_.size(); };
 	void setId(int id)                    { this->id_ = id; };
 	int getId() const                     { return id_; };
+	void setUmin(double u)                           { start_u_ = u; };
+	void setVmin(double v)                           { start_v_ = v; };
+	void setUmax(double u)                           { stop_u_  = u; };
+	void setVmax(double v)                           { stop_v_  = v; };
 
 	void addPartialLine(Meshline *line);
 	void updateBasisPointers(std::vector<Basisfunction*> &basis) ;

@@ -60,6 +60,7 @@ public:
 	Meshline* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	Meshline* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
+	bool isLinearIndepByFloatingPointMappingMatrix(bool verbose) const ;
 	void updateSupport(Basisfunction *f) ;
 	void updateSupport(Basisfunction *f,
 	                   std::vector<Element*>::iterator start,
@@ -83,8 +84,10 @@ public:
 	int nElements()               const                { return element_.size(); };
 	int nMeshlines()              const                { return meshline_.size(); };
 
+	// assorted specialized functions
 	void set_dim(int dimvalue)                         {dim_ = dimvalue;};
 	void rebuildDimension(int dimvalue) ;
+	double makeIntegerKnots();
 
 
 	std::vector<Meshline*>::iterator meshlineBegin()               { return meshline_.begin(); };

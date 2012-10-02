@@ -20,6 +20,8 @@ int main(int argc, char **argv) {
 	bool verbose                  = false;
 	bool dumpFile                 = false;
 	bool one_by_one               = false;
+	bool floatingPointCheck       = false;
+	bool isInteger                = false;
 	double beta                   = 0.10;
 	enum refinementStrategy strat = LR_SAFE;
 	int mult                      = 1;
@@ -29,6 +31,8 @@ int main(int argc, char **argv) {
 	string parameters(" parameters: \n" \
 	                  "   -refine <s>   test refinement given by input file <s>\n"\
 	                  "   -verbose      verbose output\n"\
+	                  "   -float        use matrix of doubles instead of default rationals\n"\
+	                  "   -integer      force all knots to be integer values\n"\
 	                  "   -dumpfile     writes an eps- and lr-file of the LR-mesh\n"\
 	                  "   -one-by-one   does the meshline insertions one at a time, checking for independence at every step\n"\
 	                  "   -help         display (this) help screen\n"
@@ -48,6 +52,10 @@ int main(int argc, char **argv) {
 			verbose = true;
 		else if(strcmp(argv[i], "-one-by-one") == 0)
 			one_by_one = true;
+		else if(strcmp(argv[i], "-float") == 0)
+			floatingPointCheck = true;
+		else if(strcmp(argv[i], "-integer") == 0)
+			isInteger = true;
 		else if(strcmp(argv[i], "-refine") == 0)
 			refineFileName = argv[++i];
 		else if(strcmp(argv[i], "-help") == 0) {
@@ -80,6 +88,9 @@ int main(int argc, char **argv) {
 	}
 	lr = new LRSplineSurface();
 	inputfile >> *lr;
+
+	if(isInteger)
+		lr->makeIntegerKnots();
 
 	bool isLinearIndep = true;
 	int meshlineFail   = -1;
@@ -146,11 +157,41 @@ int main(int argc, char **argv) {
 				else if(m->type_ == MERGING)
 					cout << "Merging lines : " << *m << endl;
 
+#if 0
+				if(m->const_par_ == 73 && m->is_spanning_u()) {
+					cout << "Insert special code here!\n";
+
+/*
+					cout << "newline left side\n";
+					lr_original->insert_const_v_edge(73, 76, 82);
+					printf("Nelements = %5d Nbasis = %5d \n", lr_original->nElements(), lr_original->nBasisFunctions());
+
+					cout << "expand right side\n";
+					lr_original->insert_const_v_edge(73, 82, 84);
+					printf("Nelements = %5d Nbasis = %5d \n", lr_original->nElements(), lr_original->nBasisFunctions());
+*/
+					cout << "newline right side\n";
+					lr_original->insert_const_v_edge(73, 78, 84);
+					printf("Nelements = %5d Nbasis = %5d \n", lr_original->nElements(), lr_original->nBasisFunctions());
+
+					cout << "expand right side\n";
+					lr_original->insert_const_v_edge(73, 76, 78);
+					printf("Nelements = %5d Nbasis = %5d \n", lr_original->nElements(), lr_original->nBasisFunctions());
+
+					isLinearIndep = lr_original->isLinearIndepByMappingMatrix(false);
+				}
+#endif
+
 				if(m->is_spanning_u())
 					lr_original->insert_const_v_edge(m->const_par_, m->start_, m->stop_, m->multiplicity_);
 				else
 					lr_original->insert_const_u_edge(m->const_par_, m->start_, m->stop_, m->multiplicity_);
-				if( ! lr_original->isLinearIndepByMappingMatrix(false) ) {
+				
+				if(floatingPointCheck)
+					isLinearIndep = lr_original->isLinearIndepByFloatingPointMappingMatrix(false);
+				else 
+					isLinearIndep = lr_original->isLinearIndepByMappingMatrix(false);
+				if( ! isLinearIndep) {
 					printf("Nelements = %5d Nbasis = %5d \n", lr_original->nElements(), lr_original->nBasisFunctions());
 					lr = lr_original;
 					isLinearIndep = false;
@@ -160,8 +201,12 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	if(!one_by_one)
-		isLinearIndep = lr->isLinearIndepByMappingMatrix(verbose);
+	if(!one_by_one) {
+		if(floatingPointCheck)
+			isLinearIndep = lr->isLinearIndepByFloatingPointMappingMatrix(verbose);
+		else 
+			isLinearIndep = lr->isLinearIndepByMappingMatrix(verbose);
+	}
 
 	if(dumpFile) {
 		ofstream meshfile;
