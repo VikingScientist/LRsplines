@@ -314,7 +314,7 @@ std::vector<Element*> Basisfunction::getExtendedSupport() {
 std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 	double min_du = 1e100;
 	double min_dv = 1e100;
-	Basisfunction *smallestGuy;
+	Basisfunction *smallestGuy = NULL;
 
 	Element *e;
 	Basisfunction *b;
@@ -324,10 +324,12 @@ std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 		e = *it;
 		for(bit=e->supportBegin(); bit!=e->supportEnd(); bit++) {
 			b = *bit;
-			if( (b->umin() < this->umin() || b->umax() > this->umax()) && 
-			    (b->vmin() < this->vmin() || b->vmax() > this->vmax()) && 
+			if( ((b->umin() <  this->umin() && b->umax() >= this->umax()) || 
+			     (b->umin() <= this->umin() && b->umax() >  this->umax())) &&  // extend left OR right of the u-directions
+			    ((b->vmin() <  this->vmin() && b->vmax() >= this->vmax()) || 
+			     (b->vmin() <= this->vmin() && b->vmax() >  this->vmax())) &&  // AND extend up OR down in the v-direction
 			    min_du >= b->umax()-b->umin() &&
-			    min_dv >= b->vmax()-b->vmin()  ) {
+			    min_dv >= b->vmax()-b->vmin()  ) { // AND less support than the last best guy
 
 				min_du = b->umax()-b->umin();
 				min_dv = b->vmax()-b->vmin();
@@ -335,8 +337,31 @@ std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 			}
 		}
 	}
-	std::vector<Element*> results(b->nSupportedElements());
-	std::copy(b->supportedElementBegin(), b->supportedElementEnd(), results.begin());
+	if(smallestGuy == NULL) {
+		for(it=support_.begin(); it!=support_.end(); it++) {
+			e = *it;
+			for(bit=e->supportBegin(); bit!=e->supportEnd(); bit++) {
+				b = *bit;
+				if(  b->umin() <= this->umin()    && 
+				     b->umax() >= this->umax()    && 
+				     b->vmin() <= this->vmin()    && 
+				     b->vmax() >= this->vmax()    &&  // Cover *this' support
+				    (b->umin() <  this->umin() || 
+				     b->umax() >  this->umax() || 
+				     b->vmin() <  this->vmin() ||    // Extend at least one direction
+				     b->vmax() >  this->vmax() )  && 
+					min_du >= b->umax()-b->umin() &&
+					min_dv >= b->vmax()-b->vmin()  ) { // smaller support than the last best option
+
+					min_du = b->umax()-b->umin();
+					min_dv = b->vmax()-b->vmin();
+					smallestGuy = b;
+				}
+			}
+		}
+	}
+	std::vector<Element*> results(smallestGuy->nSupportedElements());
+	std::copy(smallestGuy->supportedElementBegin(), smallestGuy->supportedElementEnd(), results.begin());
 	return results;
 }
 
