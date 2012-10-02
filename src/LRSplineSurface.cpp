@@ -560,7 +560,7 @@ void LRSplineSurface::refineBasisFunction(int index) {
 	refineBasisFunction(tmp);
 }
 
-void LRSplineSurface::refineBasisFunction(std::vector<int> &indices) {
+void LRSplineSurface::refineBasisFunction(const std::vector<int> &indices) {
 	std::vector<Meshline*> newLines;
 
 	/* first retrieve all meshlines needed */
@@ -586,7 +586,7 @@ void LRSplineSurface::refineElement(int index) {
 	refineElement(tmp);
 }
 
-void LRSplineSurface::refineElement(std::vector<int> &indices) {
+void LRSplineSurface::refineElement(const std::vector<int> &indices) {
 	std::vector<Meshline*> newLines;
 
 	/* first retrieve all meshlines needed */
@@ -611,7 +611,7 @@ void LRSplineSurface::refineElement(std::vector<int> &indices) {
 		delete newLines[i];
 }
 
-void LRSplineSurface::refineByDimensionIncrease(std::vector<double> &errPerElement, double beta) {
+void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPerElement, double beta) {
 	std::vector<Meshline*> newLines;
 
 	Basisfunction *b;

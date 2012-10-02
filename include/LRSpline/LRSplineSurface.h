@@ -50,10 +50,10 @@ public:
 
 	// refinement functions
 	void refineBasisFunction(int index);
-	void refineBasisFunction(std::vector<int> &indices);
+	void refineBasisFunction(const std::vector<int> &indices);
 	void refineElement(int index);
-	void refineElement(std::vector<int> &indices);
-	void refineByDimensionIncrease(std::vector<double> &error, double beta);
+	void refineElement(const std::vector<int> &indices);
+	void refineByDimensionIncrease(const std::vector<double> &error, double beta);
 
 	// set refinement state parameters
 	void setRefStrat(enum refinementStrategy strat) { refStrat_        = strat;    };
