@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# This script helps workaround current CPack (2.8.8) limitations
+# 1) Fix the main deb to drop the postfix
+# 2) Fix -dev dependencies and descriptions
+#
+# It expects to be run with debs in the cwd
+
+function Unpack() {
+  mkdir tmp
+  dpkg-deb -R $1 tmp
+  cd tmp/DEBIAN
+}
+
+function Pack() {
+  cd ../..
+  dpkg-deb -b tmp $1
+  rm tmp -rf
+}
+
+path=`pwd`
+mkdir -p UbuntuDebs
+rm -f UbuntuDebs/*
+arch=`dpkg --print-architecture`
+code=`lsb_release -sc`
+version=@LRSpline_VERSION_MAJOR@.@LRSpline_VERSION_MINOR@.@LRSpline_VERSION_PATCH@
+mkdir -p /tmp/debfixer
+cd /tmp/debfixer
+
+# Step 1
+Unpack $path/liblrspline_${version}_$arch-$code-liblrspline.deb
+sed -i control -e 's/Package:.*$/Package: liblrspline/g'
+sed '/^$/d' -i control
+Pack $path/UbuntuDebs/liblrspline_${version}_$arch-$code.deb
+rm -f $path/liblrspline_${version}_$arch-$code-liblrspline.deb
+
+# Step 2
+Unpack $path/liblrspline_${version}_$arch-$code-liblrspline-dev.deb
+sed -i control -e 's/Package:.*$/Package: liblrspline-dev/g'
+sed -i control -e 's/\(Description: .*$\)/\1 - development headers/g'
+sed -i control -e 's/Depends:.*$/Depends: liblrspline, libgotools-core-dev, libboost-dev/g'
+sed -i control -e 's/\(Architecture: .*$\)/Architecture: all/g'
+sed '/^$/d' -i control
+Pack $path/UbuntuDebs/liblrspline-dev_${version}_all-$code.deb
+rm -f $path/liblrspline_${version}_$arch-$code-liblrspline-dev.deb
+
+rmdir /tmp/debfixer

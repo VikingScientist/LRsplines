@@ -1,6 +1,16 @@
 PROJECT(LRSpline)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+SET(LRSpline_VERSION_MAJOR 0)
+SET(LRSpline_VERSION_MINOR 2)
+SET(LRSpline_VERSION_PATCH 0)
+SET(LRSpline_VERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR}.${LRSpline_VERSION_PATCH})
+
+# Generate header with version info
+CONFIGURE_FILE(include/LRSpline/LRSpline_version.h.in
+               ${PROJECT_SOURCE_DIR}/include/LRSpline/LRSpline_version.h @ONLY)
+CONFIGURE_FILE(test/fixupdebs.sh.in
+               ${PROJECT_SOURCE_DIR}/test/fixupdebs.sh @ONLY)
 
 ENABLE_LANGUAGE(CXX)
 
@@ -49,6 +59,9 @@ ENDIF(NOT WIN32)
 # Make the LRSpline library
 FILE(GLOB_RECURSE LRSPLINE_SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp)
 ADD_LIBRARY(LRSpline ${LRSPLINE_SRCS})
+TARGET_LINK_LIBRARIES(LRSpline ${DEPLIBS})
+SET_TARGET_PROPERTIES(LRSpline PROPERTIES  VERSION ${LRSpline_VERSION}
+                      SOVERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR})
 
 # Make some Apps
 ADD_EXECUTABLE(TensorComparison ${PROJECT_SOURCE_DIR}/Apps/TensorComparison.cpp)
@@ -93,13 +106,51 @@ IF(WIN32)
   # TODO
 ELSE(WIN32)
   # lib
-  INSTALL(TARGETS LRSpline DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  INSTALL(TARGETS LRSpline DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+          COMPONENT liblrspline)
 
   # headers
   FILE(GLOB LRSPLINE_HEADERS include/LRSpline/Basisfunction.h
                              include/LRSpline/Element.h
                              include/LRSpline/Meshline.h
+                             include/LRSpline/LRSpline_version.h
                              include/LRSpline/LRSplineSurface.h)
   INSTALL(FILES ${LRSPLINE_HEADERS}
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/include/LRSpline)
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/include/LRSpline
+    COMPONENT liblrspline-dev)
 ENDIF(WIN32)
+
+# Packaging
+EXECUTE_PROCESS(COMMAND lsb_release "-sc" OUTPUT_VARIABLE CODENAME)
+STRING(REGEX REPLACE "\n" "" SYSTEM_CODENAME ${CODENAME})
+EXECUTE_PROCESS(COMMAND lsb_release "-si" OUTPUT_VARIABLE VENDOR)
+STRING(REGEX REPLACE "\n" "" SYSTEM_VENDOR ${VENDOR})
+
+IF (SYSTEM_VENDOR STREQUAL "Ubuntu" OR SYSTEM_VENDOR STREQUAL "Debian")
+  EXECUTE_PROCESS(COMMAND dpkg --print-architecture OUTPUT_VARIABLE ARCHITECTURE)
+  STRING(REGEX REPLACE "\n" "" CPACK_DEBIAN_PACKAGE_ARCHITECTURE ${ARCHITECTURE})
+  SET(SYSTEM_ARCHITECTURE ${CPACK_DEBIAN_PACKAGE_ARCHITECTURE})
+  SET(CPACK_GENERATOR "DEB")
+  SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Arne Morten Kvarving <arne.morten.kvarving@sintef.no>")
+  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libgotools-core")
+  SET(CPACK_DEB_COMPONENT_INSTALL ON)
+ENDIF (SYSTEM_VENDOR STREQUAL "Ubuntu" OR SYSTEM_VENDOR STREQUAL "Debian")
+
+SET(CPACK_PACKAGE_NAME "liblrspline")
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "LRSplines - the locally-refined spline library")
+SET(CPACK_PACKAGE_VERSION "${LRSpline_VERSION}")
+SET(CPACK_PACKAGE_VERSION_MAJOR ${LRSpline_VERSION_MAJOR})
+SET(CPACK_PACKAGE_VERSION_MINOR ${LRSpline_VERSION_MINOR})
+SET(CPACK_PACKAGE_VERSION_PATCH ${LRSpline_VERSION_PATCH})
+SET(CPACK_PACKAGE_FILE_NAME "liblrspline_${CPACK_PACKAGE_VERSION}_${SYSTEM_ARCHITECTURE}-${SYSTEM_CODENAME}")
+SET(CPACK_COMPONENTS_ALL liblrspline liblrspline-dev)
+#SET(CPACK_RESOURCE_FILE_LICENSE ${PROJECT_SOURCE_DIR}/COPYING)
+SET(CPACK_STRIP_FILES "lib/libLRSpline.so")
+
+INCLUDE(CPack)
+
+ADD_CUSTOM_TARGET(ubuntu 
+                  COMMAND make package
+                  COMMAND ${PROJECT_SOURCE_DIR}/test/fixupdebs.sh
+                  COMMAND echo "All done. Packages are in UbuntuDebs/"
+                  COMMENT "Generating and fixing up Ubuntu packages" VERBATIM)
