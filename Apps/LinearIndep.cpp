@@ -23,6 +23,9 @@ int main(int argc, char **argv) {
 	bool floatingPointCheck       = false;
 	bool isInteger                = false;
 	double beta                   = 0.10;
+	double maxAspectRatio         = -1;
+	int maxTjoints                = -1;
+	bool closeGaps                = true;
 	enum refinementStrategy strat = LR_SAFE;
 	int mult                      = 1;
 	int symmetry                  = 1;
@@ -38,6 +41,7 @@ int main(int argc, char **argv) {
 	                  "   -help         display (this) help screen\n"
 	                  " Refinement file syntax\n"\
 	                  "   <beta> <multiplicity> <strategy> <symmetry>\n"\
+	                  "   <maxTjoints> <maxAspectRatio> <closeGaps> \n"\
 	                  "   <number of elements to follow>\n"\
 	                  "   <highest error element index #0>\n"\
 	                  "   <highest error element index #1>\n"\
@@ -104,8 +108,8 @@ int main(int argc, char **argv) {
 		cout << "Reading refine file " << refineFileName << "...\n";
 		int strat_index;
 		vector<int> sorted_list;
-		refineFile >> beta;
-		refineFile >> mult >> strat_index >> symmetry;
+		refineFile >> beta >> mult >> strat_index >> symmetry;
+		refineFile >> maxTjoints >> maxAspectRatio >> closeGaps;
 		if(strat_index == 0) 
 			strat = LR_SAFE;
 		else if(strat_index == 1) 
@@ -128,6 +132,13 @@ int main(int argc, char **argv) {
 			sorted_list.push_back(a);
 		}
 		cout << "done\n";
+
+		/* setting up for refinement */
+		if(maxTjoints > 0)
+			lr->setMaxTjoints(maxTjoints);
+		if(maxAspectRatio > 0)
+			lr->setMaxAspectRatio(maxAspectRatio);
+		lr->setCloseGaps(closeGaps);
 
 		cout << "calling LRSplineSurface::refine(...)\n";
 

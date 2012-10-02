@@ -32,6 +32,10 @@ LRSplineSurface::LRSplineSurface() {
 	basis_    = std::vector<Basisfunction*>(0);
 	meshline_ = std::vector<Meshline*>(0);
 	element_  = std::vector<Element*>(0);
+	maxTjoints_       = -1;
+	doCloseGaps_      = true;
+	maxAspectRatio_   = 2.0;
+	doAspectRatioFix_ = false;
 }
 
 LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
@@ -46,6 +50,10 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 	start_v_  = surf->startparam_v();
 	end_u_    = surf->endparam_u();
 	end_v_    = surf->endparam_v();
+	maxTjoints_       = -1;
+	doCloseGaps_      = true;
+	maxAspectRatio_   = 2.0;
+	doAspectRatioFix_ = false;
 
 	int n1 = surf->numCoefs_u();
 	int n2 = surf->numCoefs_v();
@@ -103,6 +111,10 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 	start_v_  = knot_v[0];
 	end_u_    = knot_u[n1];
 	end_v_    = knot_v[n2];
+	maxTjoints_       = -1;
+	doCloseGaps_      = true;
+	maxAspectRatio_   = 2.0;
+	doAspectRatioFix_ = false;
 
 	basis_ = std::vector<Basisfunction*>(n1*n2);
 	int k=0;
@@ -165,14 +177,19 @@ LRSplineSurface* LRSplineSurface::copy()
 	for(int i = 0; i < this->nMeshlines();i++)
 		{returnvalue -> meshline_.push_back(this-> meshline_[i]->copy());}
 	
-	returnvalue->rational_= this->rational_;
-	returnvalue->dim_     = this->dim_;
-	returnvalue->order_u_ = this->order_u_;
-	returnvalue->order_v_ = this->order_v_;
-	returnvalue->start_u_ = this->start_u_;
-	returnvalue->start_v_ = this->start_v_;
-	returnvalue->end_u_   = this->end_u_;
-	returnvalue->end_v_   = this->end_v_;
+	returnvalue->rational_         = this->rational_;
+	returnvalue->dim_              = this->dim_;
+	returnvalue->order_u_          = this->order_u_;
+	returnvalue->order_v_          = this->order_v_;
+	returnvalue->start_u_          = this->start_u_;
+	returnvalue->start_v_          = this->start_v_;
+	returnvalue->end_u_            = this->end_u_;
+	returnvalue->end_v_            = this->end_v_;
+	returnvalue->maxTjoints_       = this->maxTjoints_;
+	returnvalue->doCloseGaps_      = this->doCloseGaps_;
+	returnvalue->doAspectRatioFix_ = this->doAspectRatioFix_;
+	returnvalue->maxAspectRatio_   = this->maxAspectRatio_;
+
 	
 	for(int i = 0; i< this->nBasisFunctions();i++)
 		{returnvalue -> updateSupport(returnvalue->basis_[i]);}
@@ -538,8 +555,6 @@ void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bo
 		this->insert_const_u_edge(mid_u[i], start_v[i], stop_v[i], multiplicity);
 	for(uint i=0; i<start_u.size(); i++)
 		this->insert_const_v_edge(mid_v[i], start_u[i], stop_u[i], multiplicity);
-
-	// setMaxAspectRatio(2.0, multiplicity);
 }
 
 void LRSplineSurface::refine(std::vector<int> sorted_list, double beta, int multiplicity, enum refinementStrategy strat, int symmetry, std::vector<Meshline*>* newLines) {
@@ -609,16 +624,20 @@ void LRSplineSurface::refine(std::vector<int> sorted_list, double beta, int mult
 			double umax = element_[sorted_list[i]]->umax();
 			double vmin = element_[sorted_list[i]]->vmin();
 			double vmax = element_[sorted_list[i]]->vmax();
-			double min_du = 1e100; // that's a pretty large number!
-			double min_dv = 1e100;
+			double min_du = DBL_MAX;
+			double min_dv = DBL_MAX;
 			double max_du = 0;   
 			double max_dv = 0;
+			int    best_startI = order_u_+2;
+			int    best_stopI  = order_u_+2;
+			int    best_startJ = order_v_+2;
+			int    best_stopJ  = order_v_+2;
 			bool   first_u = true;
 			bool   first_v = true;
 			bool   all_du_eq = true;
 			bool   all_dv_eq = true;
-			bool   only_insert_span_u_line = (vmax-vmin) >= 2*(umax-umin);
-			bool   only_insert_span_v_line = (umax-umin) >= 2*(vmax-vmin);
+			bool   only_insert_span_u_line = (vmax-vmin) >= maxAspectRatio_*(umax-umin);
+			bool   only_insert_span_v_line = (umax-umin) >= maxAspectRatio_*(vmax-vmin);
 			for(it=element_[sorted_list[i]]->supportBegin(); it<element_[sorted_list[i]]->supportEnd(); it++) {
 				if(strat == LR_ISOTROPIC_EL) {
 					// min_du is defined as the minimum SINGLE knot span (within a basis function)
@@ -643,16 +662,53 @@ void LRSplineSurface::refine(std::vector<int> sorted_list, double beta, int mult
 							first_v = false;
 					}
 				} else if(strat == LR_MINSPAN) {
+					double lowu  = (**it).umin();
+					double highu = (**it).umax();
+					double lowv  = (**it).vmin();
+					double highv = (**it).vmax();
+					double du = highu - lowu;
+					double dv = highv - lowv;
+					int startI=0;
+					int stopI=0;
+					int startJ=0;
+					int stopJ=0;
+					while((**it).knot_u_[startI] <= element_[sorted_list[i]]->umin())
+						startI++;
+					while((**it).knot_u_[stopI]  <  element_[sorted_list[i]]->umax())
+						stopI++;
+					while((**it).knot_v_[startJ] <= element_[sorted_list[i]]->vmin())
+						startJ++;
+					while((**it).knot_v_[stopJ]  <  element_[sorted_list[i]]->vmax())
+						stopJ++;
+
 					// min_du is defined as the minimum TOTAL knot span (of an entire basis function)
-					if( (**it).umax() - (**it).umin() < min_du) {
-						umin = (**it).umin();
-						umax = (**it).umax();
+					bool fixU = false;
+					int delta_startI = abs(startI - (order_u_+1)/2);
+					int delta_stopI  = abs(stopI  - (order_u_+1)/2);
+					if(  du <  min_du )
+						fixU = true;
+					if( du == min_du && delta_startI <= best_startI && delta_stopI  <= best_stopI )
+						fixU = true;
+					if(fixU) {
+						umin = lowu;
+						umax = highu;
 						min_du = umax-umin;
+						best_startI = delta_startI;
+						best_stopI  = delta_stopI;
 					}
-					if( (**it).vmax() - (**it).vmin() < min_dv) {
-						vmin = (**it).vmin();
-						vmax = (**it).vmax();
+					bool fixV = false;
+					int delta_startJ = abs(startJ - (order_v_+1)/2);
+					int delta_stopJ  = abs(stopJ  - (order_v_+1)/2);
+					if(  dv <  min_dv )
+						fixV = true;
+					if( dv == min_dv && delta_startJ <= best_startJ && delta_stopJ  <= best_stopJ )
+						fixV = true;
+					if(fixV) {
+						vmin = lowv;
+						vmax = highv;
 						min_dv = vmax-vmin;
+						best_startJ = delta_startJ;
+						best_stopJ  = delta_stopJ;
 					}
 				} else if(strat == LR_SAFE) {
 					umin = (umin > (**it).umin()) ? (**it).umin() : umin;
@@ -702,6 +758,7 @@ void LRSplineSurface::refine(std::vector<int> sorted_list, double beta, int mult
 		mid_u.push_back(   loc_mid_u  );
 	}
 
+	/* do the actual refinement */
 	uint target_n_functions = ceil(basis_.size()*(1+beta));
 	uint i=0;
 	Meshline *m;
@@ -720,20 +777,23 @@ void LRSplineSurface::refine(std::vector<int> sorted_list, double beta, int mult
 		}
 		i++;
 	}
-	std::vector<Meshline*> *regularizedLines = NULL;
-	if(newLines != NULL) 
-		regularizedLines = new std::vector<Meshline*>();
+
+
+	/* do a posteriori fixes to ensure a proper mesh */
 	uint nFunc;
 	do {
 		nFunc = basis_.size();
-		this->regularize(multiplicity, regularizedLines);
+		if(doCloseGaps_)
+			this->closeGaps(multiplicity, newLines);
+		if(maxTjoints_ > 0)
+			this->enforceMaxTjoints(maxTjoints_, multiplicity, newLines);
+		if(doAspectRatioFix_)
+			this->enforceMaxAspectRatio(maxAspectRatio_, multiplicity, strat != LR_SAFE, newLines);
 	} while(nFunc != basis_.size());
-	if(newLines != NULL)
-		newLines->insert(newLines->end(), regularizedLines->begin(), regularizedLines->end());
 
 }
 
-void LRSplineSurface::regularize(int multiplicity, std::vector<Meshline*>* newLines) {
+void LRSplineSurface::closeGaps(int multiplicity, std::vector<Meshline*>* newLines) {
 	std::vector<double>  start_v;
 	std::vector<double>  stop_v ;
 	std::vector<double>  const_u  ;
@@ -780,8 +840,6 @@ void LRSplineSurface::regularize(int multiplicity, std::vector<Meshline*>* newLi
 					stop_v.push_back(vmax);
 				}
 	}
-	if(newLines != NULL)
-		newLines->clear();
 	Meshline* m;
 	for(uint i=0; i<const_u.size(); i++) {
 		m = insert_const_u_edge(const_u[i], start_v[i], stop_v[i], multiplicity);
@@ -795,19 +853,184 @@ void LRSplineSurface::regularize(int multiplicity, std::vector<Meshline*>* newLi
 	}
 }
 
-void LRSplineSurface::setMaxTjoints(int n) {
-	
+void LRSplineSurface::enforceMaxTjoints(int n, int multiplicity, std::vector<Meshline*> *newLines) {
+	bool someFix = true;
+	while(someFix) {
+		someFix = false;
+		for(uint i=0; i<element_.size(); i++) {
+			double umin = element_[i]->umin();
+			double umax = element_[i]->umax();
+			double vmin = element_[i]->vmin();
+			double vmax = element_[i]->vmax();
+			std::vector<double> left, right, top, bottom;
+			for(uint j=0; j<meshline_.size(); j++) {
+				Meshline *m = meshline_[j];
+				if(      m->span_u_line_ &&
+						 m->const_par_ > vmin &&
+						 m->const_par_ < vmax) {
+					if(m->start_ == umax)
+						right.push_back(m->const_par_);
+					else if(m->stop_ == umin)
+						left.push_back(m->const_par_);
+				} else if(!m->span_u_line_ &&
+						  m->const_par_ > umin &&
+						  m->const_par_ < umax) {
+					if(m->start_ == vmax)
+						top.push_back(m->const_par_);
+					else if(m->stop_ == vmin)
+						bottom.push_back(m->const_par_);
+				}
+			}
+			Meshline *m;
+			double best = DBL_MAX;
+			int bi      = -1;
+			if(left.size() > n) {
+				for(uint j=0; j<left.size(); j++) {
+					if(MY_STUPID_FABS(left[j] - (vmin+vmax)/2) < best) {
+						best = MY_STUPID_FABS(left[j] - (vmin+vmax)/2);
+						bi = j;
+					}
+				}
+				m = insert_const_v_edge(left[bi], umin, umax, multiplicity);
+				if(newLines != NULL)
+					newLines->push_back(m->copy());
+				someFix = true;
+				continue;
+			}
+			if(right.size() > n) {
+				for(uint j=0; j<right.size(); j++) {
+					if(MY_STUPID_FABS(right[j] - (vmin+vmax)/2) < best) {
+						best = MY_STUPID_FABS(right[j] - (vmin+vmax)/2);
+						bi = j;
+					}
+				}
+				m = insert_const_v_edge(right[bi], umin, umax, multiplicity);
+				if(newLines != NULL)
+					newLines->push_back(m->copy());
+				someFix = true;
+				continue;
+			}
+			if(top.size() > n) {
+				for(uint j=0; j<top.size(); j++) {
+					if(MY_STUPID_FABS(top[j] - (umin+umax)/2) < best) {
+						best = MY_STUPID_FABS(top[j] - (umin+umax)/2);
+						bi = j;
+					}
+				}
+				m = insert_const_u_edge(top[bi], vmin, vmax, multiplicity);
+				if(newLines != NULL)
+					newLines->push_back(m->copy());
+				someFix = true;
+				continue;
+			}
+			if(bottom.size() > n) {
+				for(uint j=0; j<bottom.size(); j++) {
+					if(MY_STUPID_FABS(bottom[j] - (umin+umax)/2) < best) {
+						best = MY_STUPID_FABS(bottom[j] - (umin+umax)/2);
+						bi = j;
+					}
+				}
+				m = insert_const_u_edge(bottom[bi], vmin, vmax, multiplicity);
+				if(newLines != NULL)
+					newLines->push_back(m->copy());
+				someFix = true;
+				continue;
+			}
+		}
+	}
 }
 
-void LRSplineSurface::setMaxAspectRatio(double ratio, int multiplicity, bool minimum_span) {
-	for(uint i=0; i<element_.size(); i++) {
-		double umin = element_[i]->umin();
-		double umax = element_[i]->umax();
-		double vmin = element_[i]->vmin();
-		double vmax = element_[i]->vmax();
-		if(umax-umin > ratio*(vmax-vmin) ||
-		   vmax-vmin > ratio*(umax-umin) )
-			refineElement(i, multiplicity, minimum_span);
+void LRSplineSurface::enforceMaxAspectRatio(double ratio, int multiplicity, bool minimum_span, std::vector<Meshline*>* newLines) {
+	bool somethingFixed = true;
+	while(somethingFixed) {
+		somethingFixed = false;
+		for(uint i=0; i<element_.size(); i++) {
+			double umin = element_[i]->umin();
+			double umax = element_[i]->umax();
+			double vmin = element_[i]->vmin();
+			double vmax = element_[i]->vmax();
+			bool insert_const_u =  umax-umin > ratio*(vmax-vmin);
+			bool insert_const_v =  vmax-vmin > ratio*(umax-umin);
+			if( insert_const_u || insert_const_v ) {
+				std::vector<Basisfunction*>::iterator it;
+				double min_du = DBL_MAX;
+				double min_dv = DBL_MAX;
+				int    best_startI = order_u_+2;
+				int    best_stopI  = order_u_+2;
+				int    best_startJ = order_v_+2;
+				int    best_stopJ  = order_v_+2;
+				for(it=element_[i]->supportBegin(); it<element_[i]->supportEnd(); it++) {
+					if(minimum_span) {
+						double lowu  = (**it).umin();
+						double highu = (**it).umax();
+						double lowv  = (**it).vmin();
+						double highv = (**it).vmax();
+						double du = highu - lowu;
+						double dv = highv - lowv;
+						int startI=0;
+						int stopI=0;
+						int startJ=0;
+						int stopJ=0;
+						while((**it).knot_u_[startI] <= element_[i]->umin())
+							startI++;
+						while((**it).knot_u_[stopI]  <  element_[i]->umax())
+							stopI++;
+						while((**it).knot_v_[startJ] <= element_[i]->vmin())
+							startJ++;
+						while((**it).knot_v_[stopJ]  <  element_[i]->vmax())
+							stopJ++;
+
+						// min_du is defined as the minimum TOTAL knot span (of an entire basis function)
+						bool fixU = false;
+						int delta_startI = abs(startI - (order_u_+1)/2);
+						int delta_stopI  = abs(stopI  - (order_u_+1)/2);
+						if(  du <  min_du )
+							fixU = true;
+						if( du == min_du && delta_startI <= best_startI && delta_stopI  <= best_stopI )
+							fixU = true;
+						if(fixU) {
+							umin = lowu;
+							umax = highu;
+							min_du = umax-umin;
+							best_startI = delta_startI;
+							best_stopI  = delta_stopI;
+						}
+						bool fixV = false;
+						int delta_startJ = abs(startJ - (order_v_+1)/2);
+						int delta_stopJ  = abs(stopJ  - (order_v_+1)/2);
+						if(  dv <  min_dv )
+							fixV = true;
+						if( dv == min_dv && delta_startJ <= best_startJ && delta_stopJ  <= best_stopJ )
+							fixV = true;
+						if(fixV) {
+							vmin = lowv;
+							vmax = highv;
+							min_dv = vmax-vmin;
+							best_startJ = delta_startJ;
+							best_stopJ  = delta_stopJ;
+						}
+					} else {
+						umin = (umin > (**it).umin()) ? (**it).umin() : umin;
+						umax = (umax < (**it).umax()) ? (**it).umax() : umax;
+						vmin = (vmin > (**it).vmin()) ? (**it).vmin() : vmin;
+						vmax = (vmax < (**it).vmax()) ? (**it).vmax() : vmax;
+					}
+				}
+
+				Meshline *m;
+				if(insert_const_u) {
+					m = insert_const_u_edge((element_[i]->umax() + element_[i]->umin())/2, vmin, vmax, multiplicity);
+					if(newLines != NULL)
+						newLines->push_back(m->copy());
+				} else {
+					m = insert_const_v_edge((element_[i]->vmax() + element_[i]->vmin())/2, umin, umax, multiplicity);
+					if(newLines != NULL)
+						newLines->push_back(m->copy());
+				}
+				somethingFixed = true;
+				break;
+			}
+		}
 	}
 }
 

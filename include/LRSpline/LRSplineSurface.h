@@ -52,9 +52,12 @@ public:
 	void refineElement(int index, int multiplicity=1, bool minimum_span=false);
 	void refineElement(std::vector<int> indices, int multiplicity=1, bool minimum_span=false, bool isotropic=false);
 	void refine(std::vector<int> sorted_list, double beta, int multiplicity=1, enum refinementStrategy strat=LR_SAFE, int symmetry=1, std::vector<Meshline*>* newLines=NULL);
-	void regularize(int multiplicity=1, std::vector<Meshline*>* newLines=NULL);
-	void setMaxTjoints(int n);
-	void setMaxAspectRatio(double ratio, int multiplicity=1, bool minimum_span=false);
+	void setMaxTjoints(int n)       { maxTjoints_     = n;       };
+	void setCloseGaps(bool doClose) { doCloseGaps_    = doClose; };
+	void setMaxAspectRatio(double r, bool aposterioriFix=true) {
+		maxAspectRatio_ = r;
+		doAspectRatioFix_ = aposterioriFix;
+	}
 
 	// (private) refinement functions
 	Meshline* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
@@ -65,6 +68,9 @@ public:
 	void updateSupport(Basisfunction *f,
 	                   std::vector<Element*>::iterator start,
 	                   std::vector<Element*>::iterator end ) ;
+	void closeGaps(                          int multiplicity=1,                          std::vector<Meshline*>* newLines=NULL);
+	void enforceMaxTjoints(           int n, int multiplicity=1,                          std::vector<Meshline*>* newLines=NULL);
+	void enforceMaxAspectRatio(double ratio, int multiplicity=1, bool minimum_span=false, std::vector<Meshline*>* newLines=NULL);
 	
 	void generateIDs() const;
 
@@ -128,6 +134,12 @@ private:
 	double start_v_;
 	double end_u_;
 	double end_v_;
+
+	// refinement parameters
+	int maxTjoints_;
+	bool doCloseGaps_;
+	bool doAspectRatioFix_;
+	double maxAspectRatio_;
 
 };
 
