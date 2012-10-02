@@ -612,8 +612,6 @@ void LRSplineSurface::refineElement(const std::vector<int> &indices) {
 }
 
 void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPerElement, double beta) {
-	std::vector<Meshline*> newLines;
-
 	Basisfunction *b;
 	Element       *e;
 	/* accumulate the error & index - vector */
@@ -636,13 +634,14 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 	std::sort(errors.begin(), errors.end(), std::greater<IndexDouble>());
 
 	/* first retrieve all possible meshlines needed */
+	std::vector<std::vector<Meshline*> > newLines(errors.size(), std::vector<Meshline*>(0));
 	for(uint i=0; i<errors.size(); i++) {
 		if(refStrat_ == LR_MINSPAN)
-			getMinspanLines(errors[i].second, newLines);
+			getMinspanLines(errors[i].second, newLines[i]);
 		else if(refStrat_ == LR_SAFE) 
-			getFullspanLines(errors[i].second, newLines);
+			getFullspanLines(errors[i].second, newLines[i]);
 		else if(refStrat_ == LR_ISOTROPIC_FUNC) 
-			getStructMeshLines(errors[i].second, newLines);
+			getStructMeshLines(errors[i].second, newLines[i]);
 		// note that this is an excessive loop as it computes the meshlines for ALL elements,
 		// but we're only going to use a small part of this.
 	}
@@ -651,8 +650,11 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 	uint target_n_functions = ceil(basis_.size()*(1+beta));
 	int i=0;
 	while( basis_.size() < target_n_functions ) {
-		Meshline *m = newLines[i++];
-		insert_line(!m->is_spanning_u(), m->const_par_, m->start_, m->stop_, refKnotlineMult_);
+		for(uint j=0; j<newLines[i].size(); j++) {
+			Meshline *m = newLines[i][j];
+			insert_line(!m->is_spanning_u(), m->const_par_, m->start_, m->stop_, refKnotlineMult_);
+		}
+		i++;
 	}
 
 	/* do a posteriori fixes to ensure a proper mesh */
@@ -660,7 +662,8 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 
 	/* exit cleanly be deleting all temporary new lines */
 	for(uint i=0; i<newLines.size(); i++) 
-		delete newLines[i];
+		for(uint j=0; j<newLines[i].size(); j++) 
+			delete newLines[i][j];
 }
 
 void LRSplineSurface::aPosterioriFixes()  {
