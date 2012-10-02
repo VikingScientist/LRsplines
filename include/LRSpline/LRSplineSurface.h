@@ -33,6 +33,7 @@ public:
 	LRSplineSurface* copy();
 	// surface evaluation
 	virtual void point(Go::Point &pt, double u, double v, int iEl=-1) const;
+	virtual void point(Go::Point &pt, double u, double v, int iEl, bool u_from_right, bool v_from_right) const;
 	virtual void point(std::vector<Go::Point> &pts, double upar, double vpar, int derivs, int iEl=-1) const;
 	void computeBasis (double param_u, double param_v, Go::BasisPtsSf     & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf  & result, int iEl=-1 ) const;

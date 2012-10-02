@@ -215,6 +215,22 @@ LRSplineSurface& LRSplineSurface::operator=( LRSplineSurface &copythis)
   //}
 
 
+void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl, bool u_from_right, bool v_from_right) const {
+	Go::Point cp;
+	double basis_ev;
+
+	pt.resize(dim_);
+	pt.setValue(0.0);
+	std::vector<Basisfunction*>::const_iterator it;
+	
+	for(it=element_[iEl]->supportBegin(); it<element_[iEl]->supportEnd(); it++) {
+		(**it).getControlPoint(cp);
+		
+		basis_ev = (**it).evaluate(u,v, u_from_right, v_from_right);
+		pt += basis_ev*cp;
+	}
+	
+}
 
 void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl) const {
 	Go::Point cp;
@@ -227,8 +243,8 @@ void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl) const {
 	std::vector<Basisfunction*>::const_iterator it;
 	
 	for(it=element_[iEl]->supportBegin(); it<element_[iEl]->supportEnd(); it++) {
-	  (**it).getControlPoint(cp);
-	
+		(**it).getControlPoint(cp);
+		
 		basis_ev = (**it).evaluate(u,v, u!=end_u_, v!=end_v_);
 		pt += basis_ev*cp;
 	}
@@ -927,8 +943,15 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 			break;
 		}
 	}
-	std::vector<Basisfunction*>::iterator it;
-	for(it=el->supportBegin(); it != el->supportEnd(); it++) {
+	std::vector<Basisfunction*>::iterator it, start, stop;
+	if(el == NULL) {
+		start = basis_.begin();
+		stop  = basis_.end();
+	} else {  // no overlapping basis elements means discontinous basis functions. Not very elegant, but do a global search for identical basis functions
+		start = el->supportBegin();
+		stop  = el->supportEnd();
+	}
+	for(it=start; it < stop; it++) {
 		// existing functions need only update their control points and weights
 		if(b1 && *b1 == **it) {
 			**it += *b1;
@@ -1566,28 +1589,28 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 		point(pt, umin, vmin, iEl);
 		out << "newpath\n";
 		out <<  pt[0]*scale << " " << pt[1]*scale << " moveto\n";
-		for(int i=1; i<nu; i++) {
+		for(int i=1; i<nu; i++) { // SOUTH side
 			double u = umin + (umax-umin)*i/(nu-1);
 			double v = vmin;
-			point(pt, u, v, iEl);
+			point(pt, u, v, iEl, false, true);
 			out <<  pt[0]*scale << " " << pt[1]*scale << " lineto\n";
 		}
-		for(int i=1; i<nv; i++) {
+		for(int i=1; i<nv; i++) { // EAST side
 			double u = umax;
 			double v = vmin + (vmax-vmin)*i/(nv-1);
-			point(pt, u, v, iEl);
+			point(pt, u, v, iEl, false, false);
 			out <<  pt[0]*scale << " " << pt[1]*scale << " lineto\n";
 		}
-		for(int i=nu; i-->1; ) {
+		for(int i=nu-1; i-->0; ) { // NORTH side
 			double u = umin + (umax-umin)*i/(nu-1);
 			double v = vmax;
-			point(pt, u, v, iEl);
+			point(pt, u, v, iEl, true, false);
 			out <<  pt[0]*scale << " " << pt[1]*scale << " lineto\n";
 		}
-		for(int i=nv; i-->1; ) {
+		for(int i=nv-1; i-->1; ) { // WEST side
 			double u = umin;
 			double v = vmin + (vmax-vmin)*i/(nv-1);
-			point(pt, u, v, iEl);
+			point(pt, u, v, iEl, true, false);
 			out <<  pt[0]*scale << " " << pt[1]*scale << " lineto\n";
 		}
 		out << "closepath\n";
