@@ -46,7 +46,7 @@ public:
 	std::vector<Meshline*>::iterator partialLineEnd() ;
 
 	std::vector<Element*> getExtendedSupport() ;
-	std::vector<Element*> getMinmalExtendedSupport();
+	std::vector<Element*> getMinimalExtendedSupport();
 
 	void inheritPartialLine(Basisfunction *f);
 	void removePartialLine(Meshline *m);

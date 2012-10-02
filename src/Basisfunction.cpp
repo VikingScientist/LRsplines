@@ -311,7 +311,7 @@ std::vector<Element*> Basisfunction::getExtendedSupport() {
 	return ans_vector;
 }
 
-std::vector<Element*> Basisfunction::getMinmalExtendedSupport() {
+std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 	double min_du = 1e100;
 	double min_dv = 1e100;
 	Basisfunction *smallestGuy;
@@ -335,7 +335,7 @@ std::vector<Element*> Basisfunction::getMinmalExtendedSupport() {
 			}
 		}
 	}
-	std::set<Element*> results(b->nSupportedElements());
+	std::vector<Element*> results(b->nSupportedElements());
 	std::copy(b->supportedElementBegin(), b->supportedElementEnd(), results.begin());
 	return results;
 }
