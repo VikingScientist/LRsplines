@@ -1580,8 +1580,8 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, bool color
 		max_dv       = (max_dv > dv) ? max_dv : dv;
 	}
 
-	double scaleSize = (max_du > max_dv) ? max_du/15.0 : max_dv/15.0;
-	scaleSize *= scale;
+	double scaleSize = (max_du > max_dv) ? 1.0/max_du : 1.0/max_dv;
+	scaleSize *= 20.0;
 	
 	// create the ellipse function
 	out << "/ellipse {\n";
@@ -1603,12 +1603,12 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, bool color
 		double avg_v = 0;
 		double du    = basis_[i]->knot_u_[order_u_] - basis_[i]->knot_u_[0];
 		double dv    = basis_[i]->knot_v_[order_v_] - basis_[i]->knot_v_[0];
-		for(int j=0; j<order_u_+1; j++)
+		for(int j=1; j<order_u_; j++)
 			avg_u += basis_[i]->knot_u_[j];
-		for(int j=0; j<order_v_+1; j++)
+		for(int j=1; j<order_v_; j++)
 			avg_v += basis_[i]->knot_v_[j];
-		avg_u /= (order_u_+1);
-		avg_v /= (order_v_+1);
+		avg_u /= (order_u_-1);
+		avg_v /= (order_v_-1);
 
 		bool is_diag = true;
 		for(int j=0; j<order_u_+1; j++)
@@ -1629,7 +1629,8 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, bool color
 
 void LRSplineSurface::printElements(std::ostream &out) const {
 	for(uint i=0; i<element_.size(); i++) {
-		if(i<10) out << " ";
+		if(i<100) out << " ";
+		if(i<10)  out << " ";
 		out << i << ": " << *element_[i] << std::endl;
 	}
 }
