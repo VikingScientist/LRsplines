@@ -1,0 +1,9 @@
+-p1 3 -p2 3 -n1 5 -n2 5 -knot1 0 0 0 2 4 6 6 6 -knot2 0 0 0 2 3 5 5 5 article_example.inp
+
+  Linear independent :     OK
+    all assertions passed
+Key LR-spline information:
+  number of basis functions: 36
+  number of mesh lines     : 13
+  number of elements       : 20
+
