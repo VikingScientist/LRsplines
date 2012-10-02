@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
 			
 		cout << setprecision(16);
 		vector<Meshline*> *newLines = new vector<Meshline*>();
-		lr->refine(sorted_list, beta, mult, strat, symmetry, newLines);
+		// lr->refine(sorted_list, beta, mult, strat, symmetry, newLines);
 		cout << "Number of new mesh lines: " << newLines->size() << endl;
 		for(unsigned int i=0; i<newLines->size(); i++) {
 			newLines->at(i)->writeMore(cout);

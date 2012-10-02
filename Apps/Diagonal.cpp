@@ -73,37 +73,33 @@ int main(int argc, char **argv) {
 	SplineSurface   ss(2, 2, 2, 2, knot_u, knot_v, cp, 2, false);
 	ss.raiseOrder(p-1, p-1);
 	LRSplineSurface lr(&ss);
+
+	// setup refinement parameters
+	lr.setRefMultiplicity(m);
+	if(scheme == 0)
+		lr.setRefStrat(LR_SAFE);
+	else if(scheme == 1)
+		lr.setRefStrat(LR_MINSPAN);
+	else if(scheme == 2)
+		lr.setRefStrat(LR_ISOTROPIC_FUNC);
 	
+	// for all iterations
 	for(int n=0; n<N; n++) {
 		lr.generateIDs();
 		vector<int> indices;
-		if(scheme < 2) {
-			vector<Element*>::iterator iel;
-			for(iel=lr.elementBegin(); iel<lr.elementEnd(); iel++) {
-				if((**iel).umin() == (**iel).vmin())
-					indices.push_back((**iel).getId() );
-			}
-		} else if(scheme == 2) {
-			vector<Basisfunction*>::iterator ifun;
-			for(ifun=lr.basisBegin(); ifun<lr.basisEnd(); ifun++) {
-				bool diag = true;
-				for(int i=0; i<lr.order_u()+1; i++)
-					diag = diag && (**ifun).knot_u_[i] == (**ifun).knot_v_[i];
-				if(diag)
-					indices.push_back( (**ifun).getId() );
-			}
-		}
-		if(scheme == 0)
-			lr.refineElement(indices, m, false, false);
-		else if(scheme == 1)
-			lr.refineElement(indices, m, true,  false);
-		else if(scheme == 2)
-			lr.refineBasisFunctions(indices, m);
 
+		if(scheme < 2) {
+			lr.getDiagonalElements(indices);
+			lr.refineElement(indices);
+		} else if(scheme == 2) {
+			lr.getDiagonalBasisfunctions(indices);
+			lr.refineBasisFunction(indices);
+		}
+
+		// draw result files (with next refinement-step-diagonal shaded)
 		vector<int> diagElms, diagFuncs;
 		lr.getDiagonalElements(diagElms);
 		lr.getDiagonalBasisfunctions(diagFuncs);
-
 		char filename[128];
 
 		sprintf(filename, "index_%02d.eps", n+1);
