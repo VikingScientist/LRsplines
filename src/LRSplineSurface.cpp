@@ -1472,6 +1472,7 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 
 		C.push_back(totalRow);
 	}
+	verbose = false;
 
 	if(verbose && sparseVerbose) {
 		for(uint i=0; i<C.size(); i++) {
@@ -1492,6 +1493,15 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		}
 		std::cout << std::endl;
 	}
+	
+	std::cout << "\n\n\n\nC = [";
+	for(int i=0; i<C.size(); i++) {
+		for(int j=0; j<C[0].size(); j++) {
+			std::cout << C[i][j] << " ";
+		}
+		std::cout << ";\n";
+	}
+	std::cout << "];\n\n\n";
 
 	// gauss-jordan elimination
 	int zeroColumns = 0;
@@ -1550,6 +1560,152 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 	}
 	
 	return rank == nmb_bas;
+}
+
+void LRSplineSurface::getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const {
+#ifdef TIME_LRSPLINE
+	PROFILE("Linear independent)");
+#endif
+	// try and figure out this thing by the projection matrix C
+
+	std::vector<double> knots_u, knots_v;
+	getGlobalKnotVector(knots_u, knots_v);
+	int nmb_bas = basis_.size();
+	int n1 = knots_u.size() - order_u_;
+	int n2 = knots_v.size() - order_v_;
+	int fullDim = n1*n2;
+
+	std::vector<std::vector<boost::rational<long long> > > Ct;  // rational projection matrix (transpose of this)
+
+	// scaling factor to ensure that all knots are integers (assuming all multiplum of smallest knot span)
+	double smallKnotU = DBL_MAX;
+	double smallKnotV = DBL_MAX;
+	for(uint i=0; i<knots_u.size()-1; i++)
+		if(knots_u[i+1]-knots_u[i] < smallKnotU && knots_u[i+1] != knots_u[i])
+			smallKnotU = knots_u[i+1]-knots_u[i];
+	for(uint i=0; i<knots_v.size()-1; i++)
+		if(knots_v[i+1]-knots_v[i] < smallKnotV && knots_v[i+1] != knots_v[i])
+			smallKnotV = knots_v[i+1]-knots_v[i];
+
+	// initialize C transpose with zeros
+	for(int i=0; i<fullDim; i++)
+		Ct.push_back(std::vector<boost::rational<long long> >(nmb_bas, boost::rational<long long>(0)));
+
+	for (int i = 0; i < nmb_bas; ++i) {
+		int startU, startV;
+		std::vector<double> locKnotU(basis_[i]->knot_u_, basis_[i]->knot_u_ + basis_[i]->order_u_+1);
+		std::vector<double> locKnotV(basis_[i]->knot_v_, basis_[i]->knot_v_ + basis_[i]->order_v_+1);
+		
+		for(startU=knots_u.size(); startU-->0; )
+			if(knots_u[startU] == basis_[i]->knot_u_[0]) break;
+		for(int j=0; j<basis_[i]->order_u_; j++) {
+			if(knots_u[startU] == basis_[i]->knot_u_[j]) startU--;
+			else break;
+		}
+		startU++;
+		for(startV=knots_v.size(); startV-->0; )
+			if(knots_v[startV] == basis_[i]->knot_v_[0]) break;
+		for(int j=0; j<basis_[i]->order_v_; j++) {
+			if(knots_v[startV] == basis_[i]->knot_v_[j]) startV--;
+			else break;
+		}
+		startV++;
+
+		std::vector<boost::rational<long long> > rowU(1,1), rowV(1,1);
+		int curU = startU+1;
+		for(uint j=0; j<locKnotU.size()-1; j++, curU++) {
+			if(locKnotU[j+1] != knots_u[curU]) {
+				std::vector<boost::rational<long long> > newRowU(rowU.size()+1, boost::rational<long long>(0));
+				for(uint k=0; k<rowU.size(); k++) {
+					#define U(x) ((long long) (locKnotU[x+k]/smallKnotU + 0.5))
+					long long z = (long long) (knots_u[curU] / smallKnotU + 0.5);
+					int p = order_u_-1;
+					if(z < U(0) || z > U(p+1)) {
+						newRowU[k] = rowU[k];
+						continue;
+					}
+					boost::rational<long long> alpha1 = (U(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - U(0),  U(p)  - U(0));
+					boost::rational<long long> alpha2 = (z    <= U(1)) ? 1 : boost::rational<long long>( U(p+1) - z   , U(p+1) - U(1));
+					newRowU[k]   += rowU[k]*alpha1;
+					newRowU[k+1] += rowU[k]*alpha2;
+					#undef U
+				}
+				locKnotU.insert(locKnotU.begin()+(j+1), knots_u[curU]);
+				rowU = newRowU;
+			}
+		}
+		int curV = startV+1;
+		for(uint j=0; j<locKnotV.size()-1; j++, curV++) {
+			if(locKnotV[j+1] != knots_v[curV]) {
+				std::vector<boost::rational<long long> > newRowV(rowV.size()+1, boost::rational<long long>(0));
+				for(uint k=0; k<rowV.size(); k++) {
+					#define V(x) ((long long) (locKnotV[x+k]/smallKnotV + 0.5))
+					long long z = (long long) (knots_v[curV] / smallKnotV + 0.5);
+					int p = order_v_-1;
+					if(z < V(0) || z > V(p+1)) {
+						newRowV[k] = rowV[k];
+						continue;
+					}
+					boost::rational<long long> alpha1 = (V(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - V(0),  V(p)  - V(0));
+					boost::rational<long long> alpha2 = (z    <= V(1)) ? 1 : boost::rational<long long>( V(p+1) - z   , V(p+1) - V(1));
+					newRowV[k]   += rowV[k]*alpha1;
+					newRowV[k+1] += rowV[k]*alpha2;
+					#undef V
+				}
+				locKnotV.insert(locKnotV.begin()+(j+1), knots_v[curV]);
+				rowV= newRowV;
+			}
+		}
+		for(uint i1=0; i1<rowU.size(); i1++)
+			for(uint i2=0; i2<rowV.size(); i2++)
+				Ct[(startV+i2)*n1 + (startU+i1)][i] = rowV[i2]*rowU[i1];
+
+	}
+
+	// gauss-jordan elimination
+	int zeroColumns = 0;
+	for(uint i=0; i<Ct.size() && i+zeroColumns<Ct[i].size(); i++) {
+		boost::rational<long long> maxPivot(0);
+		int maxI = -1;
+		for(uint j=i; j<Ct.size(); j++) {
+			if(abs(Ct[j][i+zeroColumns]) > maxPivot) {
+				maxPivot = abs(Ct[j][i+zeroColumns]);
+				maxI = j;
+			}
+		}
+		if(maxI == -1) {
+			i--;
+			zeroColumns++;
+			continue;
+		}
+		std::vector<boost::rational<long long> > tmp = Ct[i];
+		Ct[i]    = Ct[maxI];
+		Ct[maxI] = tmp;
+		boost::rational<long long> leading = Ct[i][i+zeroColumns];
+		for(uint j=i+zeroColumns; j<Ct[i].size(); j++)
+			Ct[i][j] /= leading;
+
+		for(uint j=0; j<Ct.size(); j++) {
+			if(i==j) continue;
+			boost::rational<long long> scale =  Ct[j][i+zeroColumns] / Ct[i][i+zeroColumns];
+			if(scale != 0) {
+				for(uint k=i+zeroColumns; k<Ct[j].size(); k++)
+					Ct[j][k] -= Ct[i][k] * scale;
+			}
+		}
+	}
+
+	// figure out the null space
+	nullspace.clear();
+	for(int i=0; i<zeroColumns; i++) {
+		std::vector<boost::rational<long long> > newRow(nmb_bas, boost::rational<long long>(0));
+		newRow[nmb_bas-(i+1)] = 1;
+		nullspace.push_back(newRow);
+	}
+	for(int i=0; i<zeroColumns; i++)
+		for(int j=0; j<nmb_bas-zeroColumns; j++)
+			nullspace[i][j] = -Ct[j][nmb_bas-(i+1)]; // no need to divide by C[j][j] since it's 1
+
 }
 
 bool LRSplineSurface::isLinearIndepByFloatingPointMappingMatrix(bool verbose) const {

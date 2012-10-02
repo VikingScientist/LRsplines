@@ -4,6 +4,7 @@
 #include <vector>
 #include <GoTools/utils/Point.h>
 #include <GoTools/geometry/Streamable.h>
+#include <boost/rational.hpp>
 #include <GoTools/geometry/SplineSurface.h>
 #include "Basisfunction.h"
 
@@ -64,6 +65,7 @@ public:
 	Meshline* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
 	bool isLinearIndepByFloatingPointMappingMatrix(bool verbose) const ;
+	void getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const ;
 	void updateSupport(Basisfunction *f) ;
 	void updateSupport(Basisfunction *f,
 	                   std::vector<Element*>::iterator start,

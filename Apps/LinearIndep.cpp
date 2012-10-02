@@ -22,6 +22,7 @@ int main(int argc, char **argv) {
 	bool one_by_one               = false;
 	bool floatingPointCheck       = false;
 	bool isInteger                = false;
+	bool dumpNullSpace            = false;
 	double beta                   = 0.10;
 	double maxAspectRatio         = -1;
 	int maxTjoints                = -1;
@@ -37,6 +38,7 @@ int main(int argc, char **argv) {
 	                  "   -float        use matrix of doubles instead of default rationals\n"\
 	                  "   -integer      force all knots to be integer values\n"\
 	                  "   -dumpfile     writes an eps- and lr-file of the LR-mesh\n"\
+	                  "   -nullspace    writes the nullspace of the dependent LR-mesh\n"\
 	                  "   -one-by-one   does the meshline insertions one at a time, checking for independence at every step\n"\
 	                  "   -help         display (this) help screen\n"
 	                  " Refinement file syntax\n"\
@@ -62,6 +64,8 @@ int main(int argc, char **argv) {
 			isInteger = true;
 		else if(strcmp(argv[i], "-refine") == 0)
 			refineFileName = argv[++i];
+		else if(strcmp(argv[i], "-nullspace") == 0)
+			dumpNullSpace = true;
 		else if(strcmp(argv[i], "-help") == 0) {
 			cout << "usage: " << argv[0] << "[parameters] <refine inputfile>" << endl << parameters;
 			exit(0);
@@ -254,6 +258,18 @@ int main(int argc, char **argv) {
 		exit(0);
 	} else {
 		cout << "Linear dependent mesh!\n";
+		if(dumpNullSpace) {
+			vector<vector<boost::rational<long long> > > nullspace;
+			lr->getNullSpace(nullspace);
+			std::cout << "Nullspace: " << nullspace.size() << " x " << nullspace[0].size() << std::endl;
+			cout << "Number of null vectors: " << nullspace.size() << endl;
+			cout << "Vector sizes:           " << nullspace[0].size() << endl;
+			for(int i=0; i<nullspace[0].size(); i++) {
+				for(int j=0; j<nullspace.size(); j++)
+					cout << nullspace[j][i] << "\t";
+				cout << endl;
+			}
+		}
 		exit(1);
 	}
 
