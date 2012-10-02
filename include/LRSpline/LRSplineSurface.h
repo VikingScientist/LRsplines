@@ -59,7 +59,6 @@ public:
 	void insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	void insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
-	bool isLinearIndepByMappingMatrix2(bool verbose) const ;
 	void updateSupport(Basisfunction *f) ;
 	void updateSupport(Basisfunction *f,
 	                   std::vector<Element*>::iterator start,

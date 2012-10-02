@@ -21,20 +21,24 @@ int main(int argc, char **argv) {
 	int p2 = 3;
 	int n1 = 7;
 	int n2 = 7;
+	double *knot_u = NULL;
+	double *knot_v = NULL;
 	int dim = 4;
 	int nDiagonals = -1;
 	bool rat = false;
 	bool dumpFile = false;
 	char *inputFileName = NULL;
 	string parameters(" parameters: \n" \
-	                  "   -p1   <n>  polynomial ORDER (degree+1) in first parametric direction\n" \
-	                  "   -p2   <n>  polynomial order in second parametric direction\n" \
-	                  "   -n1   <n>  number of basis functions in first parametric direction\n" \
-	                  "   -n2   <n>  number of basis functions in second parametric direction\n" \
-	                  "   -dim  <n>  dimension of the controlpoints\n" \
-	                  "   -diag <n>  override inputfile and run diagonal testcase\n"\
-	                  "   -dumpfile  writes an eps- and txt-file of the LR-mesh\n"\
-	                  "   -help      display (this) help screen\n"\
+	                  "   -p1    <n>  polynomial ORDER (degree+1) in first parametric direction\n" \
+	                  "   -p2    <n>  polynomial order in second parametric direction\n" \
+	                  "   -n1    <n>  number of basis functions in first parametric direction\n" \
+	                  "   -n2    <n>  number of basis functions in second parametric direction\n" \
+	                  "   -knot1 <n>  space-seperated list of the first knot vector (must specify n1 and p1 first)\n"\
+	                  "   -knot2 <n>  space-seperated list of the second knot vector (must specify n2 and p2 first)\n"\
+	                  "   -dim   <n>  dimension of the controlpoints\n" \
+	                  "   -diag  <n>  override inputfile and run diagonal testcase\n"\
+	                  "   -dumpfile   writes an eps- and txt-file of the LR-mesh\n"\
+	                  "   -help       display (this) help screen\n"\
 	                  " <refine inputfile>\n"\
 	                  "   inputfile describing meshline insertions.\n"\
 	                  "   FORMAT:\n"\
@@ -60,6 +64,14 @@ int main(int argc, char **argv) {
 		else if(strcmp(argv[i], "-help") == 0) {
 			cout << "usage: " << argv[0] << "[parameters] <refine inputfile>" << endl << parameters;
 			exit(0);
+		} else if(strcmp(argv[i], "-knot1") == 0) {
+			knot_u = new double[n1+p1];
+			for(int j=0; j<n1+p1; j++)
+				knot_u[j] = atoi(argv[++i]);
+		} else if(strcmp(argv[i], "-knot2") == 0) {
+			knot_v = new double[n2+p2];
+			for(int j=0; j<n2+p2; j++)
+				knot_v[j] = atoi(argv[++i]);
 		} else {
 			if(inputFileName != NULL) {
 				cerr << "usage: " << argv[0] << endl << parameters;
@@ -119,15 +131,19 @@ int main(int argc, char **argv) {
 	}
 
 	// make a uniform integer knot vector
-	double knot_u[n1+p1];
-	double knot_v[n2+p2];
-	double cp[(dim+rat)*n1*n2];
-	for(int i=0; i<p1+n1; i++)
-		knot_u[i] = (i<p1) ? 0 : (i>n1) ? n1-p1+1 : i-p1+1;
-	for(int i=0; i<p2+n2; i++)
-		knot_v[i] = (i<p2) ? 0 : (i>n2) ? n2-p2+1 : i-p2+1;
+	if(knot_u == NULL) {
+		knot_u = new double[n1+p1];
+		for(int i=0; i<p1+n1; i++)
+			knot_u[i] = (i<p1) ? 0 : (i>n1) ? n1-p1+1 : i-p1+1;
+	}
+	if(knot_v == NULL) {
+		knot_v = new double[n2+p2];
+		for(int i=0; i<p2+n2; i++)
+			knot_v[i] = (i<p2) ? 0 : (i>n2) ? n2-p2+1 : i-p2+1;
+	}
 
 	// create a list of random control points (all between 0.1 and 1.1)
+	double cp[(dim+rat)*n1*n2];
 	int k=0;
 	for(int j=0; j<n2; j++) 
 		for(int i=0; i<n1; i++) 

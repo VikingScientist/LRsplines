@@ -127,7 +127,7 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 			mult++;
 		}
 		unique_v++;
-		meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n2], mult) );
+		meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n1], mult) );
 	}
 	for(int j=0; j<unique_v-1; j++) {
 		for(int i=0; i<unique_u-1; i++) {
@@ -1128,7 +1128,6 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
 
 	std::vector<std::vector<boost::rational<long long> > > C;  // rational projection matrix 
-	std::vector<double> locKnotU, locKnotV;               // local INDEX knot vectors
 
 	// scaling factor to ensure that all knots are integers (assuming all multiplum of smallest knot span)
 	double smallKnotU = 1e300;
@@ -1171,7 +1170,7 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 					int z = (int) (knots_u[curU] / smallKnotU + eps);
 					int p = order_u_-1;
 					if(z < U(0) || z > U(p+1)) {
-						newRowU[k] = boost::rational<long long>(1);
+						newRowU[k] = rowU[k];
 						continue;
 					}
 					boost::rational<long long> alpha1 = (U(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - U(0),  U(p)  - U(0));
@@ -1181,7 +1180,7 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 					#undef U
 				}
 				locKnotU.insert(locKnotU.begin()+(j+1), knots_u[curU]);
-				rowU= newRowU;
+				rowU = newRowU;
 			}
 		}
 		int curV = startV+1;
@@ -1193,7 +1192,7 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 					int z = (int) (knots_v[curV] / smallKnotV + eps);
 					int p = order_v_-1;
 					if(z < V(0) || z > V(p+1)) {
-						newRowV[k] = boost::rational<long long>(1);
+						newRowV[k] = rowV[k];
 						continue;
 					}
 					boost::rational<long long> alpha1 = (V(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - V(0),  V(p)  - V(0));
@@ -1253,10 +1252,6 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		std::vector<boost::rational<long long> > tmp = C[i];
 		C[i] = C[maxI];
 		C[maxI] = tmp;
-		// printf("swapping row %d and %d\n", i, maxI);
-		// for(int j=i+zeroColumns+1; j<C[i].size(); j++)
-			// C[i][j] /= C[i][i+zeroColumns];
-		// C[i][i+zeroColumns] = 1.0;
 		for(uint j=i+1; j<C.size(); j++) {
 			// if(j==i) continue;
 			boost::rational<long long> scale =  C[j][i+zeroColumns] / C[i][i+zeroColumns];
