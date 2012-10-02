@@ -3,6 +3,7 @@
 #include "LRSpline/Profiler.h"
 #include "LRSpline/Meshline.h"
 #include <algorithm>
+#include <set>
 
 namespace LR {
 
@@ -43,6 +44,17 @@ Basisfunction::~Basisfunction() {
 	delete[] controlpoint_;
 }
 
+Go::Point Basisfunction::getGrevilleParameter() const {
+	Go::Point ans(2);
+	ans *= 0;
+	for(int i=1; i<order_u_; i++)
+		ans[0] += knot_u_[i];
+	for(int i=1; i<order_v_; i++)
+		ans[1] += knot_v_[i];
+	ans[0] /= (order_u_-1);
+	ans[1] /= (order_v_-1);
+	return ans;
+}
 
 double Basisfunction::grevilleParameter(int index, int order, std::vector<double> knot) const
 {
@@ -276,6 +288,35 @@ void Basisfunction::removePartialLine(Meshline *m) {
 			return;
 		}
 	}
+}
+
+std::vector<Element*> Basisfunction::getExtendedSupport() {
+	std::set<Element*> ans ;
+
+	Element *e;
+	Basisfunction *b;
+	std::vector<Element*>::iterator eit1, eit2;
+	std::vector<Basisfunction*>::iterator bit;
+	for(eit1=support_.begin(); eit1!=support_.end(); eit1++) {
+		e = *eit1;
+		for(bit=e->supportBegin(); bit!=e->supportEnd(); bit++) {
+			b = *bit;
+			for(eit2=b->supportedElementBegin(); eit2!=b->supportedElementEnd(); eit2++)
+				ans.insert(*eit2);
+
+		}
+	}
+	std::vector<Element*> ans_vector(ans.size());
+	std::copy(ans.begin(), ans.end(), ans_vector.begin());
+	return ans_vector;
+}
+
+void Basisfunction::setDimension(int dim) {
+	if(controlpoint_) delete[] controlpoint_;
+	controlpoint_ = new double[dim];
+	for(int i=0; i<dim; i++)
+		controlpoint_[i]  = 0.0;
+	dim_ = dim;
 }
 
 bool Basisfunction::operator==(const Basisfunction &other) const {

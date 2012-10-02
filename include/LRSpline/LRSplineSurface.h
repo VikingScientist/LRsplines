@@ -82,16 +82,19 @@ public:
 	double nElements()            const                { return element_.size(); };
 	double nMeshlines()           const                { return meshline_.size(); };
 
-	void set_dim(int dimvalue)                              {dim_ = dimvalue;};
+	void set_dim(int dimvalue)                         {dim_ = dimvalue;};
+	void rebuildDimension(int dimvalue) ;
 
 
-	std::vector<Element*>::iterator elementBegin()     { return element_.begin(); };
-	std::vector<Element*>::iterator elementEnd()       { return element_.end(); };
-	std::vector<Basisfunction*>::iterator basisBegin() { return basis_.begin(); };
-	std::vector<Basisfunction*>::iterator basisEnd()   { return basis_.end(); };
-	Element* getElement(int i)                         { return element_[i]; };
-	Basisfunction* getBasisfunction(int i)             { return basis_[i]; };
-	std::vector<Basisfunction*> getAllBasisfunctions() { return basis_ ;};
+	std::vector<Element*>::iterator elementBegin()                 { return element_.begin(); };
+	std::vector<Element*>::iterator elementEnd()                   { return element_.end(); };
+	std::vector<Basisfunction*>::iterator basisBegin()             { return basis_.begin(); };
+	std::vector<Basisfunction*>::iterator basisEnd()               { return basis_.end(); };
+	std::vector<Basisfunction*>::const_iterator basisBegin() const { return basis_.begin(); };
+	std::vector<Basisfunction*>::const_iterator basisEnd()   const { return basis_.end(); };
+	Element* getElement(int i)                                     { return element_[i]; };
+	Basisfunction* getBasisfunction(int i)                         { return basis_[i]; };
+	std::vector<Basisfunction*> getAllBasisfunctions()             { return basis_ ;};
 	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;
 
 	

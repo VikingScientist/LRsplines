@@ -1034,6 +1034,12 @@ void LRSplineSurface::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunction
 	}
 }
 
+void LRSplineSurface::rebuildDimension(int dimvalue) {
+	for(uint i=0; i<basis_.size(); i++) 
+		basis_[i]->setDimension(dimvalue);
+	dim_ = dimvalue;
+}
+
 void LRSplineSurface::getGlobalKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const {
 	getGlobalUniqueKnotVector(knot_u, knot_v);
 

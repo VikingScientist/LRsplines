@@ -3,7 +3,6 @@
 
 #include <GoTools/utils/Point.h>
 #include <GoTools/geometry/Streamable.h>
-#include <vector>
 
 namespace LR {
 
@@ -46,6 +45,8 @@ public:
 	std::vector<Meshline*>::iterator partialLineBegin() ;
 	std::vector<Meshline*>::iterator partialLineEnd() ;
 
+	std::vector<Element*> getExtendedSupport() ;
+
 	void inheritPartialLine(Basisfunction *f);
 	void removePartialLine(Meshline *m);
 
@@ -53,6 +54,7 @@ public:
 	void addPartialLine(Meshline *line);
 	void getControlPoint(Go::Point &pt) const;
 	void setId(int id)  { this->id_ = id; };
+	void setDimension(int dim)  ;
 	int getId() const   { return id_; };
 	int nSupportedElements() { return support_.size(); };
 	int nPartialLines() { return partial_line_.size(); };
@@ -64,6 +66,7 @@ public:
 	double *getknots_u() const {return knot_u_; };
 	int order_v() const { return order_v_; };
 	double *getknots_v() const {return knot_v_; };
+	Go::Point getGrevilleParameter() const;
         double grevilleParameter(int index, int order, std::vector<double> knot) const;
         void test(int index, int order, std::vector<double> knot){std::cout << "test" <<std::endl;};
 	// IO-functions
