@@ -875,47 +875,61 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 	newline = new Meshline(!const_u, const_par, start, stop, multiplicity);
 	newline->type_ = NEWLINE;
 	for(uint i=0; i<meshline_.size(); i++) {
+		// if newline overlaps any existing ones (may be multiple existing ones)
+		// let newline be the entire length of all merged and delete the unused ones
+
 		if(meshline_[i]->is_spanning_u() != const_u && MY_STUPID_FABS(meshline_[i]->const_par_-const_par)<DOUBLE_TOL && 
-		   meshline_[i]->start_ <= stop && meshline_[i]->stop_ >= start)  {
-			// if newline overlaps any existing ones (may be multiple existing ones)
-			// let newline be the entire length of all merged and delete the unused ones
+		   meshline_[i]->start_ <= stop && meshline_[i]->stop_ >= start)  { // meshline_[i] overlaps with newline
+
 			if(meshline_[i]->start_ <= start && 
-			   meshline_[i]->stop_  >= stop ) {
-				if(meshline_[i]->multiplicity_ != newline->multiplicity_) {
+			   meshline_[i]->stop_  >= stop ) { // newline completely contained in meshline_[i]
+			   
+				if(meshline_[i]->multiplicity_ < newline->multiplicity_) { // increasing multiplicity
 					if(meshline_[i]->start_ == start && 
-					   meshline_[i]->stop_  == stop ) {
-						meshline_[i]->multiplicity_ = multiplicity; // this is just to avoid hitting the if-bracket below. meshline_[i] deleted later anyway
-					} else {
-						std::cerr << "ERROR: LRSplineSurface::insert_line() trying to increase multiplicity of partial line\n";
-						std::cerr << "       requested line: " << *newline      << std::endl;
-						std::cerr << "       old line      : " << *meshline_[i] << std::endl;
-						exit(12459032);
+					   meshline_[i]->stop_  == stop ) { // increasing the mult of the entire line
+
+						// keeping newline, getting rid of the old line
+						delete meshline_[i];
+						meshline_.erase(meshline_.begin() + i);
+						i--;
+
+					} else { // increasing multiplicity of partial line 
+						// do nothing. Keep the entire length meshline_[i], and add newline
+
 					}
 
 				} else { // line exist already, do nothing
 					delete newline;
 					return meshline_[i];
 				}
-			}
-			if(newline->type_ == ELONGATION)   // overlaps two existing lines => MERGING
-				newline->type_ = MERGING;
-			else if(newline->type_ != MERGING) // overlaps one existing line => ELONGATION
-				newline->type_ = ELONGATION;
-			if(meshline_[i]->start_ < start) newline->start_ = meshline_[i]->start_;
-			if(meshline_[i]->stop_  > stop ) newline->stop_  = meshline_[i]->stop_;
-			if(meshline_[i]->multiplicity_ != newline->multiplicity_) {
-				/***** Isotropic refinement gets this error all the time, but no worries ****
+			} else { // newline overlaps meshline_[i]. Keep (and update) newline, delete meshline_[i]
 
-				std::cerr << "ERROR: LRSplineSurface::insert_const_u_edge() trying to merge lines of different multiplicity\n";
-				std::cerr << "       requested line: " << *newline      << std::endl;
-				std::cerr << "       old line      : " << *meshline_[i] << std::endl;
-				exit(984332);
-				******************************************************************************/
-				newline->multiplicity_ = meshline_[i]->multiplicity_;
+				// update refinement type (for later analysis of linear independence)
+				if(newline->type_ == ELONGATION)   // overlaps two existing lines => MERGING
+					newline->type_ = MERGING;
+				else if(newline->type_ != MERGING) // overlaps one existing line => ELONGATION
+					newline->type_ = ELONGATION;
+
+				// update the length of the line with the lowest multiplicity
+				if(meshline_[i]->multiplicity_ < newline->multiplicity_) {
+					if(meshline_[i]->start_ > start) meshline_[i]->start_ = newline->start_;
+					if(meshline_[i]->stop_  < stop ) meshline_[i]->stop_  = newline->stop_;
+
+				} else if(meshline_[i]->multiplicity_ > newline->multiplicity_) {
+					if(meshline_[i]->start_ < start) newline->start_ = meshline_[i]->start_;
+					if(meshline_[i]->stop_  > stop ) newline->stop_  = meshline_[i]->stop_;
+
+				} else { // for equal mult, we only keep newline and remove the previous line
+					if(meshline_[i]->start_ < start) newline->start_ = meshline_[i]->start_;
+					if(meshline_[i]->stop_  > stop ) newline->stop_  = meshline_[i]->stop_;
+
+					// keeping newline, getting rid of the old line
+					delete meshline_[i];
+					meshline_.erase(meshline_.begin() + i);
+					i--;
+				} 
+
 			}
-			delete meshline_[i];
-			meshline_.erase(meshline_.begin() + i);
-			i--;
 		}
 	}
 	}
