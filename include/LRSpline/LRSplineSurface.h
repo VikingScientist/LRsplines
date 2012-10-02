@@ -29,6 +29,8 @@ public:
 	LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v, double *coef, int dim, bool rational=false);
 	~LRSplineSurface();
 
+	LRSplineSurface &operator=(LRSplineSurface& copythis);
+	LRSplineSurface* copy();
 	// surface evaluation
 	virtual void point(Go::Point &pt, double u, double v, int iEl=-1) const;
 	virtual void point(std::vector<Go::Point> &pts, double upar, double vpar, int derivs, int iEl=-1) const;
@@ -67,6 +69,7 @@ public:
 	// common get methods
 	void getGlobalKnotVector      (std::vector<double> &knot_u, std::vector<double> &knot_v) const;
 	void getGlobalUniqueKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const;
+	//void change_coefs(std::vector<double> coefs);
 	virtual double startparam_u() const                { return start_u_; };
 	virtual double startparam_v() const                { return start_v_; };
 	virtual double endparam_u()   const                { return end_u_; };
@@ -74,17 +77,25 @@ public:
 	virtual int dimension()       const                { return dim_; };
 	int order_u()                 const                { return order_u_; };
 	int order_v()                 const                { return order_v_; };
+	bool rational()               const                { return rational_; };
 	double nBasisFunctions()      const                { return basis_.size(); };
 	double nElements()            const                { return element_.size(); };
 	double nMeshlines()           const                { return meshline_.size(); };
+
+	void set_dim(int dimvalue)                              {dim_ = dimvalue;};
+
+
 	std::vector<Element*>::iterator elementBegin()     { return element_.begin(); };
 	std::vector<Element*>::iterator elementEnd()       { return element_.end(); };
 	std::vector<Basisfunction*>::iterator basisBegin() { return basis_.begin(); };
 	std::vector<Basisfunction*>::iterator basisEnd()   { return basis_.end(); };
 	Element* getElement(int i)                         { return element_[i]; };
 	Basisfunction* getBasisfunction(int i)             { return basis_[i]; };
-
+	std::vector<Basisfunction*> getAllBasisfunctions() { return basis_ ;};
 	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;
+
+	
+	
 
 	// input output methods
 	virtual void read(std::istream &is);

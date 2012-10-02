@@ -90,6 +90,7 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 		updateSupport(basis_[i]);
 }
 
+
 LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v, double *coef, int dim, bool rational) {
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
@@ -150,19 +151,88 @@ LRSplineSurface::~LRSplineSurface() {
 		delete element_[i];
 }
 
+
+LRSplineSurface* LRSplineSurface::copy()
+	  {
+	    LRSplineSurface *returnvalue = new LR::LRSplineSurface();
+	    
+	    for(int i = 0; i< this->nBasisFunctions();i++)
+	      {returnvalue -> basis_.push_back(this->basis_[i]->copy());}
+	    
+	    for(int i = 0; i < this->nElements();i++)
+	      {returnvalue -> element_.push_back(this->element_[i]->copy());}
+	    
+	    for(int i = 0; i < this->nMeshlines();i++)
+	      {returnvalue -> meshline_.push_back(this-> meshline_[i]->copy());}
+	    
+	    returnvalue->rational_= this->rational_;
+	    returnvalue->dim_ = this->dim_;
+	    returnvalue->order_u_ = this->order_u_;
+	    returnvalue->order_v_ = this->order_v_;
+	    returnvalue->start_u_ = this->start_u_;
+	    returnvalue->start_v_ = this->start_v_;
+	    returnvalue->end_u_ = this->end_u_;
+	    returnvalue->end_v_ = this->end_v_;
+	    
+	    for(int i = 0; i< this->nBasisFunctions();i++)
+	      {returnvalue -> updateSupport(returnvalue->basis_[i]);}
+	    
+	    return returnvalue;
+	  }
+
+LRSplineSurface& LRSplineSurface::operator=( LRSplineSurface &copythis)
+	  {
+	    //cout << "dfghjn";
+	    //rational_= get_rational_value();
+	    // evtl. geht auch:
+	    // rational_ = copythis->rational_;   oder?  rational_ = copythis.rational_;
+	    // mit this
+	    // this->rational_ = copythis->rational_;
+	    // das gleiche fuer alle variablen von interesse ....
+	    //basis_=get_basis();
+	    //basis_= copythis.basis_;
+
+	    this->basis_= copythis.basis_;
+	    this->rational_= copythis.rational_;
+	    
+	    this->meshline_= copythis.meshline_;
+	    this->element_ = copythis.element_;
+	    this->dim_ = copythis.dim_;
+	    this->order_u_ = copythis.order_u_;
+	    this->order_v_ = copythis.order_v_;
+	    this->start_u_ = copythis.start_u_;
+	    this->start_v_ = copythis.start_v_;
+	    this->end_u_ = copythis.end_u_;
+	    this->end_v_ = copythis.end_v_;
+
+
+
+	    return *this;
+	  }
+
+  //void LRSplineSurface::change_coefs(std::vector<double> coefs){
+
+  //}
+
+
+
 void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl) const {
 	Go::Point cp;
 	double basis_ev;
+
 	pt.resize(dim_);
 	pt.setValue(0.0);
 	if(iEl == -1)
 		iEl = getElementContaining(u,v);
 	std::vector<Basisfunction*>::const_iterator it;
+	
 	for(it=element_[iEl]->supportBegin(); it<element_[iEl]->supportEnd(); it++) {
-		(**it).getControlPoint(cp);
+	  (**it).getControlPoint(cp);
+	
 		basis_ev = (**it).evaluate(u,v, u!=end_u_, v!=end_v_);
 		pt += basis_ev*cp;
 	}
+	
 }
 
 void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int derivs, int iEl) const {
@@ -199,9 +269,13 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
 	result.prepareDerivs(param_u, param_v, 0, -1, (itStop-itStart));
+
 	int i=0;
+	//element_[i]->write(std::cout);
+	
 	for(it=itStart; it!=itStop; it++, i++) {
 		(*it)->evaluate(values, param_u, param_v, 2, param_u!=end_u_, param_v!=end_v_);
+	
 		result.basisValues[i]    = values[0];
 		result.basisDerivs_u[i]  = values[1];
 		result.basisDerivs_v[i]  = values[2];
@@ -220,9 +294,11 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
 	result.prepareDerivs(param_u, param_v, 0, -1, (itStop-itStart));
+	
 	int i=0;
 	for(it=itStart; it!=itStop; it++, i++) {
 		(*it)->evaluate(values, param_u, param_v, 1, param_u!=end_u_, param_v!=end_v_);
+		
 		result.basisValues[i]   = values[0];
 		result.basisDerivs_u[i] = values[1];
 		result.basisDerivs_v[i] = values[2];
@@ -234,6 +310,7 @@ void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsS
 	std::vector<Basisfunction*>::const_iterator it, itStop, itStart;
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
+
 	result.preparePts(param_u, param_v, 0, -1, (itStop-itStart));
 	int i=0;
 	for(it=itStart; it!=itStop; it++, i++)
@@ -250,10 +327,14 @@ void LRSplineSurface::computeBasis (double param_u,
 	std::vector<Basisfunction*>::const_iterator it, itStop, itStart;
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
+
 	result.resize(itStop - itStart);
 	int i=0;
 	for(it=itStart; it!=itStop; it++, i++)
-		(*it)->evaluate(result[i], param_u, param_v, derivs, param_u!=end_u_, param_v!=end_v_);
+	  {	
+	    (*it)->evaluate(result[i], param_u, param_v, derivs, param_u!=end_u_, param_v!=end_v_);
+	    
+	  }
 }
 
 int LRSplineSurface::getElementContaining(double u, double v) const {

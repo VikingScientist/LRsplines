@@ -15,6 +15,7 @@ public:
 	Meshline();
 	Meshline(bool span_u_line, double const_par, double start, double stop, int multiplicity);
 	~Meshline();
+	Meshline* copy();
 
 	bool containedIn(Basisfunction *basis) const;
 	bool splits(Basisfunction *basis) const;

@@ -17,7 +17,7 @@ public:
 	void removeSupportFunction(Basisfunction *f);
 	void addSupportFunction(Basisfunction *f);
 	Element *split(bool split_u, double par_value);
-	
+	Element* copy();
 	// get/set methods
 	double umin() const         { return start_u_; };
 	double vmin() const         { return start_v_; };

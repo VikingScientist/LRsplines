@@ -31,6 +31,21 @@ Meshline::~Meshline() {
 */
 }
 
+
+Meshline* Meshline::copy()
+	  {
+	    Meshline *returnvalue = new Meshline();
+	    
+	    returnvalue->span_u_line_= this->span_u_line_;
+	    returnvalue->const_par_= this->const_par_;
+	    returnvalue->start_= this->start_;
+	    returnvalue->stop_= this->stop_;
+	    returnvalue->multiplicity_= this->multiplicity_;
+	    return returnvalue;
+	  }
+
+
+
 void Meshline::addPartialTouch(Basisfunction *basis) {
 	// touching_Basisfunction.push_back(basis);
 }

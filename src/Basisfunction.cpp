@@ -43,6 +43,17 @@ Basisfunction::~Basisfunction() {
 	delete[] controlpoint_;
 }
 
+
+double Basisfunction::grevilleParameter(int index, int order, std::vector<double> knot) const
+{
+   double greville = 0.0;
+   for (int i = 1; i < order; ++i)
+      greville += knot[index+i];
+
+   return greville/(order - 1);
+}
+
+
 void Basisfunction::evaluate(std::vector<double> &results, double u, double v, int derivs, bool u_from_right, bool v_from_right) const {
 	results.resize((derivs+1)*(derivs+2)/2);
 	fill(results.begin(), results.end(), 0);
@@ -283,6 +294,48 @@ void Basisfunction::operator+=(const Basisfunction &other) {
 		controlpoint_[i] = (controlpoint_[i]*weight_ + other.controlpoint_[i]*other.weight_)/newWeight;
 	weight_ = newWeight;
 }
+
+Basisfunction* Basisfunction::copy()
+	  {
+	    Basisfunction *returnvalue = new Basisfunction(this->knot_u_, this->knot_v_, this->controlpoint_,this->dim_,this->order_u_,this->order_v_,this->weight_);
+
+	   
+	    returnvalue->id_ = this->id_;
+	    returnvalue->order_ = this->order_;
+	    returnvalue->knots_ = this->knots_;
+	    
+
+	    /*
+	    for(int i=0;i<support_.size(); i++)
+	      {
+		returnvalue -> support_.push_back(this->support_[i]->copy());
+	      }
+	    */
+
+	    //loop
+	    //returnvalue->knots_ = this->knots_;
+
+	    //loop
+	    /*
+	    returnvalue->dim_ = this->dim_;
+	    returnvalue->order_u_ = this->order_u_;
+	    returnvalue->order_v_ = this->order_v_;
+	    returnvalue->weight_ = this->weight_;
+	    returnvalue->knot_u_ = this->knot_u_;
+	    returnvalue->knot_v_ = this->knot_v_;
+	    returnvalue->controlpoint_ = this->controlpoint_;
+	    */
+	    //std::vector<double> knots_;
+	    return returnvalue;
+	    
+	  }
+
+
+
+
+
+
+
 
 // convenience macro for reading formated input
 #define ASSERT_NEXT_CHAR(c) {ws(is); nextChar = is.get(); if(nextChar!=c) { std::cerr << "Error parsing basis function\n"; exit(324); } ws(is); }

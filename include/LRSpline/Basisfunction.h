@@ -30,6 +30,7 @@ public:
 	Basisfunction(int dim, int order_u, int order_v);
 	Basisfunction(const double *knot_u, const double *knot_v, double *controlpoint, int dim, int order_u, int order_v, double weight=1.0);
 	~Basisfunction();
+	Basisfunction* copy();
 
 	double evaluate(double u, double v, bool u_from_right=true, bool v_from_right=true) const;
 	void evaluate(std::vector<double> &results, double u, double v, int derivs, bool u_from_right=true, bool v_from_right=true) const;
@@ -59,12 +60,18 @@ public:
 	double umax() const { return knot_u_[order_u_]; };
 	double vmin() const { return knot_v_[0];        };
 	double vmax() const { return knot_v_[order_v_]; };
-
+	int order_u() const { return order_u_; };
+	double *getknots_u() const {return knot_u_; };
+	int order_v() const { return order_v_; };
+	double *getknots_v() const {return knot_v_; };
+        double grevilleParameter(int index, int order, std::vector<double> knot) const;
+        void test(int index, int order, std::vector<double> knot){std::cout << "test" <<std::endl;};
 	// IO-functions
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
 
 // private:
+
 	double *knot_u_;
 	double *knot_v_;
 	double *controlpoint_;
@@ -75,6 +82,8 @@ public:
 	std::vector<Element*> support_;
 	std::vector<Meshline*> partial_line_;
 	int id_;
+	int order_;
+	std::vector<double> knots_;
 
 };
 
