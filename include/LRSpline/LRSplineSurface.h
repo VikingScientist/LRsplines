@@ -51,14 +51,14 @@ public:
 	void refineBasisFunctions(std::vector<int> indices, int multiplicity=1);
 	void refineElement(int index, int multiplicity=1, bool minimum_span=false);
 	void refineElement(std::vector<int> indices, int multiplicity=1, bool minimum_span=false, bool isotropic=false);
-	void refine(std::vector<int> sorted_list, double beta, int multiplicity=1, enum refinementStrategy strat=LR_SAFE, int symmetry=1);
-	void regularize(int multiplicity=1);
+	void refine(std::vector<int> sorted_list, double beta, int multiplicity=1, enum refinementStrategy strat=LR_SAFE, int symmetry=1, std::vector<Meshline*>* newLines=NULL);
+	void regularize(int multiplicity=1, std::vector<Meshline*>* newLines=NULL);
 	void setMaxTjoints(int n);
 	void setMaxAspectRatio(double ratio, int multiplicity=1, bool minimum_span=false);
 
 	// (private) refinement functions
-	void insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
-	void insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
+	Meshline* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
+	Meshline* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
 	void updateSupport(Basisfunction *f) ;
 	void updateSupport(Basisfunction *f,
@@ -79,9 +79,9 @@ public:
 	int order_u()                 const                { return order_u_; };
 	int order_v()                 const                { return order_v_; };
 	bool rational()               const                { return rational_; };
-	double nBasisFunctions()      const                { return basis_.size(); };
-	double nElements()            const                { return element_.size(); };
-	double nMeshlines()           const                { return meshline_.size(); };
+	int nBasisFunctions()         const                { return basis_.size(); };
+	int nElements()               const                { return element_.size(); };
+	int nMeshlines()              const                { return meshline_.size(); };
 
 	void set_dim(int dimvalue)                         {dim_ = dimvalue;};
 	void rebuildDimension(int dimvalue) ;
@@ -99,8 +99,6 @@ public:
 	Basisfunction* getBasisfunction(int i)                         { return basis_[i]; };
 	std::vector<Basisfunction*> getAllBasisfunctions()             { return basis_ ;};
 	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;
-
-	
 	
 
 	// input output methods
@@ -114,7 +112,7 @@ public:
 
 private:
 	int split(bool insert_in_u, int function_index, double new_knot, int multiplicity=1);
-	void insert_line(bool const_u, double const_par, double start, double stop, int multiplicity);
+	Meshline* insert_line(bool const_u, double const_par, double start, double stop, int multiplicity);
 	
 	bool rational_;
 	std::vector<Basisfunction*> basis_;

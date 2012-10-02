@@ -6,6 +6,13 @@
 
 namespace LR {
 
+enum meshlineExtension {
+	ELONGATION,
+	MERGING,
+	NEWLINE,
+	INITIAL
+};
+
 class Basisfunction;
 class Element;
 
@@ -32,6 +39,7 @@ public:
 
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
+	virtual void writeMore(std::ostream &os) const;
 
 // private:
 	bool span_u_line_;
@@ -40,6 +48,9 @@ public:
 	double stop_;
 	int multiplicity_;
 	std::vector<Basisfunction*> touching_Basisfunction;
+
+// even more private (only used for linear independence testing)
+	enum meshlineExtension type_;
 
 };
 

@@ -14,6 +14,7 @@ Meshline::Meshline() {
 	start_        = 0;
 	stop_         = 0;
 	multiplicity_ = 0;
+	type_         = INITIAL;
 }
 
 Meshline::Meshline(bool span_u_line, double const_par, double start, double stop, int multiplicity) {
@@ -22,6 +23,7 @@ Meshline::Meshline(bool span_u_line, double const_par, double start, double stop
 	start_        =  start         ;
 	stop_         =  stop          ;
 	multiplicity_ =  multiplicity  ;
+	type_         =  INITIAL       ;
 }
 
 Meshline::~Meshline() {
@@ -32,17 +34,17 @@ Meshline::~Meshline() {
 }
 
 
-Meshline* Meshline::copy()
-	  {
-	    Meshline *returnvalue = new Meshline();
-	    
-	    returnvalue->span_u_line_= this->span_u_line_;
-	    returnvalue->const_par_= this->const_par_;
-	    returnvalue->start_= this->start_;
-	    returnvalue->stop_= this->stop_;
-	    returnvalue->multiplicity_= this->multiplicity_;
-	    return returnvalue;
-	  }
+Meshline* Meshline::copy() {
+	 Meshline *returnvalue     = new Meshline();
+	 
+	 returnvalue->span_u_line_ = this->span_u_line_;
+	 returnvalue->const_par_   = this->const_par_;
+	 returnvalue->start_       = this->start_;
+	 returnvalue->stop_        = this->stop_;
+	 returnvalue->multiplicity_= this->multiplicity_;
+	 returnvalue->type_        = this->type_;
+	 return returnvalue;
+}
 
 
 
@@ -179,6 +181,21 @@ void Meshline::write(std::ostream &os) const {
 		os <<  "[" << start_ << ", " << stop_ << "] x " << const_par_ << " (" << multiplicity_ << ")";
 	else // span-v line
 		os << const_par_ << " x [" << start_ << ", " << stop_ << "] (" << multiplicity_ << ")";
+}
+
+void Meshline::writeMore(std::ostream &os) const {
+	if(span_u_line_) 
+		os <<  "[" << start_ << ", " << stop_ << "] x " << const_par_ << " (" << multiplicity_ << ")";
+	else // span-v line
+		os << const_par_ << " x [" << start_ << ", " << stop_ << "] (" << multiplicity_ << ")";
+	if(type_ == INITIAL)
+		os << " INITIAL";
+	else if(type_ == NEWLINE)
+		os << " NEWLINE";
+	else if(type_ == MERGING)
+		os << " MERGING";
+	else if(type_ == ELONGATION)
+		os << " ELONGATION";
 }
 
 #undef MY_STUPID_FABS

@@ -153,32 +153,32 @@ LRSplineSurface::~LRSplineSurface() {
 
 
 LRSplineSurface* LRSplineSurface::copy()
-	  {
-	    LRSplineSurface *returnvalue = new LR::LRSplineSurface();
-	    
-	    for(int i = 0; i< this->nBasisFunctions();i++)
-	      {returnvalue -> basis_.push_back(this->basis_[i]->copy());}
-	    
-	    for(int i = 0; i < this->nElements();i++)
-	      {returnvalue -> element_.push_back(this->element_[i]->copy());}
-	    
-	    for(int i = 0; i < this->nMeshlines();i++)
-	      {returnvalue -> meshline_.push_back(this-> meshline_[i]->copy());}
-	    
-	    returnvalue->rational_= this->rational_;
-	    returnvalue->dim_ = this->dim_;
-	    returnvalue->order_u_ = this->order_u_;
-	    returnvalue->order_v_ = this->order_v_;
-	    returnvalue->start_u_ = this->start_u_;
-	    returnvalue->start_v_ = this->start_v_;
-	    returnvalue->end_u_ = this->end_u_;
-	    returnvalue->end_v_ = this->end_v_;
-	    
-	    for(int i = 0; i< this->nBasisFunctions();i++)
-	      {returnvalue -> updateSupport(returnvalue->basis_[i]);}
-	    
-	    return returnvalue;
-	  }
+{
+	LRSplineSurface *returnvalue = new LR::LRSplineSurface();
+	
+	for(int i = 0; i< this->nBasisFunctions();i++)
+		{returnvalue -> basis_.push_back(this->basis_[i]->copy());}
+	
+	for(int i = 0; i < this->nElements();i++)
+		{returnvalue -> element_.push_back(this->element_[i]->copy());}
+	
+	for(int i = 0; i < this->nMeshlines();i++)
+		{returnvalue -> meshline_.push_back(this-> meshline_[i]->copy());}
+	
+	returnvalue->rational_= this->rational_;
+	returnvalue->dim_     = this->dim_;
+	returnvalue->order_u_ = this->order_u_;
+	returnvalue->order_v_ = this->order_v_;
+	returnvalue->start_u_ = this->start_u_;
+	returnvalue->start_v_ = this->start_v_;
+	returnvalue->end_u_   = this->end_u_;
+	returnvalue->end_v_   = this->end_v_;
+	
+	for(int i = 0; i< this->nBasisFunctions();i++)
+		{returnvalue -> updateSupport(returnvalue->basis_[i]);}
+	
+	return returnvalue;
+}
 
 LRSplineSurface& LRSplineSurface::operator=( LRSplineSurface &copythis)
 	  {
@@ -542,7 +542,7 @@ void LRSplineSurface::refineElement(std::vector<int> index, int multiplicity, bo
 	// setMaxAspectRatio(2.0, multiplicity);
 }
 
-void LRSplineSurface::refine(std::vector<int> sorted_list, double beta, int multiplicity, enum refinementStrategy strat, int symmetry) {
+void LRSplineSurface::refine(std::vector<int> sorted_list, double beta, int multiplicity, enum refinementStrategy strat, int symmetry, std::vector<Meshline*>* newLines) {
 	// span-u lines
 	std::vector<std::vector<double> > start_u;
 	std::vector<std::vector<double> > stop_u ;
@@ -704,22 +704,36 @@ void LRSplineSurface::refine(std::vector<int> sorted_list, double beta, int mult
 
 	uint target_n_functions = ceil(basis_.size()*(1+beta));
 	uint i=0;
+	Meshline *m;
+	if(newLines != NULL)
+		newLines->clear();
 	while( (basis_.size() < target_n_functions || i%symmetry != 0) && i < start_u.size() ) {
-		for(uint j=0; j<start_v[i].size(); j++)
-			this->insert_const_u_edge(mid_u[i][j], start_v[i][j], stop_v[i][j], multiplicity);
-		for(uint j=0; j<start_u[i].size(); j++)
-			this->insert_const_v_edge(mid_v[i][j], start_u[i][j], stop_u[i][j], multiplicity);
+		for(uint j=0; j<start_v[i].size(); j++) {
+			m = this->insert_const_u_edge(mid_u[i][j], start_v[i][j], stop_v[i][j], multiplicity);
+			if(newLines != NULL)
+				newLines->push_back(m->copy());
+		}
+		for(uint j=0; j<start_u[i].size(); j++) {
+			m = this->insert_const_v_edge(mid_v[i][j], start_u[i][j], stop_u[i][j], multiplicity);
+			if(newLines != NULL)
+				newLines->push_back(m->copy());
+		}
 		i++;
 	}
+	std::vector<Meshline*> *regularizedLines = NULL;
+	if(newLines != NULL) 
+		regularizedLines = new std::vector<Meshline*>();
 	uint nFunc;
 	do {
 		nFunc = basis_.size();
-		this->regularize(multiplicity);
+		this->regularize(multiplicity, regularizedLines);
 	} while(nFunc != basis_.size());
+	if(newLines != NULL)
+		newLines->insert(newLines->end(), regularizedLines->begin(), regularizedLines->end());
 
 }
 
-void LRSplineSurface::regularize(int multiplicity) {
+void LRSplineSurface::regularize(int multiplicity, std::vector<Meshline*>* newLines) {
 	std::vector<double>  start_v;
 	std::vector<double>  stop_v ;
 	std::vector<double>  const_u  ;
@@ -766,10 +780,19 @@ void LRSplineSurface::regularize(int multiplicity) {
 					stop_v.push_back(vmax);
 				}
 	}
-	for(uint i=0; i<const_u.size(); i++)
-		insert_const_u_edge(const_u[i], start_v[i], stop_v[i], multiplicity);
-	for(uint i=0; i<const_v.size(); i++)
-		insert_const_v_edge(const_v[i], start_u[i], stop_u[i], multiplicity);
+	if(newLines != NULL)
+		newLines->clear();
+	Meshline* m;
+	for(uint i=0; i<const_u.size(); i++) {
+		m = insert_const_u_edge(const_u[i], start_v[i], stop_v[i], multiplicity);
+		if(newLines != NULL)
+			newLines->push_back(m->copy());
+	}
+	for(uint i=0; i<const_v.size(); i++) {
+		m = insert_const_v_edge(const_v[i], start_u[i], stop_u[i], multiplicity);
+		if(newLines != NULL)
+			newLines->push_back(m->copy());
+	}
 }
 
 void LRSplineSurface::setMaxTjoints(int n) {
@@ -788,11 +811,11 @@ void LRSplineSurface::setMaxAspectRatio(double ratio, int multiplicity, bool min
 	}
 }
 
-void LRSplineSurface::insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity) {
-	insert_line(true, u, start_v, stop_v, multiplicity);
+Meshline* LRSplineSurface::insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity) {
+	return insert_line(true, u, start_v, stop_v, multiplicity);
 }
 
-void LRSplineSurface::insert_line(bool const_u, double const_par, double start, double stop, int multiplicity) {
+Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double start, double stop, int multiplicity) {
 	Meshline *newline;
 #ifdef TIME_LRSPLINE
 	PROFILE("insert_line()");
@@ -802,6 +825,7 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 	PROFILE("line verification");
 #endif
 	newline = new Meshline(!const_u, const_par, start, stop, multiplicity);
+	newline->type_ = NEWLINE;
 	for(uint i=0; i<meshline_.size(); i++) {
 		if(meshline_[i]->is_spanning_u() != const_u && MY_STUPID_FABS(meshline_[i]->const_par_-const_par)<DOUBLE_TOL && 
 		   meshline_[i]->start_ <= stop && meshline_[i]->stop_ >= start)  {
@@ -822,9 +846,13 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 
 				} else { // line exist already, do nothing
 					delete newline;
-					return;
+					return meshline_[i];
 				}
 			}
+			if(newline->type_ == ELONGATION)   // overlaps two existing lines => MERGING
+				newline->type_ = MERGING;
+			else if(newline->type_ != MERGING) // overlaps one existing line => ELONGATION
+				newline->type_ = ELONGATION;
 			if(meshline_[i]->start_ < start) newline->start_ = meshline_[i]->start_;
 			if(meshline_[i]->stop_  > stop ) newline->stop_  = meshline_[i]->stop_;
 			if(meshline_[i]->multiplicity_ != newline->multiplicity_) {
@@ -899,10 +927,11 @@ void LRSplineSurface::insert_line(bool const_u, double const_par, double start, 
 		}
 	}
 	}
+	return newline;
 }
 
-void LRSplineSurface::insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity) {
-	insert_line(false, v, start_u, stop_u, multiplicity);
+Meshline* LRSplineSurface::insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity) {
+	return insert_line(false, v, start_u, stop_u, multiplicity);
 }
 
 int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot, int multiplicity) {
