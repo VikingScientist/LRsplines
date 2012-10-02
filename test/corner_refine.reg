@@ -1,0 +1,4 @@
+-p1 3 -p2 3 -n1 3 -n2 3 -knot1 0 0 0 243 243 243 -knot2 0 0 0 243 243 243 corner_refine.inp 
+
+  Linear independent :     OK
+    all assertions passed
