@@ -311,6 +311,35 @@ std::vector<Element*> Basisfunction::getExtendedSupport() {
 	return ans_vector;
 }
 
+std::vector<Element*> Basisfunction::getMinmalExtendedSupport() {
+	double min_du = 1e100;
+	double min_dv = 1e100;
+	Basisfunction *smallestGuy;
+
+	Element *e;
+	Basisfunction *b;
+	std::vector<Element*>::iterator it;
+	std::vector<Basisfunction*>::iterator bit;
+	for(it=support_.begin(); it!=support_.end(); it++) {
+		e = *it;
+		for(bit=e->supportBegin(); bit!=e->supportEnd(); bit++) {
+			b = *bit;
+			if( (b->umin() < this->umin() || b->umax() > this->umax()) && 
+			    (b->vmin() < this->vmin() || b->vmax() > this->vmax()) && 
+			    min_du >= b->umax()-b->umin() &&
+			    min_dv >= b->vmax()-b->vmin()  ) {
+
+				min_du = b->umax()-b->umin();
+				min_dv = b->vmax()-b->vmin();
+				smallestGuy = b;
+			}
+		}
+	}
+	std::set<Element*> results(b->nSupportedElements());
+	std::copy(b->supportedElementBegin(), b->supportedElementEnd(), results.begin());
+	return results;
+}
+
 void Basisfunction::setDimension(int dim) {
 	if(controlpoint_) delete[] controlpoint_;
 	controlpoint_ = new double[dim];
