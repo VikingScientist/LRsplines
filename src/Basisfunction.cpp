@@ -3,6 +3,7 @@
 #include "LRSpline/Profiler.h"
 #include "LRSpline/Meshline.h"
 #include <algorithm>
+#include <cfloat>
 #include <set>
 
 namespace LR {
@@ -312,14 +313,25 @@ std::vector<Element*> Basisfunction::getExtendedSupport() {
 }
 
 std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
-	double min_du = 1e100;
-	double min_dv = 1e100;
+	double min_du = DBL_MAX;
+	double min_dv = DBL_MAX;
 	Basisfunction *smallestGuy = NULL;
 
 	Element *e;
 	Basisfunction *b;
 	std::vector<Element*>::iterator it;
 	std::vector<Basisfunction*>::iterator bit;
+
+	bool edgeUmin = (knot_u_[0] == knot_u_[order_u_-1]);
+	bool edgeUmax = (knot_u_[1] == knot_u_[order_u_  ]);
+	bool edgeVmin = (knot_v_[0] == knot_v_[order_v_-1]);
+	bool edgeVmax = (knot_v_[1] == knot_v_[order_v_  ]);
+
+	if(! (edgeUmin || edgeUmax) )
+		min_du = umax() - umin();
+	if(! (edgeVmin || edgeVmax) )
+		min_dv = vmax() - vmin();
+
 	for(it=support_.begin(); it!=support_.end(); it++) {
 		e = *it;
 		for(bit=e->supportBegin(); bit!=e->supportEnd(); bit++) {
@@ -360,6 +372,7 @@ std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 			}
 		}
 	}
+
 	std::vector<Element*> results(smallestGuy->nSupportedElements());
 	std::copy(smallestGuy->supportedElementBegin(), smallestGuy->supportedElementEnd(), results.begin());
 	return results;
