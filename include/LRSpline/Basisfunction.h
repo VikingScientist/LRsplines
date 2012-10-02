@@ -10,14 +10,14 @@ namespace LR {
 // forms a 4bit binary mask where each bit corresponds to a side and corners have 2bits 'on'
 enum parameterEdge {
 NONE       = 0,
-WEST       = 1,
-EAST       = 2,
-SOUTH      = 8,
-NORTH      = 16,
-SOUTH_WEST = 9,
-SOUTH_EAST = 10,
-NORTH_WEST = 17,
-NORTH_EAST = 18};
+WEST       = 1,    // 0001
+EAST       = 2,    // 0010
+SOUTH      = 4,    // 0100
+NORTH      = 8,    // 1000
+SOUTH_WEST = 5,    // 0101
+SOUTH_EAST = 7,    // 0110
+NORTH_WEST = 9,    // 1001
+NORTH_EAST = 10};  // 1010
 
 typedef enum parameterEdge parameterEdge;
 

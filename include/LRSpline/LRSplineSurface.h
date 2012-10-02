@@ -106,15 +106,7 @@ public:
 	int nElements()               const                { return element_.size(); };
 	int nMeshlines()              const                { return meshline_.size(); };
 
-	// assorted specialized functions
-	void set_dim(int dimvalue)                         {dim_ = dimvalue;};
-	void rebuildDimension(int dimvalue) ;
-	double makeIntegerKnots();
-
-	void getDiagonalElements(      std::vector<int> &result) const ;
-	void getDiagonalBasisfunctions(std::vector<int> &result) const ;
-
-
+	// more get-methods
 	std::vector<Meshline*>::iterator meshlineBegin()               { return meshline_.begin(); };
 	std::vector<Meshline*>::iterator meshlineEnd()                 { return meshline_.end(); };
 	std::vector<Element*>::iterator elementBegin()                 { return element_.begin(); };
@@ -129,17 +121,32 @@ public:
 	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;
 	
 
+	// assorted specialized functions
+	void set_dim(int dimvalue)                         {dim_ = dimvalue;};
+	void rebuildDimension(int dimvalue) ;
+	double makeIntegerKnots();
+	void getDiagonalElements(      std::vector<int> &result) const ;
+	void getDiagonalBasisfunctions(std::vector<int> &result) const ;
+	void printElements(std::ostream &out) const;
+
+	// interpolate and approximate functions
+	void getLeastSquaresEdge(double (*f)(double, double),
+	                         parameterEdge edge,
+	                         std::vector<int> id,
+	                         std::vector<double> val) const;
+
 	// input output methods
+	virtual void read(std::istream &is);
+	virtual void write(std::ostream &os) const;
+
+	// print LR splines as eps-files
 	void setElementColor(double r, double g, double b) ;
 	void setBasisColor(double r, double g, double b) ;
 	void setSelectedBasisColor(double r, double g, double b) ;
-	virtual void read(std::istream &is);
-	virtual void write(std::ostream &os) const;
 	void writePostscriptMesh(std::ostream &out, bool close=true, std::vector<int> *colorElements=NULL) const;
 	void writePostscriptElements(std::ostream &out, int nu=2, int nv=2, bool close=true, std::vector<int> *colorElements=NULL) const;
 	void writePostscriptFunctionSpace(std::ostream &out, std::vector<int> *colorBasis=NULL, bool drawAll=true, bool close=true) const;
 	void writePostscriptMeshWithControlPoints(std::ostream &out, int nu=2, int nv=2) const ;
-	void printElements(std::ostream &out) const;
 
 private:
 	int split(bool insert_in_u, int function_index, double new_knot, int multiplicity=1);
