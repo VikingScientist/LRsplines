@@ -3,6 +3,7 @@
 #include "LRSpline/Meshline.h"
 #include "LRSpline/Element.h"
 #include "LRSpline/Profiler.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -2024,10 +2025,10 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, std::ve
 	double scale = (dx>dy) ? 1000.0/dx : 1000.0/dy;
 	// set the duplicate-knot-line (dkl) display width
 	double dkl_range = (min_span_u>min_span_v) ? min_span_v*scale/6.0 : min_span_u*scale/6.0; 
-	int xmin = (start_u_ - dx/100.0)*scale;
-	int ymin = (start_v_ - dy/100.0)*scale;
-	int xmax = (end_u_   + dx/100.0)*scale + dkl_range;
-	int ymax = (end_v_   + dy/100.0)*scale + dkl_range;
+	int xmin = (start_u_ - dx/30.0)*scale;
+	int ymin = (start_v_ - dy/30.0)*scale;
+	int xmax = (end_u_   + dx/30.0)*scale + dkl_range;
+	int ymax = (end_v_   + dy/30.0)*scale + dkl_range;
 
 	// print eps header
 	out << "%!PS-Adobe-3.0 EPSF-3.0\n";
@@ -2112,10 +2113,10 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 	double dy = y[1]-y[0];
 	double scale = (dx>dy) ? 1000.0/dx : 1000.0/dy;
 
-	int xmin = (x[0] - dx/50.0)*scale;
-	int ymin = (y[0] - dy/50.0)*scale;
-	int xmax = (x[1] + dx/50.0)*scale;
-	int ymax = (y[1] + dy/50.0)*scale;
+	int xmin = (x[0] - dx/20.0)*scale;
+	int ymin = (y[0] - dy/20.0)*scale;
+	int xmax = (x[1] + dx/20.0)*scale;
+	int ymax = (y[1] + dy/20.0)*scale;
 
 	// print eps header
 	out << "%!PS-Adobe-3.0 EPSF-3.0\n";
@@ -2285,16 +2286,39 @@ void LRSplineSurface::writePostscriptMeshWithControlPoints(std::ostream &out, in
 	out << "savematrix setmatrix\n";
 	out << "} def\n";
 
+	// load the font to use
+	out << "/Times-Roman findfont\n";
+	out << "24 scalefont\n";
+	out << "setfont\n";
+
 	for(uint i=0; i<basis_.size(); i++) {
 		double cp_x = basis_[i]->controlpoint_[0];
 		double cp_y = basis_[i]->controlpoint_[1];
+		// move C^{-1} text on internal functions
+		int textX   = (basis_[i]->knot_u_[1] == basis_[i]->knot_u_[order_u_]) ? -2 : 1;
+		int textY   = (basis_[i]->knot_v_[1] == basis_[i]->knot_v_[order_v_]) ? -2 : 1;
+		// move text on edge functions
+		if(basis_[i]->knot_u_[1] == end_u_)
+			textX = 1;
+		else if(basis_[i]->knot_u_[order_u_-1] == start_u_)
+			textX = -2;
+		if(basis_[i]->knot_v_[1] == end_v_)
+			textY = 1;
+		else if(basis_[i]->knot_v_[order_v_-1] == start_v_)
+			textY = -2;
 
+		out << "newpath\n";
 		out << "0.45 0.45 0.45 setrgbcolor \n";
 		out << cp_x*scale << " " << cp_y*scale << " " << circleSize << " " << circleSize << " 0 360 ellipse\n";
 		out << "closepath fill\n";
 		out << "0 setgray\n";
 		out << cp_x*scale << " " << cp_y*scale << " " << circleSize << " " << circleSize << " 0 360 ellipse\n";
 		out << "closepath stroke\n";
+		out << "\n";
+		out << "newpath\n";
+		out << cp_x*scale + textX*circleSize << " " << cp_y*scale + textY*circleSize << " moveto\n";
+		out << "(" << i << ") show\n";
+		out << "\n";
 	}
 	out << "%%EOF\n";
 }
@@ -2334,11 +2358,31 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 	out << "savematrix setmatrix\n";
 	out << "} def\n";
 
+	// load the font to use
+	out << "/Times-Roman findfont\n";
+	out << "24 scalefont\n";
+	out << "setfont\n";
+
 	for(uint i=0; i<basis_.size(); i++) {
 		double avg_u = 0;
 		double avg_v = 0;
 		double du    = basis_[i]->knot_u_[order_u_] - basis_[i]->knot_u_[0];
 		double dv    = basis_[i]->knot_v_[order_v_] - basis_[i]->knot_v_[0];
+
+		// move C^{-1} text on internal functions
+		double textOffset = 15.0;
+		int textX   = (basis_[i]->knot_u_[1] == basis_[i]->knot_u_[order_u_]) ? -2 : 1;
+		int textY   = (basis_[i]->knot_v_[1] == basis_[i]->knot_v_[order_v_]) ? -2 : 1;
+		// move text on edge functions
+		if(basis_[i]->knot_u_[1] == end_u_)
+			textX = 1;
+		else if(basis_[i]->knot_u_[order_u_-1] == start_u_)
+			textX = -2;
+		if(basis_[i]->knot_v_[1] == end_v_)
+			textY = 1;
+		else if(basis_[i]->knot_v_[order_v_-1] == start_v_)
+			textY = -2;
+
 		for(int j=1; j<order_u_; j++)
 			avg_u += basis_[i]->knot_u_[j];
 		for(int j=1; j<order_v_; j++)
@@ -2364,12 +2408,19 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 			out << "setrgbcolor \n";
 		}
 		if(drawAll || doColor) {
+			out << "newpath\n";
 			out << avg_u*scale << " " << avg_v*scale << " " << du*scaleSize << " " << dv*scaleSize << " 0 360 ellipse\n";
 			out << "closepath fill\n";
 			out << "0 setgray\n";
 			out << avg_u*scale << " " << avg_v*scale << " " << du*scaleSize << " " << dv*scaleSize << " 0 360 ellipse\n";
 			out << "closepath stroke\n";
 		}
+
+		out << "\n";
+		out << "newpath\n";
+		out << avg_u*scale + textX*textOffset << " " << avg_v*scale + textY*textOffset << " moveto\n";
+		out << "(" << i << ") show\n";
+		out << "\n";
 	}
 	if(close)
 		out << "%%EOF\n";
