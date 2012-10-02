@@ -3,6 +3,7 @@
 #include <string.h>
 #include <fstream>
 #include <GoTools/geometry/SplineSurface.h>
+#include <GoTools/geometry/ObjectHeader.h>
 #include "LRSpline/LRSplineSurface.h"
 #include "LRSpline/Profiler.h"
 #include "LRSpline/Element.h"
@@ -12,7 +13,9 @@ using namespace LR;
 using namespace std;
 
 int main(int argc, char **argv) {
+#ifdef TIME_LRSPLINE
 	Profiler prof(argv[0]);
+#endif
 
 	// set default parameter values
 	const double TOL = 1e-6;
@@ -21,12 +24,13 @@ int main(int argc, char **argv) {
 	int p2 = 3;
 	int n1 = 7;
 	int n2 = 7;
-	double *knot_u = NULL;
-	double *knot_v = NULL;
-	int dim = 4;
-	int nDiagonals = -1;
-	bool rat = false;
-	bool dumpFile = false;
+	double *knot_u      = NULL;
+	double *knot_v      = NULL;
+	int dim             = 4;
+	int nDiagonals      = -1;
+	bool rat            = false;
+	bool dumpFile       = false;
+	char *lrInitMesh    = NULL;
 	char *inputFileName = NULL;
 	string parameters(" parameters: \n" \
 	                  "   -p1    <n>  polynomial ORDER (degree+1) in first parametric direction\n" \
@@ -37,6 +41,7 @@ int main(int argc, char **argv) {
 	                  "   -knot2 <n>  space-seperated list of the second knot vector (must specify n2 and p2 first)\n"\
 	                  "   -dim   <n>  dimension of the controlpoints\n" \
 	                  "   -diag  <n>  override inputfile and run diagonal testcase\n"\
+	                  "   -in:   <s>  make the LRSplineSurface <s> the initial mesh\n"\
 	                  "   -dumpfile   writes an eps- and txt-file of the LR-mesh\n"\
 	                  "   -help       display (this) help screen\n"\
 	                  " <refine inputfile>\n"\
@@ -57,6 +62,8 @@ int main(int argc, char **argv) {
 			n2 = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-dim") == 0)
 			dim = atoi(argv[++i]);
+		else if(strncmp(argv[i], "-in:", 4) == 0)
+			lrInitMesh = argv[i]+4;
 		else if(strcmp(argv[i], "-diag") == 0)
 			nDiagonals = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-dumpfile") == 0)
@@ -130,46 +137,70 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	// make a uniform integer knot vector
-	if(knot_u == NULL) {
-		knot_u = new double[n1+p1];
-		for(int i=0; i<p1+n1; i++)
-			knot_u[i] = (i<p1) ? 0 : (i>n1) ? n1-p1+1 : i-p1+1;
-	}
-	if(knot_v == NULL) {
-		knot_v = new double[n2+p2];
-		for(int i=0; i<p2+n2; i++)
-			knot_v[i] = (i<p2) ? 0 : (i>n2) ? n2-p2+1 : i-p2+1;
-	}
+	SplineSurface   *ss;
+	LRSplineSurface *lr;
 
-	// create a list of random control points (all between 0.1 and 1.1)
-	double cp[(dim+rat)*n1*n2];
-	int k=0;
-	for(int j=0; j<n2; j++) 
-		for(int i=0; i<n1; i++) 
-			for(int d=0; d<dim+rat; d++)
-				cp[k++] = ((i*2+j*3+d*5) % 13) / 13.0 + 0.1;  // rational weights also random and thus we need >0
-		
-	// make two identical surfaces
-	SplineSurface   ss(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
-	LRSplineSurface lr(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
+	if(lrInitMesh == NULL) {
+
+		// make a uniform integer knot vector
+		if(knot_u == NULL) {
+			knot_u = new double[n1+p1];
+			for(int i=0; i<p1+n1; i++)
+				knot_u[i] = (i<p1) ? 0 : (i>n1) ? n1-p1+1 : i-p1+1;
+		}
+		if(knot_v == NULL) {
+			knot_v = new double[n2+p2];
+			for(int i=0; i<p2+n2; i++)
+				knot_v[i] = (i<p2) ? 0 : (i>n2) ? n2-p2+1 : i-p2+1;
+		}
+
+		// create a list of random control points (all between 0.1 and 1.1)
+		double cp[(dim+rat)*n1*n2];
+		int k=0;
+		for(int j=0; j<n2; j++) 
+			for(int i=0; i<n1; i++) 
+				for(int d=0; d<dim+rat; d++)
+					cp[k++] = ((i*2+j*3+d*5) % 13) / 13.0 + 0.1;  // rational weights also random and thus we need >0
+			
+		// make two identical surfaces
+		ss = new SplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
+		lr = new LRSplineSurface(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
+	} else {
+		ifstream inputfile;
+		inputfile.open(lrInitMesh);
+		if(!inputfile.is_open()) {
+			cerr << "Error: could not open file " << lrInitMesh << endl;
+			exit(3);
+		}
+		ObjectHeader head;
+		ss = new SplineSurface();
+		inputfile >> head >> *ss;
+		lr = new LRSplineSurface(ss);
+
+		dim = ss->dimension();
+		rat = ss->rational();
+		n1  = ss->numCoefs_u();
+		n2  = ss->numCoefs_v();
+		p1  = ss->order_u();
+		p2  = ss->order_v();
+	}
 
 	if(nDiagonals==-1) {
 		for(uint i=0; i<is_const_u.size(); i++) {
 			if(is_const_u[i])
-				lr.insert_const_u_edge(const_par[i], start_par[i], end_par[i], multiplicity[i]);
+				lr->insert_const_u_edge(const_par[i], start_par[i], end_par[i], multiplicity[i]);
 			else
-				lr.insert_const_v_edge(const_par[i], start_par[i], end_par[i], multiplicity[i]);
+				lr->insert_const_v_edge(const_par[i], start_par[i], end_par[i], multiplicity[i]);
 		}
 	} else {
 		for(int diagRuns=0; diagRuns<nDiagonals; diagRuns++) {
 			vector<Element*>::iterator it;
 			vector<int> diagonalElements;
 			int i=0;
-			for(it=lr.elementBegin(); it<lr.elementEnd(); it++, i++)
+			for(it=lr->elementBegin(); it<lr->elementEnd(); it++, i++)
 				if((**it).umin() == (**it).vmin())
 					diagonalElements.push_back(i);
-			lr.refineElement(diagonalElements);
+			lr->refineElement(diagonalElements);
 		}
 	}
 	
@@ -181,20 +212,20 @@ int main(int argc, char **argv) {
 	vector<double> par_v_values;
 	vector<Element*>::iterator el;
 	int el_i=0;
-	for(el=lr.elementBegin(); el!=lr.elementEnd(); el++, el_i++) {
+	for(el=lr->elementBegin(); el!=lr->elementEnd(); el++, el_i++) {
 		// evaluate one midpoint, 4 edge midpoints and 4 corners of the element
 		double umin = (*el)->umin();
 		double vmin = (*el)->vmin();
 		double umax = (*el)->umax();
 		double vmax = (*el)->vmax();
-		int startI = ( umin == lr.startparam_u() ) ? 0 : 1;
-		int startJ = ( vmin == lr.startparam_v() ) ? 0 : 1;
+		int startI = ( umin == lr->startparam_u() ) ? 0 : 1;
+		int startJ = ( vmin == lr->startparam_v() ) ? 0 : 1;
 		for(int ii=startI; ii<3; ii++) {
 			for(int jj=startJ; jj<3; jj++) {
 				double u = umin + ii*(umax-umin)/2.0;
 				double v = vmin + jj*(vmax-vmin)/2.0;
-				lr.point(lr_pts, u,v, 1);
-				ss.point(ss_pts, u,v, 1);
+				lr->point(lr_pts, u,v, 1);
+				ss->point(ss_pts, u,v, 1);
 
 				bool correct = true;
 				for(int i=0; i<3; i++)  
@@ -207,7 +238,7 @@ int main(int argc, char **argv) {
 
 				// test for partition of unity
 				BasisDerivsSf lr_basis;
-				lr.computeBasis(u,v, lr_basis);
+				lr->computeBasis(u,v, lr_basis);
 				double sum        = 0;
 				double sum_diff_u = 0;
 				double sum_diff_v = 0;
@@ -234,12 +265,12 @@ int main(int argc, char **argv) {
 	bool oneFail = false;
 	bool linearIndep ;
 	bool doActualLinTest ;
-	if(lr.nBasisFunctions() > max_n_linear_depence_testing) {
+	if(lr->nBasisFunctions() > max_n_linear_depence_testing) {
 		doActualLinTest = false;
 		linearIndep = true;
 	} else {
 		doActualLinTest = true;
-		linearIndep = lr.isLinearIndepByMappingMatrix(true);
+		linearIndep = lr->isLinearIndepByMappingMatrix(true);
 	}
 	cout << endl;
 	cout << "   =====================    RESULT SUMMARY   ====================     \n\n";
@@ -269,20 +300,20 @@ int main(int argc, char **argv) {
 	cout << "========================================\n";
 	cout << "\n\n\n";
 	cout << "Key LR-spline information:\n";
-	cout << "  number of basis functions: " << lr.nBasisFunctions() << endl;
-	cout << "  number of mesh lines     : " << lr.nMeshlines() << endl;
-	cout << "  number of elements       : " << lr.nElements() << endl;
+	cout << "  number of basis functions: " << lr->nBasisFunctions() << endl;
+	cout << "  number of mesh lines     : " << lr->nMeshlines() << endl;
+	cout << "  number of elements       : " << lr->nElements() << endl;
 	
 	
 	if(dumpFile) {
 		ofstream meshfile;
 		meshfile.open("mesh.eps");
-		lr.writePostscriptMesh(meshfile);
+		lr->writePostscriptMesh(meshfile);
 		meshfile.close();
 	
 		ofstream lrfile;
 		lrfile.open("lrspline.txt");
-		lrfile << lr << endl;
+		lrfile << *lr << endl;
 		lrfile.close();
 
 		cout << endl;
@@ -291,19 +322,19 @@ int main(int argc, char **argv) {
 
 	/*
 	vector<Basisfunction*> edges;
-	lr.getEdgeFunctions(edges, EAST);
+	lr->getEdgeFunctions(edges, EAST);
 	cout << "EAST EDGES:\n";
 	for(uint i=0; i<edges.size(); i++)
 		cout << *edges[i] << endl;
-	lr.getEdgeFunctions(edges, WEST);
+	lr->getEdgeFunctions(edges, WEST);
 	cout << "WEST EDGES:\n";
 	for(uint i=0; i<edges.size(); i++)
 		cout << *edges[i] << endl;
-	lr.getEdgeFunctions(edges, NORTH);
+	lr->getEdgeFunctions(edges, NORTH);
 	cout << "NORTH EDGES:\n";
 	for(uint i=0; i<edges.size(); i++)
 		cout << *edges[i] << endl;
-	lr.getEdgeFunctions(edges, SOUTH);
+	lr->getEdgeFunctions(edges, SOUTH);
 	cout << "SOUTH EDGES:\n";
 	for(uint i=0; i<edges.size(); i++)
 		cout << *edges[i] << endl;

@@ -12,7 +12,9 @@ using namespace LR;
 using namespace std;
 
 int main(int argc, char **argv) {
+#ifdef TIME_LRSPLINE
 	Profiler prof(argv[0]);
+#endif
 
 	/* UNIFORM refinement
 	 * inserts global meshlines in a tensor product way, just stored within a 

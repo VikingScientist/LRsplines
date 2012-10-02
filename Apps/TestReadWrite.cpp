@@ -11,7 +11,9 @@ using namespace LR;
 using namespace std;
 
 int main(int argc, char **argv) {
+#ifdef TIME_LRSPLINE
 	Profiler prof(argv[0]);
+#endif
 
 	// set default parameter values
 	int p1 = 3;
