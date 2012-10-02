@@ -18,6 +18,7 @@
 #include <string>
 #include <map>
 
+namespace LR {
 
 /*!
   \brief Simple class for profiling of computational tasks.
@@ -138,5 +139,7 @@ namespace utl
 //! \brief Macro to add level 4 profiling of the local scope.
 #define PROFILE4(label)
 #endif
+
+} // end namespace LR
 
 #endif

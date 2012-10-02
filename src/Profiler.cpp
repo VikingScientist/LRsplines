@@ -14,6 +14,7 @@
 #include "LRSpline/Profiler.h"
 #include <sys/time.h>
 
+namespace LR {
 
 Profiler* utl::profiler = 0;
 
@@ -179,3 +180,5 @@ void Profiler::report (std::ostream& os) const
   os <<"======================================================================="
      << std::endl;
 }
+
+} // end namespace LR
