@@ -1,0 +1,14 @@
+-p1 3 -p2 3 -n1 6 -n2 6 -knot1 0 0 0 1 2 3 4 4 4 -knot2 0 0 0 1 2 3 4 4 4 one_third_start_at.inp
+
+       1.5       0.4586           OK              OK
+    0.2293          1.5           OK              OK
+    0.4586            2           OK              OK
+     0.396       0.8333           OK              OK
+    0.5627       0.8333           OK              OK
+         1       0.5627           OK              OK
+  Linear independent :     OK
+    all assertions passed
+  number of basis functions: 47
+  number of mesh lines     : 16
+  number of elements       : 31
+
