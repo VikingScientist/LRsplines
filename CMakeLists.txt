@@ -115,8 +115,10 @@ ELSE(WIN32)
                              include/LRSpline/LRSpline_version.h
                              include/LRSpline/LRSplineSurface.h)
   INSTALL(FILES ${LRSPLINE_HEADERS}
-    DESTINATION ${CMAKE_INSTALL_PREFIX}/include/LRSpline
-    COMPONENT liblrspline-dev)
+                DESTINATION ${CMAKE_INSTALL_PREFIX}/include/LRSpline
+                COMPONENT liblrspline-dev)
+  INSTALL(FILES cmake/Modules/FindLRSpline.cmake
+          DESTINATION ${CMAKE_ROOT}/Modules COMPONENT liblrspline-dev)
 ENDIF(WIN32)
 
 # Packaging
