@@ -953,7 +953,7 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 	for(int i=0; i<nOldFunctions-nRemovedFunctions; i++) {
 		if(newline->splits(basis_[i])) {
 			int nKnots;
-			if( (nKnots=newline->nKnotsIn(basis_[i]) != newline->multiplicity_) ) {
+			if( ((nKnots=newline->nKnotsIn(basis_[i])) != newline->multiplicity_) ) {
 				nNewFunctions += split( const_u, i, const_par, newline->multiplicity_-nKnots );
 				i--; // splitting deletes a basisfunction in the middle of the basis_ vector
 				nRemovedFunctions++;
