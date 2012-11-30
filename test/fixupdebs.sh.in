@@ -38,7 +38,7 @@ rm -f $path/liblrspline_${version}_$arch-$code-liblrspline.deb
 Unpack $path/liblrspline_${version}_$arch-$code-liblrspline-dev.deb
 sed -i control -e 's/Package:.*$/Package: liblrspline-dev/g'
 sed -i control -e 's/\(Description: .*$\)/\1 - development headers/g'
-sed -i control -e 's/Depends:.*$/Depends: liblrspline, libgotools-core-dev, libboost-dev/g'
+sed -i control -e 's/Depends:.*$/Depends: liblrspline, libgotools-core-dev, libboost-dev, libifem-cmakerules/g'
 sed -i control -e 's/\(Architecture: .*$\)/Architecture: all/g'
 sed '/^$/d' -i control
 Pack $path/UbuntuDebs/liblrspline-dev_${version}_all-$code.deb
