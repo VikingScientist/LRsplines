@@ -1856,6 +1856,19 @@ double LRSplineSurface::makeIntegerKnots() {
 	return scale;
 }
 
+void LRSplineSurface::getSupportElements(std::vector<int> &result, const std::vector<int> &basisfunctions) const  {
+	result.clear();
+	std::set<int> tmp;
+	std::vector<Element*>::iterator it;
+	for(int i=0; i<basisfunctions.size(); i++) {
+		Basisfunction *b = basis_[basisfunctions[i]];
+		for(it=b->supportedElementBegin(); it != b->supportedElementEnd(); it++)
+			tmp.insert((**it).getId());
+	}
+	result.resize(tmp.size());
+	result.insert(result.begin(), tmp.begin(), tmp.end());
+}
+
 void LRSplineSurface::getDiagonalElements(std::vector<int> &result) const  {
 	result.clear();
 	for(uint i=0; i<element_.size(); i++) 

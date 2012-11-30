@@ -2,6 +2,7 @@
 #define LR_SPLINE_H
 
 #include <vector>
+#include <set>
 #include <GoTools/utils/Point.h>
 #include <GoTools/geometry/Streamable.h>
 #include <boost/rational.hpp>
@@ -125,6 +126,7 @@ public:
 	void set_dim(int dimvalue)                         {dim_ = dimvalue;};
 	void rebuildDimension(int dimvalue) ;
 	double makeIntegerKnots();
+	void getSupportElements(       std::vector<int> &result, const std::vector<int> &basisfunctions) const ;
 	void getDiagonalElements(      std::vector<int> &result) const ;
 	void getDiagonalBasisfunctions(std::vector<int> &result) const ;
 	void printElements(std::ostream &out) const;
