@@ -399,6 +399,9 @@ void LRSplineVolume::computeBasis (double param_u, double param_v, double param_
 
 
 void LRSplineVolume::computeBasis(double param_u, double param_v, double param_w, Go::BasisPts & result, int iEl ) const {
+#ifdef TIME_LRSPLINE
+	PROFILE("computeBasis()");
+#endif
 	HashSet_const_iterator<Basisfunction*> it, itStop, itStart;
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->constSupportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->constSupportEnd();
@@ -416,6 +419,9 @@ void LRSplineVolume::computeBasis (double param_u,
                                    int derivs,
                                    int iEl ) const
 {
+#ifdef TIME_LRSPLINE
+	PROFILE("computeBasis()");
+#endif
 	result.clear();
 	HashSet_const_iterator<Basisfunction*> it, itStop, itStart;
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->constSupportBegin();

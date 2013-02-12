@@ -79,6 +79,9 @@ TARGET_LINK_LIBRARIES(RefinementUnchanged LRSpline ${DEPLIBS})
 ADD_EXECUTABLE(StresstestRefinement ${PROJECT_SOURCE_DIR}/Apps/StresstestRefinement.cpp)
 TARGET_LINK_LIBRARIES(StresstestRefinement LRSpline ${DEPLIBS})
 
+ADD_EXECUTABLE(StresstestEvaluation ${PROJECT_SOURCE_DIR}/Apps/StresstestEvaluation.cpp)
+TARGET_LINK_LIBRARIES(StresstestEvaluation LRSpline ${DEPLIBS})
+
 ADD_EXECUTABLE(TestReadWrite ${PROJECT_SOURCE_DIR}/Apps/TestReadWrite.cpp)
 TARGET_LINK_LIBRARIES(TestReadWrite LRSpline ${DEPLIBS})
 

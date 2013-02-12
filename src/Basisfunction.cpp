@@ -297,10 +297,10 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, d
 //                                            d2x,dxdy,dxdz,d2y,dydz,d2z,
 //                                            d3x,d2xdy,d2xdz,dxd2y,dxdydz,dxd2z,d3y,d2ydz,dyd2z,d3z
 void collectResults(std::vector<double>::iterator &result,
-                      double product,
-                      std::vector<std::vector<std::vector<double> > > &diff,
-                      int derivsLeft,
-                      uint dim) {
+                    double product,
+                    std::vector<std::vector<std::vector<double> > > &diff,
+                    int derivsLeft,
+                    uint dim) {
 	if(dim == diff.size()-1) {
 		*result *= product*diff.back()[derivsLeft][0];
 		result++;

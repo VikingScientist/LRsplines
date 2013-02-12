@@ -48,9 +48,11 @@ int main(int argc, char **argv) {
 	                  "   -p1   <n>  polynomial ORDER (degree+1) in first parametric direction\n" \
 	                  "   -p2   <n>  polynomial order in second parametric direction\n" \
 	                  "   -p3   <n>  polynomial order in third parametric direction (volumes only)\n" \
+	                  "   -p    <n>  polynomial order in all parametric directions\n" \
 	                  "   -n1   <n>  number of basis functions in first parametric direction\n" \
 	                  "   -n2   <n>  number of basis functions in second parametric direction\n" \
 	                  "   -n3   <n>  number of basis functions in third parametric direction (volumes only)\n" \
+	                  "   -n    <n>  number of basis functions in all parametric directions\n" \
 	                  "   -dim  <n>  dimension of the controlpoints\n" \
 	                  "   -goal <n>  number of basis functions before terminating program\n"\
 	                  "   -unif      UNIFORM refinemen scheme\n"\
@@ -70,6 +72,10 @@ int main(int argc, char **argv) {
 			p2 = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-p3") == 0)
 			p3 = atoi(argv[++i]);
+		else if(strcmp(argv[i], "-p") == 0)
+			p1 = p2 = p3 = atoi(argv[++i]);
+		else if(strcmp(argv[i], "-n") == 0)
+			n1 = n2 = n3 = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-n1") == 0)
 			n1 = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-n2") == 0)
