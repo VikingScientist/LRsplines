@@ -93,7 +93,8 @@ public:
 		for(int i=0; i<iBasis; ++i) ++it;
 		return *it;
 	}
-	void getBezierElement(int iEl, std::vector<double> &controlPoints) const;
+	void getBezierElement(   int iEl, std::vector<double> &controlPoints) const;
+	void getBezierExtraction(int iEl, std::vector<double> &extractMatrix) const;
 
 	// assorted specialized functions
 	void rebuildDimension(int dimvalue) ;

@@ -1337,7 +1337,72 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 				for(int u=start[0]; u<start[0]+order_[0]; u++)
 					for(int d=0; d<dim_; d++)
 						controlPoints[ip++] += b->cp()[d]*row[0][u]*row[1][v]*row[2][w]*b->w();
+	}
+}
 
+void LRSplineVolume::getBezierExtraction(int iEl, std::vector<double> &extractMatrix) const {
+	Element *el = element_[iEl];
+	int width  = el->nBasisFunctions();
+	int height = order_[0]*order_[1]*order_[2];
+	extractMatrix.clear();
+	extractMatrix.resize(width*height);
+
+	int colI = 0;
+	for(Basisfunction* b : el->support()) {
+		int start[] = {-1,-1,-1};
+		std::vector<std::vector<double> > row(3);
+		std::vector<std::vector<double> > knot(3);
+		for(int d=0; d<3; d++) {
+			for(int i=0; i<order_[d]+1; i++)
+				knot[d].push_back( (*b)[d][i] );
+			row[d].push_back(1);
+		}
+
+		
+		for(int d=0; d<3; d++) {
+
+			double min = el->getParmin(d);
+			double max = el->getParmax(d);
+			while(knot[d][++start[d]] < min);
+			while(true) {
+				int p    = order_[d]-1;
+				int newI = -1;
+				double z;
+				if(       knot[d].size() < (uint) start[d]+order_[d]   || knot[d][start[d]+  order_[d]-1] != min) {
+					z    = min;
+					newI = start[d];
+				} else if(knot[d].size() < (uint) start[d]+2*order_[d] || knot[d][start[d]+2*order_[d]-1] != max ) {
+					z    = max;
+					newI = start[d] + order_[d];
+				} else {
+					break;
+				}
+				  
+				std::vector<double> newRow(row[d].size()+1, 0);
+				for(uint k=0; k<row[d].size(); k++) {
+					#define U(x) ( knot[d][x+k] )
+					if(z < U(0) || z > U(p+1)) {
+						newRow[k] = row[d][k];
+						continue;
+					}
+					double alpha1 = (U(p) <=  z  ) ? 1 : double(   z    - U(0)) / (  U(p)  - U(0));
+					double alpha2 = (z    <= U(1)) ? 1 : double( U(p+1) - z   ) / ( U(p+1) - U(1));
+					newRow[k]   += row[d][k]*alpha1;
+					newRow[k+1] += row[d][k]*alpha2;
+					#undef U
+				}
+				knot[d].insert(knot[d].begin()+newI, z);
+				row[d] = newRow;
+			}
+	
+		}
+		
+		int rowI = 0;
+		for(int w=start[2]; w<start[2]+order_[2]; w++)
+			for(int v=start[1]; v<start[1]+order_[1]; v++)
+				for(int u=start[0]; u<start[0]+order_[0]; u++, rowI++)
+					extractMatrix[colI*height + rowI] += row[0][u]*row[1][v]*row[2][w]*b->w();
+		colI++;
 	}
 }
 
