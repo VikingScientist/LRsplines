@@ -25,18 +25,11 @@ Element::Element(double start_u, double start_v, double stop_u, double stop_v) {
 }
 
 void Element::removeSupportFunction(Basisfunction *f) {
-	for(uint i=0; i<support_.size(); i++) {
-		if(*f == *support_[i]) {
-			support_[i] = support_.back();
-			support_[support_.size()-1] = NULL;
-			support_.pop_back();
-			return;
-		}
-	}
+	support_.erase(f);
 }
 
 void Element::addSupportFunction(Basisfunction *f) {
-	support_.push_back(f);
+	support_.insert(f);
 }
 
 Element* Element::copy() {
@@ -80,25 +73,30 @@ Element* Element::split(bool split_u, double par_value) {
 		newElement = new Element(start_u_, par_value, stop_u_, stop_v_);
 		stop_v_ = par_value;
 	}
-	for(uint i=0; i<support_.size(); i++) {
-		if(support_[i]->addSupport(newElement)) // tests for overlapping as well
-			newElement->addSupportFunction(support_[i]);
-		if(!support_[i]->overlaps(this)) {
-			support_[i]->removeSupport(this);
-			support_[i] = support_.back();
-			support_.pop_back();
-			i--;
+	for(Basisfunction *b : support_)
+		if(b->addSupport(newElement)) // tests for overlapping as well
+			newElement->addSupportFunction(b);
+
+	bool someChange = true;
+	while(someChange) {
+		someChange = false;
+		for(Basisfunction *b : support_) {
+			if(!b->overlaps(this)) {
+				support_.erase(b);
+				someChange = true;
+				break;
+			}
 		}
 	}
 	return newElement;
 }
 
-void Element::updateBasisPointers(std::vector<Basisfunction*> &basis) {
+void Element::updateBasisPointers(HashSet<Basisfunction*> &basis) {
 	for(uint i=0; i<support_ids_.size(); i++) {
 		// add pointer from Element to Basisfunction
-		support_.push_back(basis[support_ids_[i]]);
+		// support_.insert(basis[support_ids_[i]]);
 		// add pointer from Basisfunction back to Element
-		support_.back()->addSupport(this);
+		// basis[support_ids_[i]]->addSupport(this);
 	}
 }
 
@@ -140,17 +138,20 @@ void Element::read(std::istream &is) {
 void Element::write(std::ostream &os) const {
 	os << id_ << ": (" << start_u_ << ", " << stop_u_ << ") x (" << start_v_ << ", " << stop_v_ << ")";
 	os << "    {";
-	for(uint i=0; i<support_.size()-1; i++) {
-		os << support_[i]->getId() << ", " ;
+	bool isFirst = true;
+	for(Basisfunction *b : support_) {
+		if(!isFirst) os << ", ";
+		os << b->getId();
+		isFirst = false;
 	}
-	os << support_.back()->getId() << "}";
+	os << "}";
 }
 
 bool Element::isOverloaded()  const {
 	int n = support_.size();
 	if(n > 0) {
-		int p1 = support_.front()->order_u();
-		int p2 = support_.front()->order_v();
+		int p1 = (*support_.begin())->order_u();
+		int p2 = (*support_.begin())->order_v();
 		if(n > p1*p2)
 			return true;
 	}

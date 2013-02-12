@@ -3,6 +3,7 @@
 
 #include <GoTools/geometry/Streamable.h>
 #include <vector>
+#include "HashSet.h"
 
 namespace LR {
 
@@ -24,12 +25,12 @@ public:
 	double umax() const         { return stop_u_;  };
 	double vmax() const         { return stop_v_;  };
 	double area() const         { return (stop_v_-start_v_)*(stop_u_-start_u_);  };
-	std::vector<Basisfunction*>::iterator supportBegin()             { return support_.begin(); };
-	std::vector<Basisfunction*>::iterator supportEnd()               { return support_.end();   };
-	std::vector<Basisfunction*>::const_iterator supportBegin() const { return support_.begin(); };
-	std::vector<Basisfunction*>::const_iterator supportEnd()   const { return support_.end();   };
-	const std::vector<Basisfunction*> support()                const { return support_;   };
-	Basisfunction* supportFunction(int i) { return support_[i];   };
+	HashSet_iterator<Basisfunction*> supportBegin()             { return support_.begin(); };
+	HashSet_iterator<Basisfunction*> supportEnd()               { return support_.end();   };
+	HashSet_const_iterator<Basisfunction*> supportBegin() const { return support_.begin(); };
+	HashSet_const_iterator<Basisfunction*> supportEnd()   const { return support_.end();   };
+	const HashSet<Basisfunction*> support()               const { return support_;   };
+	// Basisfunction* supportFunction(int i) { return support_[i];   };
 	int nBasisFunctions() const           { return support_.size(); };
 	void setId(int id)                    { this->id_ = id; };
 	int getId() const                     { return id_; };
@@ -44,7 +45,7 @@ public:
 	int incrementOverloadCount() { return overloadCount++; }
 	int getOverloadCount() const { return overloadCount;   }
 
-	void updateBasisPointers(std::vector<Basisfunction*> &basis) ;
+	void updateBasisPointers(HashSet<Basisfunction*> &basis) ;
 
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
@@ -56,7 +57,7 @@ private:
 	double stop_v_;
 	int id_;
 
-	std::vector<Basisfunction*> support_;
+	HashSet<Basisfunction*> support_;
 	std::vector<int> support_ids_; // temporary storage for the read() method only
 
 	int overloadCount ;

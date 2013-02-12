@@ -8,6 +8,7 @@
 #include <boost/rational.hpp>
 #include <GoTools/geometry/SplineSurface.h>
 #include "Basisfunction.h"
+#include "HashSet.h"
 
 enum refinementStrategy {
 	LR_SAFE = 0,
@@ -112,13 +113,17 @@ public:
 	std::vector<Meshline*>::iterator meshlineEnd()                 { return meshline_.end(); };
 	std::vector<Element*>::iterator elementBegin()                 { return element_.begin(); };
 	std::vector<Element*>::iterator elementEnd()                   { return element_.end(); };
-	std::vector<Basisfunction*>::iterator basisBegin()             { return basis_.begin(); };
-	std::vector<Basisfunction*>::iterator basisEnd()               { return basis_.end(); };
-	std::vector<Basisfunction*>::const_iterator basisBegin() const { return basis_.begin(); };
-	std::vector<Basisfunction*>::const_iterator basisEnd()   const { return basis_.end(); };
+	HashSet_iterator<Basisfunction*>       basisBegin()            { return basis_.begin(); };
+	HashSet_iterator<Basisfunction*>       basisEnd()              { return basis_.end(); };
+	HashSet_const_iterator<Basisfunction*> basisBegin() const      { return basis_.begin(); };
+	HashSet_const_iterator<Basisfunction*> basisEnd()   const      { return basis_.end(); };
+	HashSet<Basisfunction*> getAllBasisfunctions()                 { return basis_ ;};
 	Element* getElement(int i)                                     { return element_[i]; };
-	Basisfunction* getBasisfunction(int i)                         { return basis_[i]; };
-	std::vector<Basisfunction*> getAllBasisfunctions()             { return basis_ ;};
+	Basisfunction* getBasisfunction(int iBasis) {
+		HashSet_iterator<Basisfunction*> it = basis_.begin();
+		for(int i=0; i<iBasis; i++) it++;
+		return *it;
+	}
 	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;
 	
 
@@ -151,11 +156,11 @@ public:
 	void writePostscriptMeshWithControlPoints(std::ostream &out, int nu=2, int nv=2) const ;
 
 private:
-	int split(bool insert_in_u, int function_index, double new_knot, int multiplicity=1);
+	int split(bool insert_in_u, Basisfunction *b, double new_knot, int multiplicity=1);
 	Meshline* insert_line(bool const_u, double const_par, double start, double stop, int multiplicity);
 	
 	bool rational_;
-	std::vector<Basisfunction*> basis_;
+	HashSet<Basisfunction*> basis_;
 	std::vector<Meshline*> meshline_;
 	std::vector<Element*> element_;
 	int dim_;

@@ -36,7 +36,7 @@ LRSplineSurface::LRSplineSurface() {
 	start_v_  = 0;
 	end_u_    = 0;
 	end_v_    = 0;
-	basis_    = std::vector<Basisfunction*>(0);
+	basis_    = HashSet<Basisfunction*>();
 	meshline_ = std::vector<Meshline*>(0);
 	element_  = std::vector<Element*>(0);
 	maxTjoints_       = -1;
@@ -91,11 +91,10 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 	std::vector<double>::iterator coef  = surf->coefs_begin();
 	std::vector<double>::const_iterator knot_u = surf->basis(0).begin();
 	std::vector<double>::const_iterator knot_v = surf->basis(1).begin();
-	basis_ = std::vector<Basisfunction*>(n1*n2);
-	int k=0;
+	basis_ = HashSet<Basisfunction*>();
 	for(int j=0; j<n2; j++)
 		for(int i=0; i<n1; i++)
-			basis_[k++] = new Basisfunction(&(*(knot_u+i)), &(*(knot_v+j)), &(*(coef+(j*n1+i)*(dim_+rational_))), dim_, order_u_, order_v_);
+			basis_.insert(new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim_+rational_), dim_, order_u_, order_v_));
 	int unique_u=0;
 	int unique_v=0;
 	for(int i=0; i<n1+order_u_; i++) {// const u, spanning v
@@ -125,8 +124,8 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 			element_.push_back(new Element(umin, vmin, umax, vmax));
 		}
 	}
-	for(uint i=0; i<basis_.size(); i++)
-		updateSupport(basis_[i]);
+	for(Basisfunction* b : basis_)
+		updateSupport(b);
 }
 
 
@@ -159,11 +158,10 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 	selected_basis_green  = 0.2;
 	selected_basis_blue   = 0.05;
 
-	basis_ = std::vector<Basisfunction*>(n1*n2);
-	int k=0;
+	basis_ = HashSet<Basisfunction*>();
 	for(int j=0; j<n2; j++)
 		for(int i=0; i<n1; i++)
-			basis_[k++] = new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim+rational), dim, order_u, order_v);
+			basis_.insert(new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim+rational), dim, order_u, order_v));
 	int unique_u=0;
 	int unique_v=0;
 	for(int i=0; i<n1+order_u; i++) {// const u, spanning v
@@ -193,13 +191,13 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 			element_.push_back(new Element(umin, vmin, umax, vmax));
 		}
 	}
-	for(uint i=0; i<basis_.size(); i++)
-		updateSupport(basis_[i]);
+	for(Basisfunction* b : basis_)
+		updateSupport(b);
 }
 
 LRSplineSurface::~LRSplineSurface() {
-	for(uint i=0; i<basis_.size(); i++)
-		delete basis_[i];
+	for(Basisfunction* b : basis_)
+		delete b;
 	for(uint i=0; i<meshline_.size(); i++)
 		delete meshline_[i];
 	for(uint i=0; i<element_.size(); i++)
@@ -211,8 +209,8 @@ LRSplineSurface* LRSplineSurface::copy()
 {
 	LRSplineSurface *returnvalue = new LR::LRSplineSurface();
 	
-	for(int i = 0; i< this->nBasisFunctions();i++)
-		{returnvalue -> basis_.push_back(this->basis_[i]->copy());}
+	for(Basisfunction* b : basis_) 
+		returnvalue->basis_.insert(b->copy());
 	
 	for(int i = 0; i < this->nElements();i++)
 		{returnvalue -> element_.push_back(this->element_[i]->copy());}
@@ -234,8 +232,8 @@ LRSplineSurface* LRSplineSurface::copy()
 	returnvalue->maxAspectRatio_   = this->maxAspectRatio_;
 
 	
-	for(int i = 0; i< this->nBasisFunctions();i++)
-		{returnvalue -> updateSupport(returnvalue->basis_[i]);}
+	for(Basisfunction* b : basis_) 
+		returnvalue->updateSupport(b);
 	
 	return returnvalue;
 }
@@ -338,10 +336,11 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 	PROFILE("computeBasis()");
 #endif
 	std::vector<double> values;
-	std::vector<Basisfunction*>::const_iterator it, itStop, itStart;
+	HashSet_iterator<Basisfunction*> it, itStop, itStart;
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
-	result.prepareDerivs(param_u, param_v, 0, -1, (itStop-itStart));
+	int nPts= (iEl<0) ? basis_.size()  : element_[iEl]->nBasisFunctions();
+	result.prepareDerivs(param_u, param_v, 0, -1, nPts);
 
 	int i=0;
 	//element_[i]->write(std::cout);
@@ -363,10 +362,11 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 	PROFILE("computeBasis()");
 #endif
 	std::vector<double> values;
-	std::vector<Basisfunction*>::const_iterator it, itStop, itStart;
+	HashSet_const_iterator<Basisfunction*> it, itStop, itStart;
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
-	result.prepareDerivs(param_u, param_v, 0, -1, (itStop-itStart));
+	int nPts= (iEl<0) ? basis_.size()  : element_[iEl]->nBasisFunctions();
+	result.prepareDerivs(param_u, param_v, 0, -1, nPts);
 	
 	int i=0;
 	for(it=itStart; it!=itStop; it++, i++) {
@@ -380,7 +380,7 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 
 
 void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsSf & result, int iEl ) const {
-	std::vector<Basisfunction*>::const_iterator it, itStop, itStart;
+	HashSet_const_iterator<Basisfunction*> it, itStop, itStart;
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
 
@@ -397,17 +397,15 @@ void LRSplineSurface::computeBasis (double param_u,
                                     int iEl ) const
 {
 	result.clear();
-	std::vector<Basisfunction*>::const_iterator it, itStop, itStart;
+	HashSet_const_iterator<Basisfunction*> it, itStop, itStart;
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
-
+	
 	result.resize(itStop - itStart);
 	int i=0;
 	for(it=itStart; it!=itStop; it++, i++)
-	  {	
 	    (*it)->evaluate(result[i], param_u, param_v, derivs, param_u!=end_u_, param_v!=end_v_);
-	    
-	  }
+
 }
 
 int LRSplineSurface::getElementContaining(double u, double v) const {
@@ -517,7 +515,7 @@ void LRSplineSurface::getFullspanLines(int iEl, std::vector<Meshline*>& lines) {
 }
 
 void LRSplineSurface::getStructMeshLines(int iBasis, std::vector<Meshline*>& lines) {
-	Basisfunction *b = basis_[iBasis];
+	Basisfunction *b = getBasisfunction(iBasis);
 	double umin = b->umin();
 	double umax = b->umax();
 	double vmin = b->vmin();
@@ -608,18 +606,18 @@ void LRSplineSurface::refineElement(const std::vector<int> &indices) {
 }
 
 void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPerElement, double beta) {
-	Basisfunction *b;
 	Element       *e;
 	/* accumulate the error & index - vector */
 	std::vector<IndexDouble> errors;
 	if(refStrat_ == LR_ISOTROPIC_FUNC) { // error per-function
-		for(uint i=0; i<basis_.size(); i++) {
-			b = basis_[i];
+		int i=0;
+		for(Basisfunction *b : basis_) {
 			errors.push_back(IndexDouble(0.0, i));
 			for(int j=0; j<b->nSupportedElements(); j++) {
 				e = *(b->supportedElementBegin() + j);
 				errors[i].first += errPerElement[e->getId()];
 			}
+			i++;
 		}
 	} else {
 		for(uint i=0; i<element_.size(); i++) 
@@ -643,7 +641,7 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 	}
 
 	/* Do the actual refinement */
-	uint target_n_functions = ceil(basis_.size()*(1+beta));
+	int target_n_functions = ceil(basis_.size()*(1+beta));
 	int i=0;
 	while( basis_.size() < target_n_functions ) {
 		for(uint j=0; j<newLines[i].size(); j++) {
@@ -664,7 +662,7 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 
 void LRSplineSurface::aPosterioriFixes()  {
 	std::vector<Meshline*> *newLines = NULL;
-	uint nFunc;
+	int nFunc;
 	do {
 		nFunc = basis_.size();
 		if(doCloseGaps_)
@@ -933,8 +931,6 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 	}
 	}
 
-	int nOldFunctions     = basis_.size();  // number of functions before any new ones are inserted
-	int nRemovedFunctions = 0;
 	int nNewFunctions     = 0; // number of newly created functions eligable for testing in STEP 2
 
 	{ // STEP 1: test EVERY function against the NEW meshline
@@ -945,17 +941,21 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 #ifdef TIME_LRSPLINE
 	PROFILE("S1-basissplit");
 #endif
-	for(int i=0; i<nOldFunctions-nRemovedFunctions; i++) {
-		if(newline->splits(basis_[i])) {
-			int nKnots;
-			if( ((nKnots=newline->nKnotsIn(basis_[i])) != newline->multiplicity_) ) {
-				nNewFunctions += split( const_u, i, const_par, newline->multiplicity_-nKnots );
-				i--; // splitting deletes a basisfunction in the middle of the basis_ vector
-				nRemovedFunctions++;
+	bool oneSplit = false;
+	while(!oneSplit) {
+		oneSplit = false;
+		for(Basisfunction* b : basis_) {
+			if(newline->splits(b)) {
+				int nKnots;
+				if( ((nKnots=newline->nKnotsIn(b)) != newline->multiplicity_) ) {
+					nNewFunctions += split( const_u, b, const_par, newline->multiplicity_-nKnots );
+					oneSplit = true; // splitting deletes a basisfunction in the middle of the basis_ vector
+					break;
+				}
 			}
 		}
 	}
-	}
+	} // end profiler
 	{
 #ifdef TIME_LRSPLINE
 	PROFILE("S1-elementsplit");
@@ -964,28 +964,32 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 		if(newline->splits(element_[i]))
 			element_.push_back(element_[i]->split(!newline->is_spanning_u(), newline->const_par_));
 	}
-	}
-	}
+	} // end profiler (elementsplit)
+	} // end profiler (step 1)
 
 	{ // STEP 2: test every NEW function against ALL old meshlines
 #ifdef TIME_LRSPLINE
 	PROFILE("STEP 2");
 #endif
 	meshline_.push_back(newline);
-	for(uint i=nOldFunctions-nRemovedFunctions-1; i<basis_.size(); i++) {
-		for(Meshline *m : meshline_) {
-			if(m->splits(basis_[i])) {
-				int nKnots;
-				if( (nKnots=m->nKnotsIn(basis_[i])) != m->multiplicity_ ) {
-					// basis_[i]->removePartialLine( m );
-					split( !m->is_spanning_u(), i, m->const_par_, m->multiplicity_-nKnots);
-					i--; // splitting deletes a basisfunction in the middle of the basis_ vector
-					break;
+	bool oneSplit = false;
+	while(!oneSplit) {
+		oneSplit = false;
+		for(Basisfunction *b : basis_) {
+			for(Meshline *m : meshline_) {
+				if(m->splits(b)) {
+					int nKnots;
+					if( (nKnots=m->nKnotsIn(b)) != m->multiplicity_ ) {
+						split( !m->is_spanning_u(), b, m->const_par_, m->multiplicity_-nKnots);
+						oneSplit = true; // splitting deletes a basisfunction in the middle of the basis_ vector
+						break;
+					}
 				}
 			}
+			if(oneSplit) break;
 		}
-	}
-	}
+	} 
+	} // end profiler (step 2)
 	return newline;
 }
 
@@ -993,13 +997,12 @@ Meshline* LRSplineSurface::insert_const_v_edge(double v, double start_u, double 
 	return insert_line(false, v, start_u, stop_u, multiplicity);
 }
 
-int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot, int multiplicity) {
+int LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot, int multiplicity) {
 #ifdef TIME_LRSPLINE
 	PROFILE("split()");
 #endif
 
 	// create the new functions b1 and b2
-	Basisfunction *b = basis_[function_index];
 	Basisfunction *b1, *b2;
 	std::vector<double> knot = (insert_in_u) ? (*b)[0]  : (*b)[1];
 	int     p                = (insert_in_u) ? order_u_ : order_v_;
@@ -1022,105 +1025,85 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 		b2 = new Basisfunction((*b)[0].begin(), newKnot+1, b->cp(), b->dim(), order_u_, order_v_, b->w()*alpha2);
 	}
 
-	// search for existing function (to make search local b1 and b2 is contained in the *el element)
-	Element *el=NULL;
-	for(Element* e : b->support()) {
-		if(b1->overlaps(e) && b2->overlaps(e)) {
-			el = e;
-			break;
-		}
-	}
-	std::vector<Basisfunction*>::iterator it, start, stop;
-	if(el == NULL) {
-		start = basis_.begin();
-		stop  = basis_.end();
-	} else {  // no overlapping basis elements means discontinous basis functions. Not very elegant, but do a global search for identical basis functions
-		start = el->supportBegin();
-		stop  = el->supportEnd();
-	}
-	for(it=start; it < stop; it++) {
-		// existing functions need only update their control points and weights
-		if(b1 && *b1 == **it) {
-			**it += *b1;
-			delete b1;
-			b1 = NULL;
-			// pretty sure you never end up here if multiplicity > 1
-			// this would mean there are some strange doubleknotline to singleknotline on
-			// the same vertical/horizontal line
-		} else if(b2 && *b2 == **it) {
-			**it += *b2;
-			delete b2;
-			b2 = NULL;
-		}
-	}
-
-	// remove old functions
-	basis_.erase(basis_.begin() + function_index);
 	// add any brand new functions and detect their support elements
 	int newFunctions = 0;
-	if(b1) {
-		basis_.push_back(b1);
+	HashSet_iterator<Basisfunction*> it = basis_.find(b1);
+	if(it != basis_.end()) {
+		**it += *b1;
+		delete b1;
+		b1 = NULL;
+	} else {
+		basis_.insert(b1);
 		updateSupport(b1, b->supportedElementBegin(), b->supportedElementEnd());
 		bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && (*b1)[0][order_u_]!=new_knot) ||
 		                                               (!insert_in_u && (*b1)[1][order_v_]!=new_knot)  );
 		if(recursive_split)
-			newFunctions += split( insert_in_u, basis_.size()-1, new_knot, multiplicity-1);
+			newFunctions += split( insert_in_u, b1, new_knot, multiplicity-1);
 		else
 			newFunctions++;
 	}
-	if(b2) {
-		basis_.push_back(b2);
+	it = basis_.find(b2);
+	if(it != basis_.end()) {
+		**it += *b2;
+		delete b2;
+		b2 = NULL;
+	} else {
+		basis_.insert(b2);
 		updateSupport(b2, b->supportedElementBegin(), b->supportedElementEnd());
 		bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && (*b2)[0][0]!=new_knot) ||
 		                                               (!insert_in_u && (*b2)[1][0]!=new_knot)  );
 		if(recursive_split)
-			newFunctions += split( insert_in_u, basis_.size()-1, new_knot, multiplicity-1);
+			newFunctions += split( insert_in_u, b2, new_knot, multiplicity-1);
 		else
 			newFunctions++;
 	}
+
+	// remove old functions
+	basis_.erase(b);
 	delete b;
+
 	return newFunctions;
 }
 
 void LRSplineSurface::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth) const {
 	edgeFunctions.clear();
-	for(uint i=0; i<basis_.size(); i++) {
+	for(Basisfunction *b : basis_) {
 		switch(edge) {
 		case WEST       :
-			if((*basis_[i])[0][order_u_-depth] == start_u_)
-				edgeFunctions.push_back(basis_[i]);
+			if((*b)[0][order_u_-depth] == start_u_)
+				edgeFunctions.push_back(b);
 			break;
 		case EAST       :
-			if((*basis_[i])[0][depth] == end_u_)
-				edgeFunctions.push_back(basis_[i]);
+			if((*b)[0][depth] == end_u_)
+				edgeFunctions.push_back(b);
 			break;
 		case SOUTH      :
-			if((*basis_[i])[1][order_v_-depth] == start_v_)
-				edgeFunctions.push_back(basis_[i]);
+			if((*b)[1][order_v_-depth] == start_v_)
+				edgeFunctions.push_back(b);
 			break;
 		case NORTH      :
-			if((*basis_[i])[1][depth] == end_v_)
-				edgeFunctions.push_back(basis_[i]);
+			if((*b)[1][depth] == end_v_)
+				edgeFunctions.push_back(b);
 			break;
 		case SOUTH_WEST :
-			if((*basis_[i])[0][order_u_-depth] == start_u_ &&
-			   (*basis_[i])[1][order_v_-depth] == start_v_)
-				edgeFunctions.push_back(basis_[i]);
+			if((*b)[0][order_u_-depth] == start_u_ &&
+			   (*b)[1][order_v_-depth] == start_v_)
+				edgeFunctions.push_back(b);
 			break;
 		case SOUTH_EAST :
-			if((*basis_[i])[0][depth]          == end_u_ &&
-			   (*basis_[i])[1][order_v_-depth] == start_v_)
-				edgeFunctions.push_back(basis_[i]);
+			if((*b)[0][depth]          == end_u_ &&
+			   (*b)[1][order_v_-depth] == start_v_)
+				edgeFunctions.push_back(b);
 			break;
 		case NORTH_WEST :
-			if((*basis_[i])[0][order_u_-depth] == start_u_ &&
-			   (*basis_[i])[1][depth]          == end_v_)
-				edgeFunctions.push_back(basis_[i]);
+			if((*b)[0][order_u_-depth] == start_u_ &&
+			   (*b)[1][depth]          == end_v_)
+				edgeFunctions.push_back(b);
 			break;
 		case NORTH_EAST :
-			if((*basis_[i])[0][depth] == end_u_ &&
-			   (*basis_[i])[1][depth] == end_v_)
-				edgeFunctions.push_back(basis_[i]);
+			if((*b)[0][depth] == end_u_ &&
+			   (*b)[1][depth] == end_v_)
+				edgeFunctions.push_back(b);
 			break;
 		default:
 			break;
@@ -1129,8 +1112,8 @@ void LRSplineSurface::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunction
 }
 
 void LRSplineSurface::rebuildDimension(int dimvalue) {
-	for(uint i=0; i<basis_.size(); i++) 
-		basis_[i]->setDimension(dimvalue);
+	for(Basisfunction *b : basis_)
+		b->setDimension(dimvalue);
 	dim_ = dimvalue;
 }
 
@@ -1200,9 +1183,10 @@ void LRSplineSurface::updateSupport(Basisfunction *f) {
 }
 
 void LRSplineSurface::generateIDs() const {
-	for(uint i=0; i<basis_.size(); i++) 
-		basis_[i]->setId(i);
-	for(uint i=0; i<element_.size(); i++) 
+	uint i=0;
+	for(Basisfunction *b : basis_)
+		b->setId(i++);
+	for(i=0; i<element_.size(); i++) 
 		element_[i]->setId(i);
 }
 
@@ -1215,9 +1199,9 @@ bool LRSplineSurface::isLinearIndepByOverloading(bool verbose) {
 	// reset overload counts and initialize overloaded basisfunction set
 	for(uint i=0; i<element_.size(); i++)
 		element_[i]->resetOverloadCount();
-	for(uint i=0; i<basis_.size(); i++)
-		if(basis_[i]->isOverloaded())
-			overloaded.push_back(basis_[i]);
+	for(Basisfunction *b : basis_)
+		if(b->isOverloaded())
+			overloaded.push_back(b);
 	
 	int lastOverloadCount = overloaded.size();
 	int iterationCount = 0 ;
@@ -1313,22 +1297,22 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		if(knots_v[i+1]-knots_v[i] < smallKnotV && knots_v[i+1] != knots_v[i])
 			smallKnotV = knots_v[i+1]-knots_v[i];
 
-	for (int i = 0; i < nmb_bas; ++i) {
+	for(Basisfunction *b : basis_) {
 		int startU, startV;
-		std::vector<double> locKnotU((*(basis_[i]))[0].begin(), (*(basis_[i]))[0].end());
-		std::vector<double> locKnotV((*(basis_[i]))[1].begin(), (*(basis_[i]))[1].end());
+		std::vector<double> locKnotU((*b)[0].begin(), (*b)[0].end());
+		std::vector<double> locKnotV((*b)[1].begin(), (*b)[1].end());
 		
 		for(startU=knots_u.size(); startU-->0; )
-			if(knots_u[startU] == (*basis_[i])[0][0]) break;
+			if(knots_u[startU] == (*b)[0][0]) break;
 		for(int j=0; j<order_u_; j++) {
-			if(knots_u[startU] == (*basis_[i])[0][j]) startU--;
+			if(knots_u[startU] == (*b)[0][j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
-			if(knots_v[startV] == (*basis_[i])[1][0]) break;
+			if(knots_v[startV] == (*b)[1][0]) break;
 		for(int j=0; j<order_v_; j++) {
-			if(knots_v[startV] == (*basis_[i])[1][j]) startV--;
+			if(knots_v[startV] == (*b)[1][j]) startV--;
 			else break;
 		}
 		startV++;
@@ -1494,22 +1478,23 @@ void LRSplineSurface::getNullSpace(std::vector<std::vector<boost::rational<long 
 	for(int i=0; i<fullDim; i++)
 		Ct.push_back(std::vector<boost::rational<long long> >(nmb_bas, boost::rational<long long>(0)));
 
-	for (int i = 0; i < nmb_bas; ++i) {
+	int basCount = 0;
+	for(Basisfunction *b : basis_)  {
 		int startU, startV;
-		std::vector<double> locKnotU((*(basis_[i]))[0].begin(), (*(basis_[i]))[0].end());
-		std::vector<double> locKnotV((*(basis_[i]))[1].begin(), (*(basis_[i]))[1].end());
+		std::vector<double> locKnotU((*b)[0].begin(), (*b)[0].end());
+		std::vector<double> locKnotV((*b)[1].begin(), (*b)[1].end());
 		
 		for(startU=knots_u.size(); startU-->0; )
-			if(knots_u[startU] == (*(basis_[i]))[0][0]) break;
+			if(knots_u[startU] == (*(b))[0][0]) break;
 		for(int j=0; j<order_u_; j++) {
-			if(knots_u[startU] == (*(basis_[i]))[0][j]) startU--;
+			if(knots_u[startU] == (*(b))[0][j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
-			if(knots_v[startV] == (*(basis_[i]))[1][0]) break;
+			if(knots_v[startV] == (*(b))[1][0]) break;
 		for(int j=0; j<order_v_; j++) {
-			if(knots_v[startV] == (*(basis_[i]))[1][j]) startV--;
+			if(knots_v[startV] == (*(b))[1][j]) startV--;
 			else break;
 		}
 		startV++;
@@ -1561,7 +1546,8 @@ void LRSplineSurface::getNullSpace(std::vector<std::vector<boost::rational<long 
 		}
 		for(uint i1=0; i1<rowU.size(); i1++)
 			for(uint i2=0; i2<rowV.size(); i2++)
-				Ct[(startV+i2)*n1 + (startU+i1)][i] = rowV[i2]*rowU[i1];
+				Ct[(startV+i2)*n1 + (startU+i1)][basCount] = rowV[i2]*rowU[i1];
+		basCount++;
 	}
 
 
@@ -1638,22 +1624,22 @@ bool LRSplineSurface::isLinearIndepByFloatingPointMappingMatrix(bool verbose) co
 
 	std::vector<std::vector<double > > C;  // rational projection matrix 
 
-	for (int i = 0; i < nmb_bas; ++i) {
+	for(Basisfunction *b : basis_)  {
 		int startU, startV;
-		std::vector<double> locKnotU((*(basis_[i]))[0].begin(), (*(basis_[i]))[0].end());
-		std::vector<double> locKnotV((*(basis_[i]))[1].begin(), (*(basis_[i]))[1].end());
+		std::vector<double> locKnotU((*b)[0].begin(), (*b)[0].end());
+		std::vector<double> locKnotV((*b)[1].begin(), (*b)[1].end());
 		
 		for(startU=knots_u.size(); startU-->0; )
-			if(knots_u[startU] == (*basis_[i])[0][0]) break;
+			if(knots_u[startU] == (*b)[0][0]) break;
 		for(int j=0; j<order_u_; j++) {
-			if(knots_u[startU] == (*basis_[i])[0][j]) startU--;
+			if(knots_u[startU] == (*b)[0][j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
-			if(knots_v[startV] == (*basis_[i])[1][0]) break;
+			if(knots_v[startV] == (*b)[1][0]) break;
 		for(int j=0; j<order_v_; j++) {
-			if(knots_v[startV] == (*basis_[i])[1][j]) startV--;
+			if(knots_v[startV] == (*b)[1][j]) startV--;
 			else break;
 		}
 		startV++;
@@ -1826,9 +1812,7 @@ double LRSplineSurface::makeIntegerKnots() {
 	}
 
 	// scale all basis functions values
-	Basisfunction *b;
-	for(uint i=0; i<basis_.size(); i++) {
-		b = basis_[i];
+	for(Basisfunction *b : basis_) {
 		for(int j=0; j<order_u_+1; j++)
 			(*b)[0][j] = floor((*b)[0][j]/scale + 0.5);
 		for(int j=0; j<order_v_+1; j++)
@@ -1848,8 +1832,7 @@ void LRSplineSurface::getSupportElements(std::vector<int> &result, const std::ve
 	result.clear();
 	std::set<int> tmp;
 	std::vector<Element*>::iterator it;
-	for(uint i=0; i<basisfunctions.size(); i++) {
-		Basisfunction *b = basis_[basisfunctions[i]];
+	for(Basisfunction *b : basis_) {
 		for(it=b->supportedElementBegin(); it != b->supportedElementEnd(); it++)
 			tmp.insert((**it).getId());
 	}
@@ -1866,13 +1849,15 @@ void LRSplineSurface::getDiagonalElements(std::vector<int> &result) const  {
 
 void LRSplineSurface::getDiagonalBasisfunctions(std::vector<int> &result) const  {
 	result.clear();
-	for(uint i=0; i<basis_.size(); i++)  {
+	int i = 0;
+	for(Basisfunction *b : basis_) {
 		bool isDiag = true;
 		for(int j=0; j<order_u_+1; j++)
-			if((*basis_[i])[0][j] != (*basis_[i])[1][j])
+			if((*b)[0][j] != (*b)[1][j])
 				isDiag = false;
 		if(isDiag)
 			result.push_back(i);
+		i++;
 	}
 }
 
@@ -1921,7 +1906,6 @@ void LRSplineSurface::read(std::istream &is) {
 	is >> dim_;        ws(is);
 	is >> rational_;   ws(is);
 	
-	basis_.resize(nBasis);
 	meshline_.resize(nMeshlines);
 	element_.resize(nElements);
 
@@ -1935,8 +1919,9 @@ void LRSplineSurface::read(std::istream &is) {
 
 	// read all basisfunctions
 	for(int i=0; i<nBasis; i++) {
-		basis_[i] = new Basisfunction(dim_, order_u_, order_v_);
-		basis_[i]->read(is);
+		Basisfunction *b = new Basisfunction(dim_, order_u_, order_v_);
+		b->read(is);
+		basis_.insert(b);
 	}
 
 	// get rid of more comments and spaces
@@ -2097,8 +2082,8 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 	x[1] = -1e7;
 	y[0] = 1e7;
 	y[1] = -1e7;
-	for(uint i=0; i<basis_.size(); i++) {
-		std::vector<double>::const_iterator cp = basis_[i]->cp();
+	for(Basisfunction *b : basis_) {
+		std::vector<double>::const_iterator cp = b->cp();
 		x[0] = (cp[0] < x[0]) ? cp[0] : x[0];
 		x[1] = (cp[0] > x[1]) ? cp[0] : x[1];
 		y[0] = (cp[1] < y[0]) ? cp[1] : y[0];
@@ -2253,8 +2238,8 @@ void LRSplineSurface::writePostscriptMeshWithControlPoints(std::ostream &out, in
 	x[1] = -1e7;
 	y[0] = 1e7;
 	y[1] = -1e7;
-	for(uint i=0; i<basis_.size(); i++) {
-		std::vector<double>::const_iterator cp = basis_[i]->cp();
+	for(Basisfunction *b : basis_) {
+		std::vector<double>::const_iterator cp = b->cp();
 		x[0] = (cp[0] < x[0]) ? cp[0] : x[0];
 		x[1] = (cp[0] > x[1]) ? cp[0] : x[1];
 		y[0] = (cp[1] < y[0]) ? cp[1] : y[0];
@@ -2287,20 +2272,22 @@ void LRSplineSurface::writePostscriptMeshWithControlPoints(std::ostream &out, in
 	out << "24 scalefont\n";
 	out << "setfont\n";
 
-	for(uint i=0; i<basis_.size(); i++) {
-		double cp_x = basis_[i]->cp(0);
-		double cp_y = basis_[i]->cp(1);
+	int i=-1;
+	for(Basisfunction *b : basis_) {
+		i++;
+		double cp_x = b->cp(0);
+		double cp_y = b->cp(1);
 		// move C^{-1} text on internal functions
-		int textX   = ((*basis_[i])[0][1] == (*basis_[i])[0][order_u_]) ? -2 : 1;
-		int textY   = ((*basis_[i])[1][1] == (*basis_[i])[1][order_v_]) ? -2 : 1;
+		int textX   = ((*b)[0][1] == (*b)[0][order_u_]) ? -2 : 1;
+		int textY   = ((*b)[1][1] == (*b)[1][order_v_]) ? -2 : 1;
 		// move text on edge functions
-		if((*basis_[i])[0][1] == end_u_)
+		if((*b)[0][1] == end_u_)
 			textX = 1;
-		else if((*basis_[i])[0][order_u_-1] == start_u_)
+		else if((*b)[0][order_u_-1] == start_u_)
 			textX = -2;
-		if((*basis_[i])[1][1] == end_v_)
+		if((*b)[1][1] == end_v_)
 			textY = 1;
-		else if((*basis_[i])[1][order_v_-1] == start_v_)
+		else if((*b)[1][order_v_-1] == start_v_)
 			textY = -2;
 
 		out << "newpath\n";
@@ -2329,9 +2316,9 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 
 	double max_du = 0;
 	double max_dv = 0;
-	for(uint i=0; i<basis_.size(); i++) {
-		double du    = (*basis_[i])[0][order_u_] - (*basis_[i])[0][0];
-		double dv    = (*basis_[i])[1][order_v_] - (*basis_[i])[1][0];
+	for(Basisfunction *b : basis_) {
+		double du    = (*b)[0][order_u_] - (*b)[0][0];
+		double dv    = (*b)[1][order_v_] - (*b)[1][0];
 		max_du       = (max_du > du) ? max_du : du;
 		max_dv       = (max_dv > dv) ? max_dv : dv;
 	}
@@ -2359,30 +2346,32 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 	out << "24 scalefont\n";
 	out << "setfont\n";
 
-	for(uint i=0; i<basis_.size(); i++) {
+	int i = -1;
+	for(Basisfunction *b : basis_) {
+		i++;
 		double avg_u = 0;
 		double avg_v = 0;
-		double du    = (*basis_[i])[0][order_u_] - (*basis_[i])[0][0];
-		double dv    = (*basis_[i])[1][order_v_] - (*basis_[i])[1][0];
+		double du    = (*b)[0][order_u_] - (*b)[0][0];
+		double dv    = (*b)[1][order_v_] - (*b)[1][0];
 
 		// move C^{-1} text on internal functions
 		double textOffset = 15.0;
-		int textX   = ((*basis_[i])[0][1] == (*basis_[i])[0][order_u_]) ? -2 : 1;
-		int textY   = ((*basis_[i])[1][1] == (*basis_[i])[1][order_v_]) ? -2 : 1;
+		int textX   = ((*b)[0][1] == (*b)[0][order_u_]) ? -2 : 1;
+		int textY   = ((*b)[1][1] == (*b)[1][order_v_]) ? -2 : 1;
 		// move text on edge functions
-		if((*basis_[i])[0][1] == end_u_)
+		if((*b)[0][1] == end_u_)
 			textX = 1;
-		else if((*basis_[i])[0][order_u_-1] == start_u_)
+		else if((*b)[0][order_u_-1] == start_u_)
 			textX = -2;
-		if((*basis_[i])[1][1] == end_v_)
+		if((*b)[1][1] == end_v_)
 			textY = 1;
-		else if((*basis_[i])[1][order_v_-1] == start_v_)
+		else if((*b)[1][order_v_-1] == start_v_)
 			textY = -2;
 
 		for(int j=1; j<order_u_; j++)
-			avg_u += (*basis_[i])[0][j];
+			avg_u += (*b)[0][j];
 		for(int j=1; j<order_v_; j++)
-			avg_v += (*basis_[i])[1][j];
+			avg_v += (*b)[1][j];
 		avg_u /= (order_u_-1);
 		avg_v /= (order_v_-1);
 

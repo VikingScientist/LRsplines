@@ -52,6 +52,7 @@ public:
 	bool operator==(const Basisfunction &other) const;
 	void operator+=(const Basisfunction &other) ;
 	std::vector<double>& operator[](int i) { return knots_[i]; } ;
+	const std::vector<double>& operator[](int i) const { return knots_[i]; } ;
 
 	bool overlaps(Element *el) const;
 	bool addSupport(Element *el) ;
@@ -73,7 +74,8 @@ public:
 	void setDimension(int dim)  ;
 	int getId() const   { return id_; };
 	int nSupportedElements() { return support_.size(); };
-	double dim()  const { return controlpoint_.size(); };
+	int nVariate()const { return knots_.size(); };
+	int dim()     const { return controlpoint_.size(); };
 	double umin() const { return knots_[0][0];         };
 	double umax() const { return knots_[0].back();     };
 	double vmin() const { return knots_[1][0];         };
@@ -87,6 +89,9 @@ public:
 	double cp(int i)                         const {return controlpoint_[i]; };
 	double w()                               const {return weight_; };
 	Go::Point getGrevilleParameter() const;
+	long hashCode() const ;
+	bool equals(const Basisfunction &other) const ;
+	bool equals(Basisfunction *other) const ;
 
 	double grevilleParameter(int index, int order, std::vector<double> knot) const;
 	void test(int index, int order, std::vector<double> knot){std::cout << "test" <<std::endl;};
@@ -97,8 +102,9 @@ public:
 
 private:
 
-	int    id_;
-	double weight_;
+	int                               id_;
+	double                            weight_;
+	mutable long                      hashCode_;
 	std::vector<double>               controlpoint_;
 	std::vector<std::vector<double> > knots_;
 	std::vector<Element*>             support_;

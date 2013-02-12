@@ -301,14 +301,53 @@ void Basisfunction::setDimension(int dim) {
 		controlpoint_[i]  = 0.0;
 }
 
-bool Basisfunction::operator==(const Basisfunction &other) const {
-	for(uint i=0; i<=knots_[0].size()-1; i++)
-		if(knots_[0][i] != other.knots_[0][i])
+long Basisfunction::hashCode() const {
+	if(hashCode_ != 0)
+		return hashCode_;
+
+	int nKnotSpans = 0;
+	double minSpan = DBL_MAX;
+	for(std::vector<double> knot : knots_) {
+		nKnotSpans += knot.size()-1;
+		for(uint i=0; i<knot.size()-1; i++)
+			minSpan = (minSpan < knot[i+1]-knot[i]) ? minSpan : knot[i+1]-knot[i];
+	}
+
+	int bitsFromEach = (sizeof(long)*8) / nKnotSpans;
+	int bitsLeft     = (sizeof(long)*8) % nKnotSpans;
+	int offset       = 0;
+	for(std::vector<double> knot : knots_) {
+		for(uint i=0; i<knot.size()-1; i++) {
+			int span = floor( (knot[i+1]-knot[i]) / minSpan + 0.5);
+			for(int k=0; k<bitsFromEach + (bitsLeft>0); k++) {
+				hashCode_ |= (span & (1 << k)) << offset;
+			}
+			offset += bitsFromEach + (bitsLeft>0);
+			bitsLeft--;
+		}
+	}
+	return hashCode_;
+}
+
+bool Basisfunction::equals(Basisfunction *other) const {
+	return equals(*other);
+}
+
+bool Basisfunction::equals(const Basisfunction &other) const {
+	if(knots_.size() != other.knots_.size())
+		return false;
+	for(uint i=0; i<knots_.size(); i++) {
+		if(knots_[i].size() != other[i].size())
 			return false;
-	for(uint i=0; i<=knots_[1].size()-1; i++)
-		if(knots_[1][i] != other.knots_[1][i])
-			return false;
+		for(uint j=0; j<knots_[i].size(); j++)
+			if(knots_[i][j] != other[i][j])
+				return false;
+	}
 	return true;
+}
+
+bool Basisfunction::operator==(const Basisfunction &other) const {
+	return equals(other);
 }
 
 void Basisfunction::operator+=(const Basisfunction &other) {
