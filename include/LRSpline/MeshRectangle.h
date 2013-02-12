@@ -20,6 +20,21 @@ public:
 	              double stop_v,
 	              double stop_w,
 	              int multiplicity=1);
+
+	template <typename RandomIterator1,
+	          typename RandomIterator2>
+	MeshRectangle(RandomIterator1 start, RandomIterator2 stop, int multiplicity=1) {
+		multiplicity_ = multiplicity;
+		start_.resize(3);
+		stop_.resize(3);
+		std::copy(start, start+3, start_.begin());
+		std::copy(stop,  stop+3,  stop_.begin() );
+		for(int i=0; i<3; i++)
+			if(start_[i] == stop_[i])
+				constDir_ = i;
+		if(constDir_ == -1)
+			std::cerr << "Error creating MeshRectangle: Not parallel to the parametric axis\n";
+	}
 	~MeshRectangle();
 	MeshRectangle* copy() const;
 
@@ -28,6 +43,7 @@ public:
 	bool overlaps(MeshRectangle *rect) const;
 	bool splits(Basisfunction *basis) const;
 	bool splits(Element *el) const;
+	int makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, int meshIndex) ;
 
 	int    constDirection() const;
 	double constParameter() const;

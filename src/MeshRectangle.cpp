@@ -2,6 +2,7 @@
 #include "LRSpline/MeshRectangle.h"
 #include "LRSpline/Element.h"
 #include "LRSpline/Basisfunction.h"
+#include <algorithm>
 
 namespace LR {
 
@@ -88,7 +89,8 @@ bool MeshRectangle::equals(const MeshRectangle *rect) const {
 	return true;
 }
 
-bool MeshRectangle::overlaps(MeshRectangle *rect) const {
+//! \brief returns true if \a rect overlaps or touches the edge of this MeshRectangle
+bool MeshRectangle::overlaps(const MeshRectangle *rect) const {
 	int c1 = constDir_; // constant index
 	int v1 = (c1+1)%3;  // first variable index
 	int v2 = (c1+2)%3;  // second variable index
@@ -101,6 +103,175 @@ bool MeshRectangle::overlaps(MeshRectangle *rect) const {
 	}
 
 	return false;
+}
+
+//! \brief returns true if \a rect is completely contained in the range of this MeshRectangle
+bool MeshRectangle::contains(const MeshRectangle *rect) const {
+	int c1 = constDir_; // constant index
+	int v1 = (c1+1)%3;  // first variable index
+	int v2 = (c1+2)%3;  // second variable index
+
+	if(constDir_ == rect->constDir_) {
+		if(start_[c1] == rect->start_[c1] &&
+		   start_[v1] <= rect->start_[v1] && stop_[v1] >= rect->stop_[v1] &&
+		   start_[v2] <= rect->start_[v2] && stop_[v2] >= rect->stop_[v2] )
+			return true;
+	}
+
+	return false;
+}
+
+int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, int meshIndex) {
+	int c1  = constDir_; // constant index
+	int v1  = (c1+1)%3;  // first variable index
+	int v2  = (c1+2)%3;  // second variable index
+	int v[] = {v1, v2};  // index way of referencing these
+	bool addThisToNewGuys = false;
+	MeshRectangle *rect = newGuys.at(meshIndex);
+	if( ! this->overlaps(rect) )
+		return 0;
+	if( this->contains(rect) ) {
+		newGuys.erase(newGuys.begin() + meshIndex);
+		delete rect;
+		return 1;
+	}
+	if( rect->contains(this) )
+		return 2;
+
+
+	// for both variable indices... i=0 corresponds to checking everything left-right (direction v1),
+	// i=1 is for checking everything up-down (direction v2). 
+	for(int i=0; i<2; i++) {
+		int j = 1-i; // 0 or 1
+		/*
+		 *    MERGE RECTANGLES TO ONE
+		 *  +-------+------+
+		 *  |       |      |
+		 *  |       |      |
+		 *  |       |      |
+		 *  +-------+------+
+		 */
+		// if the two mesh rectangles perfectly line up, keep only one of them
+		if((stop_[v[i]]  == rect->start_[v[i]] ||
+		    start_[v[i]] == rect->stop_[v[i]]   ) && 
+		    start_[v[j]] == rect->start_[v[j]]  && 
+		    stop_[v[j]]  == rect->stop_[v[j]]  ) {
+
+			double min = std::min(start_[v[i]], rect->start_[v[i]]);
+			double max = std::max(stop_[v[i]],  rect->stop_[v[i]] );
+			newGuys.erase(newGuys.begin() + meshIndex);
+			delete rect;
+			start_[v[i]] = min;
+			stop_[v[i]]  = max;
+			newGuys.push_back(this);
+			return 3;
+		}
+		/*
+		 *     EXPAND 'RECT' (RIGHT ONE)
+		 *  +-------+
+		 *  |    +--+------+
+		 *  |    |  |      |
+		 *  |    +--+------+
+		 *  +-------+
+		 */
+		if(start_[v[i]] <  rect->start_[v[i]] &&
+		   start_[v[j]] <= rect->start_[v[j]] &&
+		   stop_[v[j]]  >= rect->stop_[v[j]]) { // expand the support of rect DOWN in v[i]
+			rect->start_[v[i]] = start_[v[i]];
+		}
+		if(stop_[v[i]]  >  rect->stop_[v[i]]  &&
+		   start_[v[j]] <= rect->start_[v[j]] &&
+		   stop_[v[j]]  >= rect->stop_[v[j]]) { // expand the support of rect UP in v[i]
+			rect->stop_[v[i]] = stop_[v[i]];
+		}
+		/*
+		 *     EXPAND 'THIS' (LEFT ONE)
+		 *        +------+
+		 *  +-----+--+   |
+		 *  |     |  |   |
+		 *  +-----+--+   |
+		 *        +------+
+		 */
+		if(rect->start_[v[i]] <  start_[v[i]] &&
+		   rect->start_[v[j]] <= start_[v[j]] &&
+		   rect->stop_[v[j]]  >= stop_[v[j]]) {
+			start_[v[i]] = rect->start_[v[i]];
+			addThisToNewGuys = true;
+		}
+		if(rect->stop_[v[i]]  >  stop_[v[i]]  &&
+		   rect->start_[v[j]] <= start_[v[j]] &&
+		   rect->stop_[v[j]]  >= stop_[v[j]]) {
+			stop_[v[i]] = rect->stop_[v[i]];
+			addThisToNewGuys = true;
+		}
+	}
+
+
+	/*
+	 *     DO NOTHING
+	 *          +--+               +--+          +----+      
+	 *          |  |               |  |          |    |
+	 *     +----+--+----+     +----+--+     +----+----+
+	 *     |    |  |    |     |    |  |     |    |    |
+	 *     +----+--+----+     +----+--+     |    |    |
+	 *          |  |               |  |     +----+----+ 
+	 *          +--+               +--+     
+	 *        note that this is after fixes above
+	 */
+	if((rect->stop_[v1]  >=       stop_[v1]   &&
+	    rect->start_[v1] <=       start_[v1]  &&
+	          stop_[v2]  >= rect->stop_[v2]   &&
+	          start_[v2] <= rect->start_[v2]) ||
+	   (      stop_[v1]  >= rect->stop_[v1]   &&
+	          start_[v1] <= rect->start_[v1]  &&
+	    rect->stop_[v2]  >=       stop_[v2]   &&
+	    rect->start_[v2] <=       start_[v2])) {
+		// ...
+		;
+	/*
+	 *         MAKE TWO NEW ONES
+	 *  y3  +-------+                      +--+
+	 *      |       |                      |  |
+	 *  y2  |    +--+----+            +----+--+----+
+	 *      |    |  |    |      =>    |    |  |    | 
+	 *  y1  +----+--+    |            +----+--+----+
+	 *           |       |                 |  |
+	 *  y0       +-------+                 +--+
+	 *     x0   x1 x2   x3
+	 *                                  these are the two new ones
+	 */
+	} else {
+		double x0 = std::min(rect->start_[v1], start_[v1]);
+		double x1 = std::max(rect->start_[v1], start_[v1]);
+		double x2 = std::min(rect->stop_[v1],  stop_[v1] );
+		double x3 = std::max(rect->stop_[v1],  stop_[v1] );
+		double y0 = std::min(rect->start_[v2], start_[v2]);
+		double y1 = std::max(rect->start_[v2], start_[v2]);
+		double y2 = std::min(rect->stop_[v2],  stop_[v2] );
+		double y3 = std::max(rect->stop_[v2],  stop_[v2] );
+		double start[3];
+		double stop[3];
+		start[c1] = start_[c1];
+		stop[c1]  = stop_[c1];
+		start[v1] = x0;
+		stop[v1]  = x3;
+		start[v2] = y1;
+		stop[v2]  = y2;
+		MeshRectangle *m1 = new MeshRectangle(start, stop);
+		newGuys.push_back(m1);
+
+		start[v1] = x1;
+		stop[v1]  = x2;
+		start[v2] = y0;
+		stop[v2]  = y3;
+		MeshRectangle *m2 = new MeshRectangle(start, stop);
+		newGuys.push_back(m2);
+	}
+	if(addThisToNewGuys) {
+		newGuys.push_back(this);
+		return 3;
+	}
+	return 0;
 }
 
 bool MeshRectangle::splits(Element *el) const {

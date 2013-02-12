@@ -931,11 +931,7 @@ void LRSplineVolume::enforceMaxAspectRatio(std::vector<MeshRectangle*>* newLines
 		}
 	}
 }
-
-MeshRectangle* LRSplineVolume::insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity) {
-	return insert_line(true, u, start_v, stop_v, multiplicity);
-}
-#endif 
+#endif
 
 MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 	if(newRect->start_[0] < start_[0] ||
@@ -949,30 +945,52 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 		std::cerr << "(" <<   end_[0] << ", " <<   end_[1] << ", " <<   end_[2] << ") ";
 		return NULL;
 	}
-
+	
+	std::vector<MeshRectangle*> newGuys;
+	newGuys.push_back(newRect);
 
 	{ // check if the line is an extension or a merging of existing lines
 #ifdef TIME_LRSPLINE
 	PROFILE("meshrectangle verification");
 #endif
 	for(uint i=0; i<meshrect_.size(); i++) {
-		// if newRect overlaps any existing ones (may be multiple existing ones)
-		// let newRect be the entire length of all merged and delete the unused ones
-		if(meshrect_[i]->overlaps(newRect)) {
-			if(meshrect_[i]->equals(newRect)) {
-				if(meshrect_[i]->multiplicity_ >= newRect->multiplicity_) {
-					return meshrect_[i];
-				} else {
-					// keeping newrect, getting rid of the old rect
-					delete meshrect_[i];
-					meshrect_.erase(meshrect_.begin() + i);
+		for(uint j=0; j<newGuys.size(); j++) {
+			int status = meshrect_[i]->makeOverlappingRects(newGuys, j);
+			if(status == 1) { // deleted j or something in newGuys
+				j--;
+				continue;
+			} else if(status == 2) { // should deleted meshrect_[i]
+				delete meshrect_[i];
+				meshrect_.erase(meshrect_.begin() + i);
+				i--;
+				break;
+			} else if(status == 3) { // meshrect_[i] moved to newGuys (change in size)
+				meshrect_.erase(meshrect_.begin() + i);
+				i--;
+				break;
+			}
+		}
+	}
+	bool change = true;
+	while(change) {
+		change = false;
+		for(uint i=0; i<newGuys.size() && !change; i++) {
+			for(uint j=i+1; j<newGuys.size(); j++) {
+				int status = newGuys[i]->makeOverlappingRects(newGuys, j);
+				if(status == 1) {
+					j--;
+				} else if(status == 2) {
+					newGuys.erase(newGuys.begin() + i);
+					delete newGuys[i];
 					i--;
+					change = true;
+					break;
+				} else if(status == 3) {
+					newGuys.erase(newGuys.begin() + i);
+					i--;
+					change = true;
+					break;
 				}
-			} else {
-				std::cerr << "Haven't fixed overlapping, nonequal meshrectangles yet\n";
-				std::cerr << "Just works with brand new shiny rectangles\n";
-				return NULL;
-				exit(54023993);
 			}
 		}
 	}
@@ -986,11 +1004,13 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 	PROFILE("STEP 1");
 #endif
 	for(Basisfunction* b : basis_) {
-		if(newRect->splits(b)) {
-			int nKnots;
-			if( ((nKnots=newRect->nKnotsIn(b)) != newRect->multiplicity_) ) {
-				removeFunc.insert(b);
-				split( newRect->constDirection(), b, newRect->constParameter(), newRect->multiplicity_-nKnots, newFuncStp1 ); 
+		for(MeshRectangle *m : newGuys) {
+			if(m->splits(b)) {
+				int nKnots;
+				if( ((nKnots=m->nKnotsIn(b)) != m->multiplicity_) ) {
+					removeFunc.insert(b);
+					split( m->constDirection(), b, m->constParameter(), m->multiplicity_-nKnots, newFuncStp1 ); 
+				}
 			}
 		}
 	}
@@ -999,8 +1019,10 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 		delete b;
 	}
 	for(uint i=0; i<element_.size(); i++) {
-		if(newRect->splits(element_[i]))
-			element_.push_back(element_[i]->split(newRect->constDirection(), newRect->constParameter()) );
+		for(MeshRectangle *m : newGuys) {
+			if(m->splits(element_[i]))
+				element_.push_back(element_[i]->split(m->constDirection(), m->constParameter()) );
+		}
 	}
 	} // end step 1 timer
 
@@ -1008,7 +1030,8 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 #ifdef TIME_LRSPLINE
 	PROFILE("STEP 2");
 #endif
-	meshrect_.push_back(newRect);
+	for(MeshRectangle *m : newGuys) 
+		meshrect_.push_back(m);
 	while(newFuncStp1.size() > 0) {
 		Basisfunction *b = newFuncStp1.pop();
 		bool splitMore = false;
@@ -1027,17 +1050,8 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 			basis_.insert(b);
 	}
 	} // end step 2 timer
-	return newRect;
+	return NULL;
 }
-
-#if 0
-
-MeshRectangle* LRSplineVolume::insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity) {
-	return insert_line(false, v, start_u, stop_u, multiplicity);
-}
-
-#endif
- 
 
 void LRSplineVolume::split(int constDir, Basisfunction *b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions) {
 #ifdef TIME_LRSPLINE
