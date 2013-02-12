@@ -433,10 +433,13 @@ bool Basisfunction::addSupport(Element *el) {
  * \brief Returns true if this B-splines support overlaps with the elements size
  ***************************************************************************************************************************/
 bool Basisfunction::overlaps(Element *el) const {
-	return knots_[0][0]     < el->umax() &&
-	       knots_[0].back() > el->umin() && 
-	       knots_[1][0]     < el->vmax() &&
-	       knots_[1].back() > el->vmin();
+	for(uint i=0; i<knots_.size(); i++) {
+		if(knots_[i][0]     >= el->getParmax(i))
+			return false;
+		if(knots_[i].back() <= el->getParmin(i))
+			return false;
+	}
+	return true;
 }
 
 /************************************************************************************************************************//**

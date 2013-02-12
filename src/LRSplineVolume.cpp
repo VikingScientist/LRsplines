@@ -452,42 +452,62 @@ int LRSplineVolume::getElementContaining(double u, double v, double w) const {
 	return -1;
 }
 
-/*
-void LRSplineVolume::getMinspanLines(int iEl, std::vector<MeshRectangle*>& lines) {
+void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines) {
 	Element *e = element_[iEl];
 	std::vector<Basisfunction*>::iterator it;
-	double umin = e->umin();
-	double umax = e->umax();
-	double vmin = e->vmin();
-	double vmax = e->vmax();
-	double min_du = DBL_MAX;
-	double min_dv = DBL_MAX;
+	double umin        = e->getParmin(0);
+	double umax        = e->getParmax(0);
+	double vmin        = e->getParmin(1);
+	double vmax        = e->getParmax(1);
+	double wmin        = e->getParmin(2);
+	double wmax        = e->getParmax(2);
+	double min_du      = DBL_MAX;
+	double min_dv      = DBL_MAX;
+	double min_dw      = DBL_MAX;
 	int    best_startI = order_u_+2;
 	int    best_stopI  = order_u_+2;
 	int    best_startJ = order_v_+2;
 	int    best_stopJ  = order_v_+2;
-	bool   only_insert_span_u_line = (vmax-vmin) >= maxAspectRatio_*(umax-umin);
-	bool   only_insert_span_v_line = (umax-umin) >= maxAspectRatio_*(vmax-vmin);
+	int    best_startK = order_w_+2;
+	int    best_stopK  = order_w_+2;
+	double du          = umax - umin;
+	double dv          = vmax - vmin;
+	double dw          = wmax - wmin;
+	double midU        = (umax + umin)/2.0;
+	double midV        = (vmax + vmin)/2.0;
+	double midW        = (wmax + wmin)/2.0;
+	bool   drop_u_rect = du >= maxAspectRatio_*dv || du >= maxAspectRatio_*dw;
+	bool   drop_v_rect = dv >= maxAspectRatio_*du || dv >= maxAspectRatio_*dw;
+	bool   drop_w_rect = dw >= maxAspectRatio_*du || dw >= maxAspectRatio_*dv;
 	// loop over all supported B-splines and choose the minimum one
-	for(it=e->supportBegin(); it<e->supportEnd(); it++) {
-		double lowu  = (**it).umin();
-		double highu = (**it).umax();
-		double lowv  = (**it).vmin();
-		double highv = (**it).vmax();
-		double du = highu - lowu;
-		double dv = highv - lowv;
+	for(Basisfunction *b : e->support() ) {
+		double lowu  = b->getParmin(0);
+		double highu = b->getParmax(0);
+		double lowv  = b->getParmin(1);
+		double highv = b->getParmax(1);
+		double loww  = b->getParmin(2);
+		double highw = b->getParmax(2);
+		du = highu - lowu;
+		dv = highv - lowv;
+		dw = highv - lowv;
 		int startI=0;
 		int stopI=0;
 		int startJ=0;
 		int stopJ=0;
-		while((**it).knot_u_[startI] <= e->umin())
+		int startK=0;
+		int stopK=0;
+		while((*b)[0][startI] <= e->getParmin(0))
 			startI++;
-		while((**it).knot_u_[stopI]  <  e->umax())
+		while((*b)[0][stopI]  <  e->getParmax(0))
 			stopI++;
-		while((**it).knot_v_[startJ] <= e->vmin())
+		while((*b)[1][startJ] <= e->getParmin(1))
 			startJ++;
-		while((**it).knot_v_[stopJ]  <  e->vmax())
+		while((*b)[1][stopJ]  <  e->getParmax(1))
 			stopJ++;
+		while((*b)[2][startK] <= e->getParmin(2))
+			startK++;
+		while((*b)[2][stopK]  <  e->getParmax(2))
+			stopK++;
 
 		// min_du is defined as the minimum TOTAL knot span (of an entire basis function)
 		bool fixU = false;
@@ -504,6 +524,7 @@ void LRSplineVolume::getMinspanLines(int iEl, std::vector<MeshRectangle*>& lines
 			best_startI = delta_startI;
 			best_stopI  = delta_stopI;
 		}
+
 		bool fixV = false;
 		int delta_startJ = abs(startJ - (order_v_+1)/2);
 		int delta_stopJ  = abs(stopJ  - (order_v_+1)/2);
@@ -518,38 +539,67 @@ void LRSplineVolume::getMinspanLines(int iEl, std::vector<MeshRectangle*>& lines
 			best_startJ = delta_startJ;
 			best_stopJ  = delta_stopJ;
 		}
+
+		bool fixW = false;
+		int delta_startK = abs(startK - (order_w_+1)/2);
+		int delta_stopK  = abs(stopK  - (order_w_+1)/2);
+		if(  dw <  min_dw )
+			fixW = true;
+		if( dw == min_dw && delta_startK <= best_startK && delta_stopK  <= best_stopK )
+			fixW = true;
+		if(fixW) {
+			wmin = loww;
+			wmax = highw;
+			min_dw = wmax-wmin;
+			best_startK = delta_startK;
+			best_stopK  = delta_stopK;
+		}
 	}
-
-	if(!only_insert_span_v_line) 
-		lines.push_back(new MeshRectangle(true, (e->vmin() + e->vmax())/2.0, umin, umax, 1));
-		
-	if(!only_insert_span_u_line) 
-		lines.push_back(new MeshRectangle(false, (e->umin() + e->umax())/2.0, vmin, vmax, 1));
-
+	if(! drop_u_rect )
+		lines.push_back(new MeshRectangle(midU, vmin, wmin,  midU, vmax, wmax));
+	if(! drop_v_rect )
+		lines.push_back(new MeshRectangle(umin, midV, wmin,  umax, midV, wmax));
+	if(! drop_w_rect )
+		lines.push_back(new MeshRectangle(umin, vmin, midW,  umax, vmax, midW));
 }
 
-void LRSplineVolume::getFullspanLines(int iEl, std::vector<MeshRectangle*>& lines) {
+void LRSplineVolume::getFullspanRects(int iEl, std::vector<MeshRectangle*>& lines) {
 	std::vector<Basisfunction*>::iterator it;
 	Element *e = element_[iEl];
-	double umin = e->umin();
-	double umax = e->umax();
-	double vmin = e->vmin();
-	double vmax = e->vmax();
-	bool   only_insert_span_u_line = (vmax-vmin) >= maxAspectRatio_*(umax-umin);
-	bool   only_insert_span_v_line = (umax-umin) >= maxAspectRatio_*(vmax-vmin);
+	double umin        = e->getParmin(0);
+	double umax        = e->getParmax(0);
+	double vmin        = e->getParmin(1);
+	double vmax        = e->getParmax(1);
+	double wmin        = e->getParmin(2);
+	double wmax        = e->getParmax(2);
+	double du          = umax - umin;
+	double dv          = vmax - vmin;
+	double dw          = wmax - wmin;
+	double midU        = (umax + umin)/2.0;
+	double midV        = (vmax + vmin)/2.0;
+	double midW        = (wmax + wmin)/2.0;
+	bool   drop_u_rect = du >= maxAspectRatio_*dv || du >= maxAspectRatio_*dw;
+	bool   drop_v_rect = dv >= maxAspectRatio_*du || dv >= maxAspectRatio_*dw;
+	bool   drop_w_rect = dw >= maxAspectRatio_*du || dw >= maxAspectRatio_*dv;
 	// loop over all supported B-splines and make sure that everyone is covered by meshrect
-	for(it=e->supportBegin(); it<e->supportEnd(); it++) {
-		umin = (umin > (**it).umin()) ? (**it).umin() : umin;
-		umax = (umax < (**it).umax()) ? (**it).umax() : umax;
-		vmin = (vmin > (**it).vmin()) ? (**it).vmin() : vmin;
-		vmax = (vmax < (**it).vmax()) ? (**it).vmax() : vmax;
+	for(Basisfunction *b : e->support() ) {
+		umin = (umin > b->getParmin(0)) ? b->getParmin(0) : umin;
+		umax = (umax < b->getParmax(0)) ? b->getParmax(0) : umax;
+		vmin = (vmin > b->getParmin(1)) ? b->getParmin(1) : vmin;
+		vmax = (vmax < b->getParmax(1)) ? b->getParmax(1) : vmax;
+		wmin = (wmin > b->getParmin(2)) ? b->getParmin(2) : wmin;
+		wmax = (wmax < b->getParmax(2)) ? b->getParmax(2) : wmax;
 	}
-	if(!only_insert_span_v_line) 
-		lines.push_back(new MeshRectangle(true, (e->vmin() + e->vmax())/2.0, umin, umax, 1));
-		
-	if(!only_insert_span_u_line) 
-		lines.push_back(new MeshRectangle(false, (e->umin() + e->umax())/2.0, vmin, vmax, 1));
+
+	if(! drop_u_rect )
+		lines.push_back(new MeshRectangle(midU, vmin, wmin,  midU, vmax, wmax));
+	if(! drop_v_rect )
+		lines.push_back(new MeshRectangle(umin, midV, wmin,  umax, midV, wmax));
+	if(! drop_w_rect )
+		lines.push_back(new MeshRectangle(umin, vmin, midW,  umax, vmax, midW));
 }
+
+/*
 
 void LRSplineVolume::getStructMeshLines(int iBasis, std::vector<MeshRectangle*>& lines) {
 	Basisfunction *b = basis_[iBasis];
@@ -613,6 +663,7 @@ void LRSplineVolume::refineBasisFunction(const std::vector<int> &indices) {
 	for(uint i=0; i<newLines.size(); i++) 
 		delete newLines[i];
 }
+#endif
 
 void LRSplineVolume::refineElement(int index) {
 	std::vector<int> tmp = std::vector<int>(1, index);
@@ -620,29 +671,25 @@ void LRSplineVolume::refineElement(int index) {
 }
 
 void LRSplineVolume::refineElement(const std::vector<int> &indices) {
-	std::vector<MeshRectangle*> newLines;
+	std::vector<MeshRectangle*> newRects;
 
 	/* first retrieve all meshrects needed */
 	for(uint i=0; i<indices.size(); i++) {
 		if(refStrat_ == LR_MINSPAN)
-			getMinspanLines(indices[i],newLines);
+			getMinspanRects(indices[i],newRects);
 		else
-			getFullspanLines(indices[i],newLines);
+			getFullspanRects(indices[i],newRects);
 	}
 
 	/* Do the actual refinement */
-	for(uint i=0; i<newLines.size(); i++) {
-		MeshRectangle *m = newLines[i];
-		insert_line(!m->is_spanning_u(), m->const_par_, m->start_, m->stop_, refKnotlineMult_);
-	}
+	for(uint i=0; i<newRects.size(); i++)
+		insert_line(newRects[i]);
 
 	/* do a posteriori fixes to ensure a proper mesh */
-	aPosterioriFixes();
+	// aPosterioriFixes();
 
-	/* exit cleanly be deleting all temporary new lines */
-	for(uint i=0; i<newLines.size(); i++) 
-		delete newLines[i];
 }
+#if 0
 
 void LRSplineVolume::refineByDimensionIncrease(const std::vector<double> &errPerElement, double beta) {
 	Basisfunction *b;
@@ -1937,7 +1984,7 @@ double LRSplineVolume::makeIntegerKnots() {
 void LRSplineVolume::getDiagonalElements(std::vector<int> &result) const  {
 	result.clear();
 	for(uint i=0; i<element_.size(); i++) 
-		if(element_[i]->umin() == element_[i]->vmin() && element_[i]->umin() == element_[i]->getParmin(2))
+		if(element_[i]->getParmin(0) == element_[i]->getParmin(1) && element_[i]->getParmin(0) == element_[i]->getParmin(2))
 			result.push_back(i);
 }
 
@@ -2056,7 +2103,8 @@ void LRSplineVolume::write(std::ostream &os) const {
 	for(Basisfunction* b : basis_) 
 		os << *b << std::endl;
 	os << "# Mesh rectangles:\n";
-	for(MeshRectangle* m : meshrect_)  
+	int i=0;
+	for(MeshRectangle* m : meshrect_)
 		os << *m << std::endl;
 	os << "# Elements:\n";
 	for(Element* e : element_)

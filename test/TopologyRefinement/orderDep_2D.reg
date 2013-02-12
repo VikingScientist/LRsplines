@@ -1,0 +1,19 @@
+-p1 3 -p2 2 orderDep_2D.inp 
+
+# Elements:
+(0, 0) x (0.5, 0.5)
+(1, 0) x (1.5, 0.5)
+(0, 1) x (0.5, 1.5)
+(1.5, 0) x (2, 0.5)
+(0, 0.5) x (0.5, 1)
+(1, 0.5) x (1.5, 1)
+(1.5, 0.5) x (2, 1)
+(0.5, 0) x (1, 0.5)
+(0.5, 1) x (1, 1.5)
+(0.5, 0.5) x (1, 1)
+
+Key LR-spline information:
+  number of basis functions: 46
+  number of mesh lines     : 14
+  number of elements       : 30
+

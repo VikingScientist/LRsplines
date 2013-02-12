@@ -44,11 +44,11 @@ public:
 	//       Try and sort the Elements after all refinements and binary search for the containing point in logarithmic time
 
 	// refinement functions
+	void refineElement(int index);
+	void refineElement(const std::vector<int> &indices);
 	/*
 	void refineBasisFunction(int index);
 	void refineBasisFunction(const std::vector<int> &indices);
-	void refineElement(int index);
-	void refineElement(const std::vector<int> &indices);
 	void refineByDimensionIncrease(const std::vector<double> &error, double beta);
 	*/
 
@@ -64,11 +64,11 @@ public:
 	}
 
 	// (private) refinement functions
+	void getFullspanRects(  int iEl,    std::vector<MeshRectangle*>& lines);
+	void getMinspanRects(   int iEl,    std::vector<MeshRectangle*>& lines);
 	/*
 	MeshRectangle* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	MeshRectangle* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
-	void getFullspanLines(  int iEl,    std::vector<MeshRectangle*>& lines);
-	void getMinspanLines(   int iEl,    std::vector<MeshRectangle*>& lines);
 	void getStructMeshLines(int iBasis, std::vector<MeshRectangle*>& lines);
 	void aPosterioriFixes() ;
 	void closeGaps(            std::vector<MeshRectangle*>* newLines=NULL);
