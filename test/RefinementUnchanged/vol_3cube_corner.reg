@@ -1,0 +1,12 @@
+-p1 3 -p2 5 -p3 4 -n1 5 -n2 7 -n3 6 -vol vol_3cube_corner.inp
+
+----------------------------------------
+    all assertions passed
+========================================
+
+Key LR-spline information:
+  number of basis functions: 217
+  number of mesh lines     : 15
+  number of elements       : 34
+
+

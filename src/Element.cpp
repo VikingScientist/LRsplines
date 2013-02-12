@@ -51,17 +51,17 @@ Element* Element::copy() {
 
 Element* Element::split(int splitDim, double par_value) {
 	Element *newElement = NULL;
-	if(splitDim == 0) {
-		if(par_value >= max[0] || par_value <= min[0])
-			return NULL;
-		newElement = new Element(par_value, min[1], max[0], max[1]);
-		max[0] = par_value;
-	} else if(splitDim == 1) {
-		if(par_value >= max[1] || par_value <= min[1])
-			return NULL;
-		newElement = new Element(min[0], par_value, max[0], max[1]);
-		max[1] = par_value;
-	}
+	if(par_value >= max[splitDim] || par_value <= min[splitDim])
+		return NULL;
+		
+	std::vector<double> newMin(min.begin(), min.end());
+	std::vector<double> newMax(max.begin(), max.end());
+
+	newMin[splitDim] = par_value; // new element should start at par_value
+	max[splitDim]    = par_value; // old element should stop  at par_value
+
+	newElement = new Element(min.size(), newMin.begin(), newMax.begin());
+
 	for(Basisfunction *b : support_)
 		if(b->addSupport(newElement)) // tests for overlapping as well
 			newElement->addSupportFunction(b);

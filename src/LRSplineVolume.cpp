@@ -357,7 +357,7 @@ void LRSplineVolume::point(std::vector<Go::Point> &pts, double u, double v, doub
 	}
 }
 
-void LRSplineVolume::computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivsSf2 & result, int iEl ) const {
+void LRSplineVolume::computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivs2 & result, int iEl ) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("computeBasis()");
 #endif
@@ -366,23 +366,27 @@ void LRSplineVolume::computeBasis (double param_u, double param_v, double param_
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->constSupportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->constSupportEnd();
 	int nPts= (iEl<0) ? basis_.size()  : element_[iEl]->nBasisFunctions();
-	result.prepareDerivs(param_u, param_v, 0, -1, nPts);
+	result.prepareDerivs(param_u, param_v, param_w, 0, 0, 0, nPts);
 
 	int i=0;
 	
 	for(it=itStart; it!=itStop; ++it, ++i) {
-		(*it)->evaluate(values, param_u, param_v, 2, param_u!=end_u_, param_v!=end_v_);
+		(*it)->evaluate(values, param_u, param_v, param_w, 2, param_u!=end_u_, param_v!=end_v_, param_w!=end_w_);
 	
 		result.basisValues[i]    = values[0];
 		result.basisDerivs_u[i]  = values[1];
 		result.basisDerivs_v[i]  = values[2];
-		result.basisDerivs_uu[i] = values[3];
-		result.basisDerivs_uv[i] = values[4];
-		result.basisDerivs_vv[i] = values[5];
+		result.basisDerivs_w[i]  = values[3];
+		result.basisDerivs_uu[i] = values[4];
+		result.basisDerivs_uv[i] = values[5];
+		result.basisDerivs_uw[i] = values[6];
+		result.basisDerivs_vv[i] = values[7];
+		result.basisDerivs_vw[i] = values[8];
+		result.basisDerivs_ww[i] = values[9];
 	}
 }
 
-void LRSplineVolume::computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivsSf & result, int iEl ) const {
+void LRSplineVolume::computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivs & result, int iEl ) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("computeBasis()");
 #endif
@@ -391,28 +395,29 @@ void LRSplineVolume::computeBasis (double param_u, double param_v, double param_
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->constSupportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->constSupportEnd();
 	int nPts= (iEl<0) ? basis_.size()  : element_[iEl]->nBasisFunctions();
-	result.prepareDerivs(param_u, param_v, 0, -1, nPts);
+	result.prepareDerivs(param_u, param_v, param_w, 0, 0, 0, nPts);
 	
 	int i=0;
 	for(it=itStart; it!=itStop; ++it, ++i) {
-		(*it)->evaluate(values, param_u, param_v, 1, param_u!=end_u_, param_v!=end_v_);
+		(*it)->evaluate(values, param_u, param_v, param_w, 1, param_u!=end_u_, param_v!=end_v_, param_w!=end_w_);
 		
 		result.basisValues[i]   = values[0];
 		result.basisDerivs_u[i] = values[1];
 		result.basisDerivs_v[i] = values[2];
+		result.basisDerivs_w[i] = values[3];
 	}
 }
 
 
-void LRSplineVolume::computeBasis(double param_u, double param_v, double param_w, Go::BasisPtsSf & result, int iEl ) const {
+void LRSplineVolume::computeBasis(double param_u, double param_v, double param_w, Go::BasisPts & result, int iEl ) const {
 	HashSet_const_iterator<Basisfunction*> it, itStop, itStart;
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->constSupportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->constSupportEnd();
 	int nPts= (iEl<0) ? basis_.size()  : element_[iEl]->nBasisFunctions();
-	result.preparePts(param_u, param_v, 0, -1, nPts);
+	result.preparePts(param_u, param_v, param_w, 0, 0, 0, nPts);
 	int i=0;
 	for(it=itStart; it!=itStop; ++it, ++i)
-		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_u!=end_u_, param_v!=end_v_, param_w!=end_w_);
+		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_w, param_u!=end_u_, param_v!=end_v_, param_w!=end_w_);
 }
 
 void LRSplineVolume::computeBasis (double param_u,
