@@ -191,6 +191,7 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 			element_.push_back(new Element(umin, vmin, umax, vmax));
 		}
 	}
+
 	for(Basisfunction* b : basis_)
 		updateSupport(b);
 }
@@ -336,16 +337,16 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 	PROFILE("computeBasis()");
 #endif
 	std::vector<double> values;
-	HashSet_iterator<Basisfunction*> it, itStop, itStart;
-	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
-	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
+	HashSet_const_iterator<Basisfunction*> it, itStop, itStart;
+	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->constSupportBegin();
+	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->constSupportEnd();
 	int nPts= (iEl<0) ? basis_.size()  : element_[iEl]->nBasisFunctions();
 	result.prepareDerivs(param_u, param_v, 0, -1, nPts);
 
 	int i=0;
 	//element_[i]->write(std::cout);
 	
-	for(it=itStart; it!=itStop; it++, i++) {
+	for(it=itStart; it!=itStop; ++it, ++i) {
 		(*it)->evaluate(values, param_u, param_v, 2, param_u!=end_u_, param_v!=end_v_);
 	
 		result.basisValues[i]    = values[0];
@@ -363,13 +364,13 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 #endif
 	std::vector<double> values;
 	HashSet_const_iterator<Basisfunction*> it, itStop, itStart;
-	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
-	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
+	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->constSupportBegin();
+	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->constSupportEnd();
 	int nPts= (iEl<0) ? basis_.size()  : element_[iEl]->nBasisFunctions();
 	result.prepareDerivs(param_u, param_v, 0, -1, nPts);
 	
 	int i=0;
-	for(it=itStart; it!=itStop; it++, i++) {
+	for(it=itStart; it!=itStop; ++it, ++i) {
 		(*it)->evaluate(values, param_u, param_v, 1, param_u!=end_u_, param_v!=end_v_);
 		
 		result.basisValues[i]   = values[0];
@@ -381,12 +382,13 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 
 void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsSf & result, int iEl ) const {
 	HashSet_const_iterator<Basisfunction*> it, itStop, itStart;
-	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
-	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
+	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->constSupportBegin();
+	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->constSupportEnd();
+	int nPts= (iEl<0) ? basis_.size()  : element_[iEl]->nBasisFunctions();
 
-	result.preparePts(param_u, param_v, 0, -1, (itStop-itStart));
+	result.preparePts(param_u, param_v, 0, -1, nPts);
 	int i=0;
-	for(it=itStart; it!=itStop; it++, i++)
+	for(it=itStart; it!=itStop; ++it, ++i)
 		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_u!=end_u_, param_v!=end_v_);
 }
 
@@ -398,12 +400,13 @@ void LRSplineSurface::computeBasis (double param_u,
 {
 	result.clear();
 	HashSet_const_iterator<Basisfunction*> it, itStop, itStart;
-	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->supportBegin();
-	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->supportEnd();
+	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->constSupportBegin();
+	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->constSupportEnd();
+	int nPts= (iEl<0) ? basis_.size()  : element_[iEl]->nBasisFunctions();
 	
-	result.resize(itStop - itStart);
+	result.resize(nPts);
 	int i=0;
-	for(it=itStart; it!=itStop; it++, i++)
+	for(it=itStart; it!=itStop; ++it, ++i)
 	    (*it)->evaluate(result[i], param_u, param_v, derivs, param_u!=end_u_, param_v!=end_v_);
 
 }
@@ -941,8 +944,8 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 #ifdef TIME_LRSPLINE
 	PROFILE("S1-basissplit");
 #endif
-	bool oneSplit = false;
-	while(!oneSplit) {
+	bool oneSplit = true;
+	while(oneSplit) {
 		oneSplit = false;
 		for(Basisfunction* b : basis_) {
 			if(newline->splits(b)) {
@@ -972,8 +975,8 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 	PROFILE("STEP 2");
 #endif
 	meshline_.push_back(newline);
-	bool oneSplit = false;
-	while(!oneSplit) {
+	bool oneSplit = true;
+	while(oneSplit) {
 		oneSplit = false;
 		for(Basisfunction *b : basis_) {
 			for(Meshline *m : meshline_) {

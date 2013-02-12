@@ -25,11 +25,11 @@ public:
 	double umax() const         { return stop_u_;  };
 	double vmax() const         { return stop_v_;  };
 	double area() const         { return (stop_v_-start_v_)*(stop_u_-start_u_);  };
-	HashSet_iterator<Basisfunction*> supportBegin()             { return support_.begin(); };
-	HashSet_iterator<Basisfunction*> supportEnd()               { return support_.end();   };
-	HashSet_const_iterator<Basisfunction*> supportBegin() const { return support_.begin(); };
-	HashSet_const_iterator<Basisfunction*> supportEnd()   const { return support_.end();   };
-	const HashSet<Basisfunction*> support()               const { return support_;   };
+	HashSet_iterator<Basisfunction*> supportBegin()                 { return support_.begin(); };
+	HashSet_iterator<Basisfunction*> supportEnd()                   { return support_.end();   };
+	HashSet_const_iterator<Basisfunction*> constSupportBegin()const { return support_.begin(); };
+	HashSet_const_iterator<Basisfunction*> constSupportEnd()  const { return support_.end();   };
+	const HashSet<Basisfunction*>& support()                  const { return support_;   };
 	// Basisfunction* supportFunction(int i) { return support_[i];   };
 	int nBasisFunctions() const           { return support_.size(); };
 	void setId(int id)                    { this->id_ = id; };

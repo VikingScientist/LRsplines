@@ -34,6 +34,7 @@ public:
 	Basisfunction(RandomIterator1 knot_u, RandomIterator2 knot_v, RandomIterator3 controlpoint, int dim, int order_u, int order_v, double weight=1.0) {
 		weight_       = weight ;
 		id_           = -1;
+		hashCode_     = 0;
 		knots_.resize(2);
 		knots_[0].resize(order_u+1);
 		knots_[1].resize(order_v+1);
@@ -91,7 +92,7 @@ public:
 	Go::Point getGrevilleParameter() const;
 	long hashCode() const ;
 	bool equals(const Basisfunction &other) const ;
-	bool equals(Basisfunction *other) const ;
+	// bool equals(Basisfunction *other) const ;
 
 	double grevilleParameter(int index, int order, std::vector<double> knot) const;
 	void test(int index, int order, std::vector<double> knot){std::cout << "test" <<std::endl;};

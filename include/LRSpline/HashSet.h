@@ -21,11 +21,11 @@ class HashSet_iterator
 	typedef typename std::list<T>::iterator                        list_iter;
 
     public:
-		
+
 		//! \brief Default constructor
 		HashSet_iterator() {
 		}
-
+		
 		//! \brief Default constructor
 		//! \param majorIter iterator position in the hashcode map
 		//! \param subIter   iterator position in the linked list for non-unique hash codes
@@ -87,8 +87,8 @@ class HashSet_const_iterator
                                T,ptrdiff_t,const T*,const T&> // Info about iterator
 {
 
-	typedef typename std::map<long, std::list<T> >::const_iterator  iter;
-	typedef typename std::list<T>::const_iterator                   list_iter;
+	typedef typename std::map<long, std::list<T> >::const_iterator iter;
+	typedef typename std::list<T>::const_iterator                  list_iter;
 
     public:
 
@@ -133,7 +133,7 @@ class HashSet_const_iterator
 			return *this;
 		}
 		/*
-		HashSet_const_iterator operator++(int i) {
+		HashSet_iterator operator++(int i) {
 			myIter += i;
 		}
 		*/
@@ -210,7 +210,7 @@ public:
 			numb++;
 		} else {
 			for(T a : it->second)
-				if(a->equals(obj))
+				if(a->equals(*obj))
 					return;
 			data[hc].push_back(obj);
 			numb++;
@@ -231,7 +231,7 @@ public:
 			return 0;
 
 		for(list_iter lit = it->second.begin(); lit != it->second.end(); lit++) {
-			if((**lit).equals(obj)) {
+			if(obj->equals(**lit)) {
 				it->second.erase(lit);
 				if(it->second.size() == 0) {
 					data.erase(it);
@@ -256,7 +256,7 @@ public:
 		if(it == data.end())
 			return end();
 		for(list_iter lit = it->second.begin(); lit != it->second.end(); lit++)
-			if(obj->equals(*lit))
+			if(obj->equals(**lit))
 				return HashSet_iterator<T>(it, lit, data.end());
 		
 		return end();
@@ -275,7 +275,7 @@ public:
 	}
 
 	//! \brief iterator to the beginning of the container.
-	//! \details dereferencing the iterator returns an object of class <T>
+		//! \details dereferencing the iterator returns an object of class <T>
 	HashSet_const_iterator<T> begin() const {
 		return HashSet_const_iterator<T>(data.begin(), data.begin()->second.begin(), data.end());
 	}
@@ -286,8 +286,9 @@ public:
 		return HashSet_const_iterator<T>(data.end(), last->second.end(), data.end());
 	}
 
+
 	//! \brief iterator to the beginning of the container.
-		//! \details dereferencing the iterator returns an object of class <T>
+	//! \details dereferencing the iterator returns an object of class <T>
 	HashSet_iterator<T> begin() {
 		return HashSet_iterator<T>(data.begin(), data.begin()->second.begin(), data.end());
 	}
@@ -298,7 +299,7 @@ public:
 		return HashSet_iterator<T>(data.end(), last->second.end(), data.end());
 	}
 
-private:
+// private:
 	std::map<long, std::list<T> > data;
 	iter last;
 	int  numb;

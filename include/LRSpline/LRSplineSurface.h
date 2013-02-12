@@ -115,13 +115,13 @@ public:
 	std::vector<Element*>::iterator elementEnd()                   { return element_.end(); };
 	HashSet_iterator<Basisfunction*>       basisBegin()            { return basis_.begin(); };
 	HashSet_iterator<Basisfunction*>       basisEnd()              { return basis_.end(); };
-	HashSet_const_iterator<Basisfunction*> basisBegin() const      { return basis_.begin(); };
-	HashSet_const_iterator<Basisfunction*> basisEnd()   const      { return basis_.end(); };
-	HashSet<Basisfunction*> getAllBasisfunctions()                 { return basis_ ;};
+	HashSet_const_iterator<Basisfunction*> basisBegin()   const    { return basis_.begin(); };
+	HashSet_const_iterator<Basisfunction*> basisEnd()     const    { return basis_.end(); };
+	const HashSet<Basisfunction*>& getAllBasisfunctions() const    { return basis_ ;};
 	Element* getElement(int i)                                     { return element_[i]; };
 	Basisfunction* getBasisfunction(int iBasis) {
 		HashSet_iterator<Basisfunction*> it = basis_.begin();
-		for(int i=0; i<iBasis; i++) it++;
+		for(int i=0; i<iBasis; ++i) ++it;
 		return *it;
 	}
 	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;

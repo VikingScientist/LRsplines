@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <climits>
+#include <cmath>
 #include <set>
 
 namespace LR {
@@ -12,6 +13,7 @@ namespace LR {
 Basisfunction::Basisfunction(int dim, int order_u, int order_v) {
 	weight_       = 1;
 	id_           = -1;
+	hashCode_     = 0;
 	knots_.resize(2);
 	knots_[0].resize(order_u+1);
 	knots_[1].resize(order_v+1);
@@ -305,22 +307,19 @@ long Basisfunction::hashCode() const {
 	if(hashCode_ != 0)
 		return hashCode_;
 
-	int nKnotSpans = 0;
-	double minSpan = DBL_MAX;
-	for(std::vector<double> knot : knots_) {
-		nKnotSpans += knot.size()-1;
-		for(uint i=0; i<knot.size()-1; i++)
-			minSpan = (minSpan < knot[i+1]-knot[i]) ? minSpan : knot[i+1]-knot[i];
-	}
+	int nKnots = 0;
+	for(std::vector<double> knot : knots_)
+		nKnots += knot.size();
 
-	int bitsFromEach = (sizeof(long)*8) / nKnotSpans;
-	int bitsLeft     = (sizeof(long)*8) % nKnotSpans;
+	int bitsFromEach = (sizeof(long)*8) / nKnots;
+	int bitsLeft     = (sizeof(long)*8) % nKnots;
 	int offset       = 0;
 	for(std::vector<double> knot : knots_) {
 		for(uint i=0; i<knot.size()-1; i++) {
-			int span = floor( (knot[i+1]-knot[i]) / minSpan + 0.5);
+			// int randInt = log(fabs(knot[i])+1);
+			int randInt = knot[i];
 			for(int k=0; k<bitsFromEach + (bitsLeft>0); k++) {
-				hashCode_ |= (span & (1 << k)) << offset;
+				hashCode_ |= (randInt & (1 << k)) << offset;
 			}
 			offset += bitsFromEach + (bitsLeft>0);
 			bitsLeft--;
@@ -329,9 +328,11 @@ long Basisfunction::hashCode() const {
 	return hashCode_;
 }
 
+/*
 bool Basisfunction::equals(Basisfunction *other) const {
 	return equals(*other);
 }
+*/
 
 bool Basisfunction::equals(const Basisfunction &other) const {
 	if(knots_.size() != other.knots_.size())
@@ -340,7 +341,7 @@ bool Basisfunction::equals(const Basisfunction &other) const {
 		if(knots_[i].size() != other[i].size())
 			return false;
 		for(uint j=0; j<knots_[i].size(); j++)
-			if(knots_[i][j] != other[i][j])
+			if(fabs(knots_[i][j] - other[i][j]) > 1e-10)
 				return false;
 	}
 	return true;

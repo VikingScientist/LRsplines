@@ -177,13 +177,12 @@ int main(int argc, char **argv) {
 	}
 
 	// harvest some statistics and display these results
-	vector<Basisfunction*>::iterator bit;
 	double avgBasisToElement = 0;
 	double avgBasisToLine    = 0;
 	int maxBasisToElement    = -1;
 	int minBasisToElement    = 9999999;
-	for(bit=lr.basisBegin(); bit!=lr.basisEnd(); bit++) {
-		int nE = (*bit)->nSupportedElements();
+	for(Basisfunction *b : lr.getAllBasisfunctions()) {
+		int nE = b->nSupportedElements();
 		maxBasisToElement = (maxBasisToElement > nE) ? maxBasisToElement : nE;
 		minBasisToElement = (minBasisToElement < nE) ? minBasisToElement : nE;
 		avgBasisToElement += nE;
