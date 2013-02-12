@@ -131,11 +131,16 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 		return 0;
 	if( this->contains(rect) ) {
 		newGuys.erase(newGuys.begin() + meshIndex);
+		std::cout << "Deleted: " << *rect << std::endl;
+		std::cout << "  contained in : " << *this << std::endl;
 		delete rect;
 		return 1;
 	}
-	if( rect->contains(this) )
+	if( rect->contains(this) ) {
+		std::cout << "Deleted: " << *this << std::endl;
+		std::cout << "  contained in : " << *rect << std::endl;
 		return 2;
+	}
 
 
 	// for both variable indices... i=0 corresponds to checking everything left-right (direction v1),
@@ -152,18 +157,35 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 		 */
 		// if the two mesh rectangles perfectly line up, keep only one of them
 		if((stop_[v[i]]  == rect->start_[v[i]] ||
-		    start_[v[i]] == rect->stop_[v[i]]   ) && 
-		    start_[v[j]] == rect->start_[v[j]]  && 
-		    stop_[v[j]]  == rect->stop_[v[j]]  ) {
+		    start_[v[i]] == rect->stop_[v[i]]  )) {
 
-			double min = std::min(start_[v[i]], rect->start_[v[i]]);
-			double max = std::max(stop_[v[i]],  rect->stop_[v[i]] );
-			newGuys.erase(newGuys.begin() + meshIndex);
-			delete rect;
-			start_[v[i]] = min;
-			stop_[v[i]]  = max;
-			newGuys.push_back(this);
-			return 3;
+			if(start_[v[j]] == rect->start_[v[j]]  && 
+			   stop_[v[j]]  == rect->stop_[v[j]]  ) {
+				double min = std::min(start_[v[i]], rect->start_[v[i]]);
+				double max = std::max(stop_[v[i]],  rect->stop_[v[i]] );
+				std::cout << "Deleted: " << *rect << std::endl;
+				std::cout << "  merged with  : " << *this << std::endl;
+				newGuys.erase(newGuys.begin() + meshIndex);
+				delete rect;
+				start_[v[i]] = min;
+				stop_[v[i]]  = max;
+				newGuys.push_back(this);
+				return 4;
+			/*
+		 	*    DO NOTHING
+		 	*  +-------+
+		 	*  |       +------+
+		 	*  |       |      |
+		 	*  +-------+      |
+		 	*          |      |
+		 	*          +------+ they're just kissing... leave them alone
+		 	*/
+			} else if((start_[v[j]] < rect->start_[v[j]]   && 
+			           stop_[v[j]]  < rect->stop_[v[j]]  ) ||
+			          (start_[v[j]] > rect->start_[v[j]]   && 
+			           stop_[v[j]]  > rect->stop_[v[j]]  )) {
+				return 0;
+			}
 		}
 		/*
 		 *     EXPAND 'RECT' (RIGHT ONE)
@@ -265,9 +287,14 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 		stop[v2]  = y3;
 		MeshRectangle *m2 = new MeshRectangle(start, stop);
 		newGuys.push_back(m2);
+		std::cout << "Added: " << *m1 << std::endl;
+		std::cout << "Added: " << *m2 << std::endl;
+		std::cout << "  overlaps from  : " << *rect << std::endl;
+		std::cout << "  overlaps from  : " << *this << std::endl;
 	}
 	if(addThisToNewGuys) {
 		newGuys.push_back(this);
+		std::cout << "Moved: " << *this << std::endl;
 		return 3;
 	}
 	return 0;

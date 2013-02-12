@@ -588,71 +588,74 @@ void LRSplineVolume::getFullspanRects(int iEl, std::vector<MeshRectangle*>& line
 		lines.push_back(new MeshRectangle(umin, vmin, midW,  umax, vmax, midW));
 }
 
-/*
-
-void LRSplineVolume::getStructMeshLines(int iBasis, std::vector<MeshRectangle*>& lines) {
-	Basisfunction *b = basis_[iBasis];
-	double umin = b->umin();
-	double umax = b->umax();
-	double vmin = b->vmin();
-	double vmax = b->vmax();
+void LRSplineVolume::getStructMeshLines(Basisfunction *b, std::vector<MeshRectangle*>& rects) {
+	double umin = b->getParmin(0);
+	double umax = b->getParmax(0);
+	double vmin = b->getParmin(1);
+	double vmax = b->getParmax(1);
+	double wmin = b->getParmin(2);
+	double wmax = b->getParmax(2);
 
 	// find the largest knotspan in this function
-	double max_du = 0;
-	double max_dv = 0;
-	for(int j=0; j<order_[0]; j++) {
-		double du = b->knot_u_[j+1]-b->knot_u_[j];
-		bool isZeroSpan =  fabs(du) < DOUBLE_TOL ;
-		max_du = (isZeroSpan || max_du>du) ? max_du : du;
-	}
-	for(int j=0; j<order_[1]; j++) {
-		double dv = b->knot_v_[j+1]-b->knot_v_[j];
-		bool isZeroSpan =  fabs(dv) < DOUBLE_TOL ;
-		max_dv = (isZeroSpan || max_dv>dv) ? max_dv : dv;
+	double max[3] = {0,0,0};
+	for(int d=0; d<3; d++) {
+		for(int j=0; j<order_[d]; j++) {
+			double du = (*b)[d][j+1]-(*b)[d][j];
+			bool isZeroSpan =  fabs(du) < DOUBLE_TOL ;
+			max[d] = (isZeroSpan || max[d]>du) ? max[d] : du;
+		}
 	}
 
 	// to keep as "square" basis function as possible, only insert
 	// into the largest knot spans
 	for(int j=0; j<order_[0]; j++) {
-		double du = b->knot_u_[j+1]-b->knot_u_[j];
-		if( fabs(du-max_du) < DOUBLE_TOL )
-			lines.push_back(new MeshRectangle(false, (b->knot_u_[j] + b->knot_u_[j+1])/2.0, vmin, vmax,1));
+		double du = (*b)[0][j+1]-(*b)[0][j];
+		if( fabs(du-max[0]) < DOUBLE_TOL )
+			rects.push_back(new MeshRectangle(((*b)[0][j] + (*b)[0][j+1])/2.0, vmin, wmin,
+			                                  ((*b)[0][j] + (*b)[0][j+1])/2.0, vmax, wmax));
 	}
 	for(int j=0; j<order_[1]; j++) {
-		double dv = b->knot_v_[j+1]-b->knot_v_[j];
-		if( fabs(dv-max_dv) < DOUBLE_TOL )
-			lines.push_back(new MeshRectangle(true, (b->knot_v_[j] + b->knot_v_[j+1])/2.0, umin, umax,1));
+		double dv = (*b)[1][j+1]-(*b)[1][j];
+		if( fabs(dv-max[1]) < DOUBLE_TOL )
+			rects.push_back(new MeshRectangle(umin, ((*b)[1][j] + (*b)[1][j+1])/2.0, wmin,
+			                                  umax, ((*b)[1][j] + (*b)[1][j+1])/2.0, wmax));
+	}
+	for(int j=0; j<order_[2]; j++) {
+		double dw = (*b)[2][j+1]-(*b)[2][j];
+		if( fabs(dw-max[2]) < DOUBLE_TOL )
+			rects.push_back(new MeshRectangle(umin, vmin, ((*b)[2][j] + (*b)[2][j+1])/2.0,
+			                                  umax, vmax, ((*b)[2][j] + (*b)[2][j+1])/2.0));
 	}
 }
-*/
 
-#if 0
 void LRSplineVolume::refineBasisFunction(int index) {
 	std::vector<int> tmp = std::vector<int>(1, index);
 	refineBasisFunction(tmp);
 }
 
-void LRSplineVolume::refineBasisFunction(const std::vector<int> &indices) {
-	std::vector<MeshRectangle*> newLines;
+void LRSplineVolume::refineBasisFunction(std::vector<int> &indices) {
+	std::sort(indices.begin(), indices.end());
+	std::vector<MeshRectangle*> newRects;
 
 	/* first retrieve all meshrects needed */
-	for(uint i=0; i<indices.size(); i++)
-		getStructMeshLines(indices[i],newLines);
-
-	/* Do the actual refinement */
-	for(uint i=0; i<newLines.size(); i++) {
-		MeshRectangle *m = newLines[i];
-		insert_line(!m->is_spanning_u(), m->const_par_, m->start_, m->stop_, refKnotlineMult_);
+	int ib = 0;
+	HashSet_iterator<Basisfunction*> it = basis_.begin();
+	for(uint i=0; i<indices.size(); i++) {
+		while(ib < indices[i]) {
+			++ib;
+			++it;
+		}
+		getStructMeshLines(*it,newRects);
 	}
 
-	/* do a posteriori fixes to ensure a proper mesh */
-	aPosterioriFixes();
+	/* Do the actual refinement */
+	for(MeshRectangle *m : newRects) 
+		insert_line(m);
 
-	/* exit cleanly be deleting all temporary new lines */
-	for(uint i=0; i<newLines.size(); i++) 
-		delete newLines[i];
+	/* do a posteriori fixes to ensure a proper mesh */
+	// aPosterioriFixes();
+
 }
-#endif
 
 void LRSplineVolume::refineElement(int index) {
 	std::vector<int> tmp = std::vector<int>(1, index);
@@ -955,17 +958,22 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 	for(uint i=0; i<meshrect_.size(); i++) {
 		for(uint j=0; j<newGuys.size(); j++) {
 			int status = meshrect_[i]->makeOverlappingRects(newGuys, j);
-			if(status == 1) { // deleted j or something in newGuys
+			if(status == 1) { // deleted j, i kept unchanged
 				j--;
 				continue;
-			} else if(status == 2) { // should deleted meshrect_[i]
+			} else if(status == 2) { // j kept unchanged, delete i
 				delete meshrect_[i];
 				meshrect_.erase(meshrect_.begin() + i);
 				i--;
 				break;
-			} else if(status == 3) { // meshrect_[i] moved to newGuys (change in size)
+			} else if(status == 3) { // j kept unchanged, i added to newGuys
 				meshrect_.erase(meshrect_.begin() + i);
 				i--;
+				break;
+			} else if(status == 4) { // deleted j, i added to newGuys
+				meshrect_.erase(meshrect_.begin() + i);
+				i--;
+				j--;
 				break;
 			}
 		}
@@ -973,22 +981,24 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 	bool change = true;
 	while(change) {
 		change = false;
-		for(uint i=0; i<newGuys.size() && !change; i++) {
-			for(uint j=i+1; j<newGuys.size(); j++) {
+		for(uint i=0; i<newGuys.size() ; i++) {
+			for(uint j=i+1; j<newGuys.size() && j>i; j++) {
 				int status = newGuys[i]->makeOverlappingRects(newGuys, j);
-				if(status == 1) {
+				if(status == 1) { //deleted j, i kept unchanged
 					j--;
-				} else if(status == 2) {
-					newGuys.erase(newGuys.begin() + i);
+				} else if(status == 2) { // j kept unchanged, delete i
 					delete newGuys[i];
-					i--;
-					change = true;
-					break;
-				} else if(status == 3) {
 					newGuys.erase(newGuys.begin() + i);
 					i--;
+				} else if(status == 3) { // j kept unchanged, i added to newGuys
+					newGuys.erase(newGuys.begin() + i);
+					i--;
+				} else if(status == 4) { // deleted j, i added to newGuys
+					newGuys.erase(newGuys.begin() + i);
+					i--;
+				}
+				if(status > 0) {
 					change = true;
-					break;
 				}
 			}
 		}

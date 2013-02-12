@@ -2,6 +2,7 @@
 #include <GoTools/trivariate/SplineVolume.h>
 #include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/Element.h"
+#include "LRSpline/Profiler.h"
 #include "LRSpline/Basisfunction.h"
 #include <iostream>
 #include <fstream>
@@ -12,6 +13,9 @@ using namespace LR;
 using namespace std;
 
 int main(int argc, char **argv) {
+#ifdef TIME_LRSPLINE
+	Profiler prof(argv[0]);
+#endif
 
 	// set default parameter values
 	int p         = 3;
@@ -24,7 +28,7 @@ int main(int argc, char **argv) {
 	                  "   -p      <n> polynomial DEGREE (order-1) of the basis\n" \
 	                  "   -n      <n> number of iterations\n" \
 	                  "   -m      <n> knot multiplicity\n" \
-	                  "   -scheme <n> refinement scheme (0=FULLSPAN, 1=MINSPAN)\n" \
+	                  "   -scheme <n> refinement scheme (0=FULLSPAN, 1=MINSPAN, 2=STRUCTURED)\n" \
 	                  "   -help    display (this) help information\n");
 	
 	// read input
@@ -49,8 +53,8 @@ int main(int argc, char **argv) {
 	// do some error testing on input
 	if(m > p )
 		m = p;
-	if(scheme > 1)
-		scheme = 1;
+	if(scheme > 2)
+		scheme = 2;
 	if(scheme < 0)
 		scheme = 0;
 
@@ -60,6 +64,8 @@ int main(int argc, char **argv) {
 		strat = LR_SAFE;
 	else if(scheme == 1)
 		strat = LR_MINSPAN;
+	else if(scheme == 2)
+		strat = LR_ISOTROPIC_FUNC;
 
 	// make a uniform integer knot vector
 	double knot_u[] = {0,0,1,1};
@@ -102,31 +108,54 @@ int main(int argc, char **argv) {
 
 	// for all iterations
 	for(int n=0; n<N; n++) {
-		std::cout << "Starting iteration " << (n+1) << " / " << N <<  std::endl;
+		std::cout << "****************************************************" << std::endl;
+		std::cout << "         Starting iteration " << (n+1) << " / " << N <<  std::endl;
+		std::cout << "****************************************************" << std::endl;
 		lrGeom = geometries.back()->copy();
 		lrGeom->setRefMultiplicity(m);
 		lrGeom->setRefStrat(strat);
 		lrGeom->generateIDs();
 
-		// find all elements which intersect the solution layer
-		vector<int> indices;
-		int i=0;
-		for(Element *el : lrGeom->getAllElements()) {
-			double x0 = el->getParmin(0);
-			double y0 = el->getParmin(1);
-			double z0 = el->getParmin(2);
-			double x1 = el->getParmax(0);
-			double y1 = el->getParmax(1);
-			double z1 = el->getParmax(2);
-			if(x0*x0 + y0*y0 + z0*z0 < R*R &&
-			   x1*x1 + y1*y1 + z1*z1 > R*R) {
-				indices.push_back(el->getId());
+		if(scheme < 2) {
+			// find all elements which intersect the solution layer
+			vector<int> indices;
+			int i=0;
+			for(Element *el : lrGeom->getAllElements()) {
+				double x0 = el->getParmin(0);
+				double y0 = el->getParmin(1);
+				double z0 = el->getParmin(2);
+				double x1 = el->getParmax(0);
+				double y1 = el->getParmax(1);
+				double z1 = el->getParmax(2);
+				if(x0*x0 + y0*y0 + z0*z0 < R*R &&
+			   	   x1*x1 + y1*y1 + z1*z1 > R*R) {
+					indices.push_back(el->getId());
+				}
+				i++;
 			}
-			i++;
-		}
 
-		// perform actual refinement
-		lrGeom->refineElement(indices);
+			// perform actual refinement
+			lrGeom->refineElement(indices);
+		} else {
+			// find all Bsplines which intersect the solution layer
+			vector<int> indices;
+			int i=0;
+			for(Basisfunction *b : lrGeom->getAllBasisfunctions()) {
+				double x0 = (*b)[0][1];
+				double y0 = (*b)[1][1];
+				double z0 = (*b)[2][1];
+				double x1 = (*b)[0][2];
+				double y1 = (*b)[1][2];
+				double z1 = (*b)[2][2];
+				if(x0*x0 + y0*y0 + z0*z0 < R*R &&
+			   	   x1*x1 + y1*y1 + z1*z1 > R*R) {
+					indices.push_back(b->getId());
+				}
+				i++;
+			}
+			// perform actual refinement
+			lrGeom->refineBasisFunction(indices);
+		}
 
 		// make a VDA approximation to the solution
 		lrValues = lrGeom->copy();
