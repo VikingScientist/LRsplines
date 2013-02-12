@@ -108,9 +108,7 @@ int main(int argc, char **argv) {
 
 	// for all iterations
 	for(int n=0; n<N; n++) {
-		std::cout << "****************************************************" << std::endl;
-		std::cout << "         Starting iteration " << (n+1) << " / " << N <<  std::endl;
-		std::cout << "****************************************************" << std::endl;
+		std::cout << "Starting iteration " << (n+1) << " / " << N <<  std::endl;
 		lrGeom = geometries.back()->copy();
 		lrGeom->setRefMultiplicity(m);
 		lrGeom->setRefStrat(strat);

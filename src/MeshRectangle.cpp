@@ -131,14 +131,14 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 		return 0;
 	if( this->contains(rect) ) {
 		newGuys.erase(newGuys.begin() + meshIndex);
-		std::cout << "Deleted: " << *rect << std::endl;
-		std::cout << "  contained in : " << *this << std::endl;
+		// std::cout << "Deleted: " << *rect << std::endl;
+		// std::cout << "  contained in : " << *this << std::endl;
 		delete rect;
 		return 1;
 	}
 	if( rect->contains(this) ) {
-		std::cout << "Deleted: " << *this << std::endl;
-		std::cout << "  contained in : " << *rect << std::endl;
+		// std::cout << "Deleted: " << *this << std::endl;
+		// std::cout << "  contained in : " << *rect << std::endl;
 		return 2;
 	}
 
@@ -163,8 +163,8 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 			   stop_[v[j]]  == rect->stop_[v[j]]  ) {
 				double min = std::min(start_[v[i]], rect->start_[v[i]]);
 				double max = std::max(stop_[v[i]],  rect->stop_[v[i]] );
-				std::cout << "Deleted: " << *rect << std::endl;
-				std::cout << "  merged with  : " << *this << std::endl;
+				// std::cout << "Deleted: " << *rect << std::endl;
+				// std::cout << "  merged with  : " << *this << std::endl;
 				newGuys.erase(newGuys.begin() + meshIndex);
 				delete rect;
 				start_[v[i]] = min;
@@ -279,22 +279,32 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 		start[v2] = y1;
 		stop[v2]  = y2;
 		MeshRectangle *m1 = new MeshRectangle(start, stop);
-		newGuys.push_back(m1);
+		bool doesExist = false;
+		for(MeshRectangle *m : newGuys)
+			if(m->equals(m1))
+				doesExist = true;
+		if(!doesExist)
+			newGuys.push_back(m1);
 
 		start[v1] = x1;
 		stop[v1]  = x2;
 		start[v2] = y0;
 		stop[v2]  = y3;
 		MeshRectangle *m2 = new MeshRectangle(start, stop);
-		newGuys.push_back(m2);
-		std::cout << "Added: " << *m1 << std::endl;
-		std::cout << "Added: " << *m2 << std::endl;
-		std::cout << "  overlaps from  : " << *rect << std::endl;
-		std::cout << "  overlaps from  : " << *this << std::endl;
+		for(MeshRectangle *m : newGuys)
+			if(m->equals(m2))
+				doesExist = true;
+		if(!doesExist)
+			newGuys.push_back(m2);
+
+		// std::cout << "Added: " << *m1 << std::endl;
+		// std::cout << "Added: " << *m2 << std::endl;
+		// std::cout << "  overlaps from  : " << *rect << std::endl;
+		// std::cout << "  overlaps from  : " << *this << std::endl;
 	}
 	if(addThisToNewGuys) {
 		newGuys.push_back(this);
-		std::cout << "Moved: " << *this << std::endl;
+		// std::cout << "Moved: " << *this << std::endl;
 		return 3;
 	}
 	return 0;
