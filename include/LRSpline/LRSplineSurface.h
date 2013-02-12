@@ -75,16 +75,7 @@ public:
 	// common get methods
 	void getGlobalKnotVector      (std::vector<double> &knot_u, std::vector<double> &knot_v) const;
 	void getGlobalUniqueKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const;
-        void getBezierElement         (int iEl, std::vector<double> &controlPoints)              const;
-	//void change_coefs(std::vector<double> coefs);
-	virtual double startparam_u() const                { return start_u_; };
-	virtual double startparam_v() const                { return start_v_; };
-	virtual double endparam_u()   const                { return end_u_; };
-	virtual double endparam_v()   const                { return end_v_; };
-	virtual int dimension()       const                { return dim_; };
-	int order_u()                 const                { return order_u_; };
-	int order_v()                 const                { return order_v_; };
-	bool rational()               const                { return rational_; };
+	void getBezierElement         (int iEl, std::vector<double> &controlPoints)              const;
 	int nMeshlines()              const                { return meshline_.size(); };
 
 	// more get-methods
@@ -141,12 +132,6 @@ private:
 	Meshline* insert_line(bool const_u, double const_par, double start, double stop, int multiplicity);
 	
 	std::vector<Meshline*> meshline_;
-	int order_u_;
-	int order_v_;
-	double start_u_;
-	double start_v_;
-	double end_u_;
-	double end_v_;
 
 	// plotting parameters
 	double element_red;

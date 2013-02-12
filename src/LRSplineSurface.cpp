@@ -31,14 +31,17 @@ namespace LR {
  * \brief Default constructor. Creates an empty LRSplineSurface object
  ***************************************************************************************************************************/
 LRSplineSurface::LRSplineSurface() {
+	order_.resize(2);
+	start_.resize(2);
+	end_.resize(2);
 	rational_ = false;
 	dim_      = 0;
-	order_u_  = 0;
-	order_v_  = 0;
-	start_u_  = 0;
-	start_v_  = 0;
-	end_u_    = 0;
-	end_v_    = 0;
+	order_[0]  = 0;
+	order_[1]  = 0;
+	start_[0]  = 0;
+	start_[1]  = 0;
+	end_[0]    = 0;
+	end_[1]    = 0;
 	meshline_ = std::vector<Meshline*>(0);
 	element_  = std::vector<Element*>(0);
 	maxTjoints_       = -1;
@@ -67,14 +70,17 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
 #endif
+	order_.resize(2);
+	start_.resize(2);
+	end_.resize(2);
 	rational_ = surf->rational();
 	dim_      = surf->dimension();
-	order_u_  = surf->order_u();
-	order_v_  = surf->order_v();
-	start_u_  = surf->startparam_u();
-	start_v_  = surf->startparam_v();
-	end_u_    = surf->endparam_u();
-	end_v_    = surf->endparam_v();
+	order_[0]  = surf->order_u();
+	order_[1]  = surf->order_v();
+	start_[0]  = surf->startparam_u();
+	start_[1]  = surf->startparam_v();
+	end_[0]    = surf->endparam_u();
+	end_[1]    = surf->endparam_v();
 	maxTjoints_       = -1;
 	doCloseGaps_      = true;
 	maxAspectRatio_   = 2.0;
@@ -100,21 +106,21 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 	std::vector<double>::const_iterator knot_v = surf->basis(1).begin();
 	for(int j=0; j<n2; j++)
 		for(int i=0; i<n1; i++)
-			basis_.insert(new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim_+rational_), dim_, order_u_, order_v_));
+			basis_.insert(new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim_+rational_), dim_, order_[0], order_[1]));
 	int unique_u=0;
 	int unique_v=0;
-	for(int i=0; i<n1+order_u_; i++) {// const u, spanning v
+	for(int i=0; i<n1+order_[0]; i++) {// const u, spanning v
 		int mult = 1;
-		while(i+1<n1+order_u_ && knot_u[i]==knot_u[i+1]) {
+		while(i+1<n1+order_[0] && knot_u[i]==knot_u[i+1]) {
 			i++;
 			mult++;
 		}
 		unique_u++;
 		meshline_.push_back(new Meshline(false, knot_u[i], knot_v[0], knot_v[n2], mult) );
 	}
-	for(int i=0; i<n2+order_v_; i++) {// const v, spanning u
+	for(int i=0; i<n2+order_[1]; i++) {// const v, spanning u
 		int mult = 1;
-		while(i+1<n2+order_v_ && knot_v[i]==knot_v[i+1]) {
+		while(i+1<n2+order_[1] && knot_v[i]==knot_v[i+1]) {
 			i++;
 			mult++;
 		}
@@ -151,14 +157,17 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
 #endif
+	order_.resize(2);
+	start_.resize(2);
+	end_.resize(2);
 	rational_ = rational;
 	dim_      = dim;
-	order_u_  = order_u;
-	order_v_  = order_v;
-	start_u_  = knot_u[0];
-	start_v_  = knot_v[0];
-	end_u_    = knot_u[n1];
-	end_v_    = knot_v[n2];
+	order_[0]  = order_u;
+	order_[1]  = order_v;
+	start_[0]  = knot_u[0];
+	start_[1]  = knot_v[0];
+	end_[0]    = knot_u[n1];
+	end_[1]    = knot_v[n2];
 	maxTjoints_       = -1;
 	doCloseGaps_      = true;
 	maxAspectRatio_   = 2.0;
@@ -257,12 +266,12 @@ LRSplineSurface* LRSplineSurface::copy() const {
 	
 	returnvalue->rational_         = this->rational_;
 	returnvalue->dim_              = this->dim_;
-	returnvalue->order_u_          = this->order_u_;
-	returnvalue->order_v_          = this->order_v_;
-	returnvalue->start_u_          = this->start_u_;
-	returnvalue->start_v_          = this->start_v_;
-	returnvalue->end_u_            = this->end_u_;
-	returnvalue->end_v_            = this->end_v_;
+	returnvalue->order_[0]          = this->order_[0];
+	returnvalue->order_[1]          = this->order_[1];
+	returnvalue->start_[0]          = this->start_[0];
+	returnvalue->start_[1]          = this->start_[1];
+	returnvalue->end_[0]            = this->end_[0];
+	returnvalue->end_[1]            = this->end_[1];
 	returnvalue->maxTjoints_       = this->maxTjoints_;
 	returnvalue->doCloseGaps_      = this->doCloseGaps_;
 	returnvalue->doAspectRatioFix_ = this->doAspectRatioFix_;
@@ -315,7 +324,7 @@ void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl) const {
 	for(Basisfunction* b : element_[iEl]->support()) {
 		b->getControlPoint(cp);
 		
-		basis_ev = b->evaluate(u,v, u!=end_u_, v!=end_v_);
+		basis_ev = b->evaluate(u,v, u!=end_[0], v!=end_[1]);
 		pt += basis_ev*cp;
 	}
 	
@@ -349,7 +358,7 @@ void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int
 		iEl = getElementContaining(u,v);
 	for(Basisfunction* b : element_[iEl]->support() ) {
 		b->getControlPoint(cp);
-		b->evaluate(basis_ev, u,v, derivs, u!=end_u_, v!=end_v_);
+		b->evaluate(basis_ev, u,v, derivs, u!=end_[0], v!=end_[1]);
 		for(uint j=0; j<pts.size(); j++)
 			pts[j] += basis_ev[j]*cp;
 	}
@@ -380,7 +389,7 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 	//element_[i]->write(std::cout);
 	
 	for(it=itStart; it!=itStop; ++it, ++i) {
-		(*it)->evaluate(values, param_u, param_v, 2, param_u!=end_u_, param_v!=end_v_);
+		(*it)->evaluate(values, param_u, param_v, 2, param_u!=end_[0], param_v!=end_[1]);
 	
 		result.basisValues[i]    = values[0];
 		result.basisDerivs_u[i]  = values[1];
@@ -414,7 +423,7 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 	
 	int i=0;
 	for(it=itStart; it!=itStop; ++it, ++i) {
-		(*it)->evaluate(values, param_u, param_v, 1, param_u!=end_u_, param_v!=end_v_);
+		(*it)->evaluate(values, param_u, param_v, 1, param_u!=end_[0], param_v!=end_[1]);
 		
 		result.basisValues[i]   = values[0];
 		result.basisDerivs_u[i] = values[1];
@@ -441,7 +450,7 @@ void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsS
 	result.preparePts(param_u, param_v, 0, -1, nPts);
 	int i=0;
 	for(it=itStart; it!=itStop; ++it, ++i)
-		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_u!=end_u_, param_v!=end_v_);
+		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_u!=end_[0], param_v!=end_[1]);
 }
 
 /************************************************************************************************************************//**
@@ -471,7 +480,7 @@ void LRSplineSurface::computeBasis (double param_u,
 	result.resize(nPts);
 	int i=0;
 	for(it=itStart; it!=itStop; ++it, ++i)
-	    (*it)->evaluate(result[i], param_u, param_v, derivs, param_u!=end_u_, param_v!=end_v_);
+	    (*it)->evaluate(result[i], param_u, param_v, derivs, param_u!=end_[0], param_v!=end_[1]);
 
 }
 
@@ -485,8 +494,8 @@ void LRSplineSurface::computeBasis (double param_u,
 int LRSplineSurface::getElementContaining(double u, double v) const {
 	for(uint i=0; i<element_.size(); i++)
 		if(element_[i]->umin() <= u && element_[i]->vmin() <= v) 
-			if((u < element_[i]->umax() || (u == end_u_ && u <= element_[i]->umax())) && 
-			   (v < element_[i]->vmax() || (v == end_v_ && v <= element_[i]->vmax())))
+			if((u < element_[i]->umax() || (u == end_[0] && u <= element_[i]->umax())) && 
+			   (v < element_[i]->vmax() || (v == end_[1] && v <= element_[i]->vmax())))
 				return i;
 		
 	return -1;
@@ -508,10 +517,10 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 	double vmax = e->vmax();
 	double min_du = DBL_MAX;
 	double min_dv = DBL_MAX;
-	int    best_startI = order_u_+2;
-	int    best_stopI  = order_u_+2;
-	int    best_startJ = order_v_+2;
-	int    best_stopJ  = order_v_+2;
+	int    best_startI = order_[0]+2;
+	int    best_stopI  = order_[0]+2;
+	int    best_startJ = order_[1]+2;
+	int    best_stopJ  = order_[1]+2;
 	bool   only_insert_span_u_line = (vmax-vmin) >= maxAspectRatio_*(umax-umin);
 	bool   only_insert_span_v_line = (umax-umin) >= maxAspectRatio_*(vmax-vmin);
 	// loop over all supported B-splines and choose the minimum one
@@ -537,8 +546,8 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 
 		// min_du is defined as the minimum TOTAL knot span (of an entire basis function)
 		bool fixU = false;
-		int delta_startI = abs(startI - (order_u_+1)/2);
-		int delta_stopI  = abs(stopI  - (order_u_+1)/2);
+		int delta_startI = abs(startI - (order_[0]+1)/2);
+		int delta_stopI  = abs(stopI  - (order_[0]+1)/2);
 		if(  du <  min_du )
 			fixU = true;
 		if( du == min_du && delta_startI <= best_startI && delta_stopI  <= best_stopI )
@@ -551,8 +560,8 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 			best_stopI  = delta_stopI;
 		}
 		bool fixV = false;
-		int delta_startJ = abs(startJ - (order_v_+1)/2);
-		int delta_stopJ  = abs(stopJ  - (order_v_+1)/2);
+		int delta_startJ = abs(startJ - (order_[1]+1)/2);
+		int delta_stopJ  = abs(stopJ  - (order_[1]+1)/2);
 		if(  dv <  min_dv )
 			fixV = true;
 		if( dv == min_dv && delta_startJ <= best_startJ && delta_stopJ  <= best_stopJ )
@@ -622,12 +631,12 @@ void LRSplineSurface::getStructMeshLines(int iBasis, std::vector<Meshline*>& lin
 	// find the largest knotspan in this function
 	double max_du = 0;
 	double max_dv = 0;
-	for(int j=0; j<order_u_; j++) {
+	for(int j=0; j<order_[0]; j++) {
 		double du = (*b)[0][j+1]-(*b)[0][j];
 		bool isZeroSpan =  MY_STUPID_FABS(du) < DOUBLE_TOL ;
 		max_du = (isZeroSpan || max_du>du) ? max_du : du;
 	}
-	for(int j=0; j<order_v_; j++) {
+	for(int j=0; j<order_[1]; j++) {
 		double dv = (*b)[1][j+1]-(*b)[1][j];
 		bool isZeroSpan =  MY_STUPID_FABS(dv) < DOUBLE_TOL ;
 		max_dv = (isZeroSpan || max_dv>dv) ? max_dv : dv;
@@ -635,12 +644,12 @@ void LRSplineSurface::getStructMeshLines(int iBasis, std::vector<Meshline*>& lin
 
 	// to keep as "square" basis function as possible, only insert
 	// into the largest knot spans
-	for(int j=0; j<order_u_; j++) {
+	for(int j=0; j<order_[0]; j++) {
 		double du = (*b)[0][j+1]-(*b)[0][j];
 		if( MY_STUPID_FABS(du-max_du) < DOUBLE_TOL )
 			lines.push_back(new Meshline(false, ((*b)[0][j] + (*b)[0][j+1])/2.0, vmin, vmax,1));
 	}
-	for(int j=0; j<order_v_; j++) {
+	for(int j=0; j<order_[1]; j++) {
 		double dv = (*b)[1][j+1]-(*b)[1][j];
 		if( MY_STUPID_FABS(dv-max_dv) < DOUBLE_TOL )
 			lines.push_back(new Meshline(true, ((*b)[1][j] + (*b)[1][j+1])/2.0, umin, umax,1));
@@ -1129,7 +1138,7 @@ void LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot,
 	// create the new functions b1 and b2
 	Basisfunction *b1, *b2;
 	std::vector<double> knot = (insert_in_u) ? (*b)[0]  : (*b)[1];
-	int     p                = (insert_in_u) ? order_u_ : order_v_;
+	int     p                = (insert_in_u) ? order_[0] : order_[1];
 	int     insert_index = 0;
 	if(new_knot < knot[0] || knot[p] < new_knot)
 		return ;
@@ -1142,11 +1151,11 @@ void LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot,
 	newKnot[0] = new_knot;
 	std::sort(newKnot, newKnot + p+2);
 	if(insert_in_u) {
-		b1 = new Basisfunction(newKnot  , (*b)[1].begin(), b->cp(), b->dim(), order_u_, order_v_, b->w()*alpha1);
-		b2 = new Basisfunction(newKnot+1, (*b)[1].begin(), b->cp(), b->dim(), order_u_, order_v_, b->w()*alpha2);
+		b1 = new Basisfunction(newKnot  , (*b)[1].begin(), b->cp(), b->dim(), order_[0], order_[1], b->w()*alpha1);
+		b2 = new Basisfunction(newKnot+1, (*b)[1].begin(), b->cp(), b->dim(), order_[0], order_[1], b->w()*alpha2);
 	} else { // insert in v
-		b1 = new Basisfunction((*b)[0].begin(), newKnot  , b->cp(), b->dim(), order_u_, order_v_, b->w()*alpha1);
-		b2 = new Basisfunction((*b)[0].begin(), newKnot+1, b->cp(), b->dim(), order_u_, order_v_, b->w()*alpha2);
+		b1 = new Basisfunction((*b)[0].begin(), newKnot  , b->cp(), b->dim(), order_[0], order_[1], b->w()*alpha1);
+		b2 = new Basisfunction((*b)[0].begin(), newKnot+1, b->cp(), b->dim(), order_[0], order_[1], b->w()*alpha2);
 	}
 
 	// add any brand new functions and detect their support elements
@@ -1161,8 +1170,8 @@ void LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot,
 			delete b1;
 		} else {
 			updateSupport(b1, b->supportedElementBegin(), b->supportedElementEnd());
-			bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && (*b1)[0][order_u_]!=new_knot) ||
-			                                               (!insert_in_u && (*b1)[1][order_v_]!=new_knot)  );
+			bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && (*b1)[0][order_[0]]!=new_knot) ||
+			                                               (!insert_in_u && (*b1)[1][order_[1]]!=new_knot)  );
 			if(recursive_split) {
 				split( insert_in_u, b1, new_knot, multiplicity-1, newFunctions);
 				delete b1;
@@ -1200,39 +1209,39 @@ void LRSplineSurface::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunction
 	for(Basisfunction *b : basis_) {
 		switch(edge) {
 		case WEST       :
-			if((*b)[0][order_u_-depth] == start_u_)
+			if((*b)[0][order_[0]-depth] == start_[0])
 				edgeFunctions.push_back(b);
 			break;
 		case EAST       :
-			if((*b)[0][depth] == end_u_)
+			if((*b)[0][depth] == end_[0])
 				edgeFunctions.push_back(b);
 			break;
 		case SOUTH      :
-			if((*b)[1][order_v_-depth] == start_v_)
+			if((*b)[1][order_[1]-depth] == start_[1])
 				edgeFunctions.push_back(b);
 			break;
 		case NORTH      :
-			if((*b)[1][depth] == end_v_)
+			if((*b)[1][depth] == end_[1])
 				edgeFunctions.push_back(b);
 			break;
 		case SOUTH_WEST :
-			if((*b)[0][order_u_-depth] == start_u_ &&
-			   (*b)[1][order_v_-depth] == start_v_)
+			if((*b)[0][order_[0]-depth] == start_[0] &&
+			   (*b)[1][order_[1]-depth] == start_[1])
 				edgeFunctions.push_back(b);
 			break;
 		case SOUTH_EAST :
-			if((*b)[0][depth]          == end_u_ &&
-			   (*b)[1][order_v_-depth] == start_v_)
+			if((*b)[0][depth]          == end_[0] &&
+			   (*b)[1][order_[1]-depth] == start_[1])
 				edgeFunctions.push_back(b);
 			break;
 		case NORTH_WEST :
-			if((*b)[0][order_u_-depth] == start_u_ &&
-			   (*b)[1][depth]          == end_v_)
+			if((*b)[0][order_[0]-depth] == start_[0] &&
+			   (*b)[1][depth]          == end_[1])
 				edgeFunctions.push_back(b);
 			break;
 		case NORTH_EAST :
-			if((*b)[0][depth] == end_u_ &&
-			   (*b)[1][depth] == end_v_)
+			if((*b)[0][depth] == end_[0] &&
+			   (*b)[1][depth] == end_[1])
 				edgeFunctions.push_back(b);
 			break;
 		default:
@@ -1401,8 +1410,8 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 	std::vector<double> knots_u, knots_v;
 	getGlobalKnotVector(knots_u, knots_v);
 	int nmb_bas = basis_.size();
-	int n1 = knots_u.size() - order_u_;
-	int n2 = knots_v.size() - order_v_;
+	int n1 = knots_u.size() - order_[0];
+	int n2 = knots_v.size() - order_[1];
 	int fullDim = n1*n2;
 	bool fullVerbose   = fullDim < 30  && nmb_bas < 50;
 	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
@@ -1433,14 +1442,14 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		
 		for(startU=knots_u.size(); startU-->0; )
 			if(knots_u[startU] == (*b)[0][0]) break;
-		for(int j=0; j<order_u_; j++) {
+		for(int j=0; j<order_[0]; j++) {
 			if(knots_u[startU] == (*b)[0][j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
 			if(knots_v[startV] == (*b)[1][0]) break;
-		for(int j=0; j<order_v_; j++) {
+		for(int j=0; j<order_[1]; j++) {
 			if(knots_v[startV] == (*b)[1][j]) startV--;
 			else break;
 		}
@@ -1454,7 +1463,7 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 				for(uint k=0; k<rowU.size(); k++) {
 					#define U(x) ((long long) (locKnotU[x+k]/smallKnotU + 0.5))
 					long long z = (long long) (knots_u[curU] / smallKnotU + 0.5);
-					int p = order_u_-1;
+					int p = order_[0]-1;
 					if(z < U(0) || z > U(p+1)) {
 						newRowU[k] = rowU[k];
 						continue;
@@ -1476,7 +1485,7 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 				for(uint k=0; k<rowV.size(); k++) {
 					#define V(x) ((long long) (locKnotV[x+k]/smallKnotV + 0.5))
 					long long z = (long long) (knots_v[curV] / smallKnotV + 0.5);
-					int p = order_v_-1;
+					int p = order_[1]-1;
 					if(z < V(0) || z > V(p+1)) {
 						newRowV[k] = rowV[k];
 						continue;
@@ -1587,8 +1596,8 @@ void LRSplineSurface::getNullSpace(std::vector<std::vector<boost::rational<long 
 	std::vector<double> knots_u, knots_v;
 	getGlobalKnotVector(knots_u, knots_v);
 	int nmb_bas = basis_.size();
-	int n1 = knots_u.size() - order_u_;
-	int n2 = knots_v.size() - order_v_;
+	int n1 = knots_u.size() - order_[0];
+	int n2 = knots_v.size() - order_[1];
 	int fullDim = n1*n2;
 
 	std::vector<std::vector<boost::rational<long long> > > Ct;  // rational projection matrix (transpose of this)
@@ -1615,14 +1624,14 @@ void LRSplineSurface::getNullSpace(std::vector<std::vector<boost::rational<long 
 		
 		for(startU=knots_u.size(); startU-->0; )
 			if(knots_u[startU] == (*(b))[0][0]) break;
-		for(int j=0; j<order_u_; j++) {
+		for(int j=0; j<order_[0]; j++) {
 			if(knots_u[startU] == (*(b))[0][j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
 			if(knots_v[startV] == (*(b))[1][0]) break;
-		for(int j=0; j<order_v_; j++) {
+		for(int j=0; j<order_[1]; j++) {
 			if(knots_v[startV] == (*(b))[1][j]) startV--;
 			else break;
 		}
@@ -1636,7 +1645,7 @@ void LRSplineSurface::getNullSpace(std::vector<std::vector<boost::rational<long 
 				for(uint k=0; k<rowU.size(); k++) {
 					#define U(x) ((long long) (locKnotU[x+k]/smallKnotU + 0.5))
 					long long z = (long long) (knots_u[curU] / smallKnotU + 0.5);
-					int p = order_u_-1;
+					int p = order_[0]-1;
 					if(z < U(0) || z > U(p+1)) {
 						newRowU[k] = rowU[k];
 						continue;
@@ -1658,7 +1667,7 @@ void LRSplineSurface::getNullSpace(std::vector<std::vector<boost::rational<long 
 				for(uint k=0; k<rowV.size(); k++) {
 					#define V(x) ((long long) (locKnotV[x+k]/smallKnotV + 0.5))
 					long long z = (long long) (knots_v[curV] / smallKnotV + 0.5);
-					int p = order_v_-1;
+					int p = order_[1]-1;
 					if(z < V(0) || z > V(p+1)) {
 						newRowV[k] = rowV[k];
 						continue;
@@ -1745,8 +1754,8 @@ bool LRSplineSurface::isLinearIndepByFloatingPointMappingMatrix(bool verbose) co
 	std::vector<double> knots_u, knots_v;
 	getGlobalKnotVector(knots_u, knots_v);
 	int nmb_bas = basis_.size();
-	int n1 = knots_u.size() - order_u_;
-	int n2 = knots_v.size() - order_v_;
+	int n1 = knots_u.size() - order_[0];
+	int n2 = knots_v.size() - order_[1];
 	int fullDim = n1*n2;
 	bool fullVerbose   = fullDim < 30  && nmb_bas < 50;
 	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
@@ -1760,14 +1769,14 @@ bool LRSplineSurface::isLinearIndepByFloatingPointMappingMatrix(bool verbose) co
 		
 		for(startU=knots_u.size(); startU-->0; )
 			if(knots_u[startU] == (*b)[0][0]) break;
-		for(int j=0; j<order_u_; j++) {
+		for(int j=0; j<order_[0]; j++) {
 			if(knots_u[startU] == (*b)[0][j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
 			if(knots_v[startV] == (*b)[1][0]) break;
-		for(int j=0; j<order_v_; j++) {
+		for(int j=0; j<order_[1]; j++) {
 			if(knots_v[startV] == (*b)[1][j]) startV--;
 			else break;
 		}
@@ -1781,7 +1790,7 @@ bool LRSplineSurface::isLinearIndepByFloatingPointMappingMatrix(bool verbose) co
 				for(uint k=0; k<rowU.size(); k++) {
 					#define U(x) (locKnotU[x+k])
 					double z = knots_u[curU] ;
-					int p = order_u_-1;
+					int p = order_[0]-1;
 					if(z < U(0) || z > U(p+1)) {
 						newRowU[k] = rowU[k];
 						continue;
@@ -1803,7 +1812,7 @@ bool LRSplineSurface::isLinearIndepByFloatingPointMappingMatrix(bool verbose) co
 				for(uint k=0; k<rowV.size(); k++) {
 					#define V(x) (locKnotV[x+k])
 					double z = knots_v[curV];
-					int p = order_v_-1;
+					int p = order_[1]-1;
 					if(z < V(0) || z > V(p+1)) {
 						newRowV[k] = rowV[k];
 						continue;
@@ -1942,17 +1951,17 @@ double LRSplineSurface::makeIntegerKnots() {
 
 	// scale all basis functions values
 	for(Basisfunction *b : basis_) {
-		for(int j=0; j<order_u_+1; j++)
+		for(int j=0; j<order_[0]+1; j++)
 			(*b)[0][j] = floor((*b)[0][j]/scale + 0.5);
-		for(int j=0; j<order_v_+1; j++)
+		for(int j=0; j<order_[1]+1; j++)
 			(*b)[1][j] = floor((*b)[1][j]/scale + 0.5);
 	}
 	
 	// scale all LRSplineSurface values
-	start_u_ = floor(start_u_/scale + 0.5);
-	start_v_ = floor(start_v_/scale + 0.5);
-	end_u_   = floor(end_u_  /scale + 0.5);
-	end_v_   = floor(end_v_  /scale + 0.5);
+	start_[0] = floor(start_[0]/scale + 0.5);
+	start_[1] = floor(start_[1]/scale + 0.5);
+	end_[0]   = floor(end_[0]  /scale + 0.5);
+	end_[1]   = floor(end_[1]  /scale + 0.5);
 
 	return scale;
 }
@@ -1981,7 +1990,7 @@ void LRSplineSurface::getDiagonalBasisfunctions(std::vector<int> &result) const 
 	int i = 0;
 	for(Basisfunction *b : basis_) {
 		bool isDiag = true;
-		for(int j=0; j<order_u_+1; j++)
+		for(int j=0; j<order_[0]+1; j++)
 			if((*b)[0][j] != (*b)[1][j])
 				isDiag = false;
 		if(isDiag)
@@ -1992,7 +2001,7 @@ void LRSplineSurface::getDiagonalBasisfunctions(std::vector<int> &result) const 
 
 void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoints) const {
 	controlPoints.clear();
-	controlPoints.resize(order_u_*order_v_*dim_, 0);
+	controlPoints.resize(order_[0]*order_[1]*dim_, 0);
 	Element *el = element_[iEl];
 	for(Basisfunction* b : el->support()) {
 		std::vector<double> knotU((*b)[0].begin(), (*b)[0].end() );
@@ -2006,15 +2015,15 @@ void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoin
 		double max = el->umax();
 		while(knotU[++startU] < min);
 		while(true) {
-			int p    = order_u_-1;
+			int p    = order_[0]-1;
 			int newI = -1;
 			double z;
-			if(       knotU.size() < (uint) startU+order_u_   || knotU[startU+  order_u_-1] != min) {
+			if(       knotU.size() < (uint) startU+order_[0]   || knotU[startU+  order_[0]-1] != min) {
 				z    = min;
 				newI = startU;
-			} else if(knotU.size() < (uint) startU+2*order_u_ || knotU[startU+2*order_u_-1] != max ) {
+			} else if(knotU.size() < (uint) startU+2*order_[0] || knotU[startU+2*order_[0]-1] != max ) {
 				z    = max;
-				newI = startU + order_u_;
+				newI = startU + order_[0];
 			} else {
 				break;
 			}
@@ -2040,15 +2049,15 @@ void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoin
 		max = el->vmax();
 		while(knotV[++startV] < min);
 		while(true) {
-			int p    = order_v_-1;
+			int p    = order_[1]-1;
 			int newI = -1;
 			double z;
-			if(       knotV.size() < (uint) startV+order_v_   || knotV[startV+  order_v_-1] != min) {
+			if(       knotV.size() < (uint) startV+order_[1]   || knotV[startV+  order_[1]-1] != min) {
 				z    = min;
 				newI = startV;
-			} else if(knotV.size() < (uint) startV+2*order_v_ || knotV[startV+2*order_v_-1] != max ) {
+			} else if(knotV.size() < (uint) startV+2*order_[1] || knotV[startV+2*order_[1]-1] != max ) {
 				z = max;
-				newI = startV + order_v_;
+				newI = startV + order_[1];
 			} else {
 				break;
 			}
@@ -2071,8 +2080,8 @@ void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoin
 		}
 		
 		int ip = 0;
-		for(int v=startV; v<startV+order_v_; v++)
-			for(int u=startU; u<startU+order_u_; u++)
+		for(int v=startV; v<startV+order_[1]; v++)
+			for(int u=startU; u<startU+order_[0]; u++)
 				for(int d=0; d<dim_; d++)
 					controlPoints[ip++] += b->cp()[d]*rowU[u]*rowV[v]*b->w();
 
@@ -2098,10 +2107,10 @@ void LRSplineSurface::setSelectedBasisColor(double r, double g, double b) {
 }
 
 void LRSplineSurface::read(std::istream &is) {
-	start_u_ =  DBL_MAX;
-	end_u_   = -DBL_MAX;
-	start_v_ =  DBL_MAX;
-	end_v_   = -DBL_MAX;
+	start_[0] =  DBL_MAX;
+	end_[0]   = -DBL_MAX;
+	start_[1] =  DBL_MAX;
+	end_[1]   = -DBL_MAX;
 
 	// first get rid of comments and spaces
 	ws(is); 
@@ -2116,8 +2125,8 @@ void LRSplineSurface::read(std::istream &is) {
 
 	// read actual parameters
 	int nBasis, nElements, nMeshlines;
-	is >> order_u_;    ws(is);
-	is >> order_v_;    ws(is);
+	is >> order_[0];    ws(is);
+	is >> order_[1];    ws(is);
 	is >> nBasis;      ws(is);
 	is >> nMeshlines;  ws(is);
 	is >> nElements;   ws(is);
@@ -2138,7 +2147,7 @@ void LRSplineSurface::read(std::istream &is) {
 
 	// read all basisfunctions
 	for(int i=0; i<nBasis; i++) {
-		Basisfunction *b = new Basisfunction(dim_, order_u_, order_v_);
+		Basisfunction *b = new Basisfunction(dim_, order_[0], order_[1]);
 		b->read(is);
 		basis_.insert(b);
 		basisVector[i] = b;
@@ -2170,10 +2179,10 @@ void LRSplineSurface::read(std::istream &is) {
 		element_[i] = new Element();
 		element_[i]->read(is);
 		element_[i]->updateBasisPointers(basisVector);
-		start_u_ = (element_[i]->umin() < start_u_) ? element_[i]->umin() : start_u_;
-		end_u_   = (element_[i]->umax() > end_u_  ) ? element_[i]->umax() : end_u_  ;
-		start_v_ = (element_[i]->vmin() < start_v_) ? element_[i]->vmin() : start_v_;
-		end_v_   = (element_[i]->vmax() > end_v_  ) ? element_[i]->vmax() : end_v_  ;
+		start_[0] = (element_[i]->umin() < start_[0]) ? element_[i]->umin() : start_[0];
+		end_[0]   = (element_[i]->umax() > end_[0]  ) ? element_[i]->umax() : end_[0]  ;
+		start_[1] = (element_[i]->vmin() < start_[1]) ? element_[i]->vmin() : start_[1];
+		end_[1]   = (element_[i]->vmax() > end_[1]  ) ? element_[i]->vmax() : end_[1]  ;
 	}
 }
 
@@ -2182,8 +2191,8 @@ void LRSplineSurface::write(std::ostream &os) const {
 	os << std::setprecision(16);
 	os << "# LRSPLINE SURFACE\n";
 	os << "#\tp1\tp2\tNbasis\tNline\tNel\tdim\trat\n\t";
-	os << order_u_ << "\t";
-	os << order_v_ << "\t";
+	os << order_[0] << "\t";
+	os << order_[1] << "\t";
 	os << basis_.size() << "\t";
 	os << meshline_.size() << "\t";
 	os << element_.size() << "\t";
@@ -2221,15 +2230,15 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, std::ve
 	sprintf(date, "%02d/%02d/%04d", lt->tm_mday, lt->tm_mon + 1, lt->tm_year+1900);
 
 	// get bounding box
-	int dx = end_u_ - start_u_;
-	int dy = end_v_ - start_v_;
+	int dx = end_[0] - start_[0];
+	int dy = end_[1] - start_[1];
 	double scale = (dx>dy) ? 1000.0/dx : 1000.0/dy;
 	// set the duplicate-knot-line (dkl) display width
 	double dkl_range = (min_span_u>min_span_v) ? min_span_v*scale/6.0 : min_span_u*scale/6.0; 
-	int xmin = (start_u_ - dx/30.0)*scale;
-	int ymin = (start_v_ - dy/30.0)*scale;
-	int xmax = (end_u_   + dx/30.0)*scale + dkl_range;
-	int ymax = (end_v_   + dy/30.0)*scale + dkl_range;
+	int xmin = (start_[0] - dx/30.0)*scale;
+	int ymin = (start_[1] - dy/30.0)*scale;
+	int xmax = (end_[0]   + dx/30.0)*scale + dkl_range;
+	int ymax = (end_[1]   + dy/30.0)*scale + dkl_range;
 
 	// print eps header
 	out << "%!PS-Adobe-3.0 EPSF-3.0\n";
@@ -2265,13 +2274,13 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, std::ve
 		for(int m=0; m<meshline_[i]->multiplicity_; m++) {
 			if(meshline_[i]->is_spanning_u()) {
 				out << meshline_[i]->start_*scale << " " << meshline_[i]->const_par_*scale + dm*m << " moveto\n";
-				if(meshline_[i]->stop_ == end_u_)
+				if(meshline_[i]->stop_ == end_[0])
 					out << meshline_[i]->stop_*scale+dkl_range << " " << meshline_[i]->const_par_*scale + dm*m << " lineto\n";
 				else
 					out << meshline_[i]->stop_*scale << " " << meshline_[i]->const_par_*scale + dm*m << " lineto\n";
 			} else {
 				out << meshline_[i]->const_par_*scale + dm*m << " " << meshline_[i]->start_*scale << " moveto\n";
-				if(meshline_[i]->stop_ == end_v_)
+				if(meshline_[i]->stop_ == end_[1])
 					out << meshline_[i]->const_par_*scale + dm*m << " " << meshline_[i]->stop_ *scale+dkl_range << " lineto\n";
 				else
 					out << meshline_[i]->const_par_*scale + dm*m << " " << meshline_[i]->stop_ *scale << " lineto\n";
@@ -2498,16 +2507,16 @@ void LRSplineSurface::writePostscriptMeshWithControlPoints(std::ostream &out, in
 		double cp_x = b->cp(0);
 		double cp_y = b->cp(1);
 		// move C^{-1} text on internal functions
-		int textX   = ((*b)[0][1] == (*b)[0][order_u_]) ? -2 : 1;
-		int textY   = ((*b)[1][1] == (*b)[1][order_v_]) ? -2 : 1;
+		int textX   = ((*b)[0][1] == (*b)[0][order_[0]]) ? -2 : 1;
+		int textY   = ((*b)[1][1] == (*b)[1][order_[1]]) ? -2 : 1;
 		// move text on edge functions
-		if((*b)[0][1] == end_u_)
+		if((*b)[0][1] == end_[0])
 			textX = 1;
-		else if((*b)[0][order_u_-1] == start_u_)
+		else if((*b)[0][order_[0]-1] == start_[0])
 			textX = -2;
-		if((*b)[1][1] == end_v_)
+		if((*b)[1][1] == end_[1])
 			textY = 1;
-		else if((*b)[1][order_v_-1] == start_v_)
+		else if((*b)[1][order_[1]-1] == start_[1])
 			textY = -2;
 
 		out << "newpath\n";
@@ -2530,15 +2539,15 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 	if(drawAll)
 		writePostscriptMesh(out, false);
 
-	int dx = end_u_ - start_u_;
-	int dy = end_v_ - start_v_;
+	int dx = end_[0] - start_[0];
+	int dy = end_[1] - start_[1];
 	double scale = (dx>dy) ? 1000.0/dx : 1000.0/dy;
 
 	double max_du = 0;
 	double max_dv = 0;
 	for(Basisfunction *b : basis_) {
-		double du    = (*b)[0][order_u_] - (*b)[0][0];
-		double dv    = (*b)[1][order_v_] - (*b)[1][0];
+		double du    = (*b)[0][order_[0]] - (*b)[0][0];
+		double dv    = (*b)[1][order_[1]] - (*b)[1][0];
 		max_du       = (max_du > du) ? max_du : du;
 		max_dv       = (max_dv > dv) ? max_dv : dv;
 	}
@@ -2571,29 +2580,29 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 		i++;
 		double avg_u = 0;
 		double avg_v = 0;
-		double du    = (*b)[0][order_u_] - (*b)[0][0];
-		double dv    = (*b)[1][order_v_] - (*b)[1][0];
+		double du    = (*b)[0][order_[0]] - (*b)[0][0];
+		double dv    = (*b)[1][order_[1]] - (*b)[1][0];
 
 		// move C^{-1} text on internal functions
 		double textOffset = 15.0;
-		int textX   = ((*b)[0][1] == (*b)[0][order_u_]) ? -2 : 1;
-		int textY   = ((*b)[1][1] == (*b)[1][order_v_]) ? -2 : 1;
+		int textX   = ((*b)[0][1] == (*b)[0][order_[0]]) ? -2 : 1;
+		int textY   = ((*b)[1][1] == (*b)[1][order_[1]]) ? -2 : 1;
 		// move text on edge functions
-		if((*b)[0][1] == end_u_)
+		if((*b)[0][1] == end_[0])
 			textX = 1;
-		else if((*b)[0][order_u_-1] == start_u_)
+		else if((*b)[0][order_[0]-1] == start_[0])
 			textX = -2;
-		if((*b)[1][1] == end_v_)
+		if((*b)[1][1] == end_[1])
 			textY = 1;
-		else if((*b)[1][order_v_-1] == start_v_)
+		else if((*b)[1][order_[1]-1] == start_[1])
 			textY = -2;
 
-		for(int j=1; j<order_u_; j++)
+		for(int j=1; j<order_[0]; j++)
 			avg_u += (*b)[0][j];
-		for(int j=1; j<order_v_; j++)
+		for(int j=1; j<order_[1]; j++)
 			avg_v += (*b)[1][j];
-		avg_u /= (order_u_-1);
-		avg_v /= (order_v_-1);
+		avg_u /= (order_[0]-1);
+		avg_v /= (order_[1]-1);
 
 		bool doColor = false;
 		if(colorBasis != NULL)

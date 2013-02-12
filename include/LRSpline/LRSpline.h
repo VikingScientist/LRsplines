@@ -25,8 +25,13 @@ public:
 	virtual void generateIDs() const;
 
 	// common get methods
-	int nBasisFunctions() const { return basis_.size();   };
-	int nElements()       const { return element_.size(); };
+	int nBasisFunctions()    const { return basis_.size()  ; };
+	int nElements()          const { return element_.size(); };
+	int dimension()          const { return dim_           ; };
+	int order        (int i) const { return order_[i]      ; };
+	double startparam(int i) const { return start_[i]      ; };
+	double endparam  (int i) const { return end_[i]        ; };
+	bool rational()          const { return rational_      ; };
 
 
 	// set refinement state parameters
@@ -48,6 +53,9 @@ protected:
 	// useful descriptive stuff
 	int dim_;
 	bool rational_;
+	std::vector<double> start_ ; //! \brief parametric start coordinate (2 components for surfaces, 3 for volumes)
+	std::vector<double> end_   ; //! \brief parametric stop coordinate (2 components for surfaces, 3 for volumes)
+	std::vector<int>    order_ ; //! \brief polynomial order (degree + 1) in each parametric direction (2 or 3 components)
 	
 	// core storage places for the building blocks
 	std::vector<Basisfunction*> basisVector; // only used in read/write functions

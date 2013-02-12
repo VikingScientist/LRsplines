@@ -83,17 +83,6 @@ public:
 	void getGlobalKnotUniqueVector(std::vector<double> &knot_u,
 	                               std::vector<double> &knot_v,
 	                               std::vector<double> &knot_w) const;
-	virtual double startparam_u() const                { return start_u_; };
-	virtual double startparam_v() const                { return start_v_; };
-	virtual double startparam_w() const                { return start_w_; };
-	virtual double endparam_u()   const                { return end_u_; };
-	virtual double endparam_v()   const                { return end_v_; };
-	virtual double endparam_w()   const                { return end_w_; };
-	virtual int dimension()       const                { return dim_; };
-	int order_u()                 const                { return order_u_; };
-	int order_v()                 const                { return order_v_; };
-	int order_w()                 const                { return order_w_; };
-	bool rational()               const                { return rational_; };
 	int nMeshRectangles()         const                { return meshrect_.size(); };
 
 	// more get-methods
@@ -142,15 +131,6 @@ private:
 	void split(int constDir, Basisfunction *b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
 	
 	std::vector<MeshRectangle*> meshrect_;
-	int order_u_;
-	int order_v_;
-	int order_w_;
-	double start_u_;
-	double start_v_;
-	double start_w_;
-	double end_u_;
-	double end_v_;
-	double end_w_;
 
 
 };

@@ -316,8 +316,8 @@ int main(int argc, char **argv) {
 			double vmin = (*el)->vmin();
 			double umax = (*el)->umax();
 			double vmax = (*el)->vmax();
-			int startI = ( umin == lrs->startparam_u() ) ? 0 : 1;
-			int startJ = ( vmin == lrs->startparam_v() ) ? 0 : 1;
+			int startI = ( umin == lrs->startparam(0) ) ? 0 : 1;
+			int startJ = ( vmin == lrs->startparam(1) ) ? 0 : 1;
 			for(int ii=startI; ii<3; ii++) {
 				for(int jj=startJ; jj<3; jj++) {
 					double u = umin + ii*(umax-umin)/2.0;
@@ -403,9 +403,9 @@ int main(int argc, char **argv) {
 			double umax = (*el)->getParmax(0);
 			double vmax = (*el)->getParmax(1);
 			double wmax = (*el)->getParmax(2);
-			int startI = ( umin == lrv->startparam_u() ) ? 0 : 1;
-			int startJ = ( vmin == lrv->startparam_v() ) ? 0 : 1;
-			int startK = ( wmin == lrv->startparam_w() ) ? 0 : 1;
+			int startI = ( umin == lrv->startparam(0) ) ? 0 : 1;
+			int startJ = ( vmin == lrv->startparam(1) ) ? 0 : 1;
+			int startK = ( wmin == lrv->startparam(2) ) ? 0 : 1;
 			for(int ii=startI; ii<3; ii++) {
 				for(int jj=startJ; jj<3; jj++) {
 					for(int kk=startK; kk<3; kk++) {

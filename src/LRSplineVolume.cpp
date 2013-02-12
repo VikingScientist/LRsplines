@@ -31,17 +31,20 @@ namespace LR {
 
 
 LRSplineVolume::LRSplineVolume() {
+	order_.resize(3);
+	start_.resize(3);
+	end_.resize(3);
 	rational_ = false;
 	dim_      = 0;
-	order_u_  = 0;
-	order_v_  = 0;
-	order_w_  = 0;
-	start_u_  = 0;
-	start_v_  = 0;
-	start_w_  = 0;
-	end_u_    = 0;
-	end_v_    = 0;
-	end_w_    = 0;
+	order_[0]  = 0;
+	order_[1]  = 0;
+	order_[2]  = 0;
+	start_[0]  = 0;
+	start_[1]  = 0;
+	start_[2]  = 0;
+	end_[0]    = 0;
+	end_[1]    = 0;
+	end_[2]    = 0;
 	meshrect_ = std::vector<MeshRectangle*>(0);
 	element_  = std::vector<Element*>(0);
 	maxTjoints_       = -1;
@@ -57,17 +60,20 @@ LRSplineVolume::LRSplineVolume(Go::SplineVolume *vol) {
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
 #endif
+	order_.resize(3);
+	start_.resize(3);
+	end_.resize(3);
 	rational_ = vol->rational();
 	dim_      = vol->dimension();
-	order_u_  = vol->order(0);
-	order_v_  = vol->order(1);
-	order_w_  = vol->order(2);
-	start_u_  = vol->startparam(0);
-	start_v_  = vol->startparam(1);
-	start_w_  = vol->startparam(2);
-	end_u_    = vol->endparam(0);
-	end_v_    = vol->endparam(1);
-	end_w_    = vol->endparam(2);
+	order_[0]  = vol->order(0);
+	order_[1]  = vol->order(1);
+	order_[2]  = vol->order(2);
+	start_[0]  = vol->startparam(0);
+	start_[1]  = vol->startparam(1);
+	start_[2]  = vol->startparam(2);
+	end_[0]    = vol->endparam(0);
+	end_[1]    = vol->endparam(1);
+	end_[2]    = vol->endparam(2);
 	maxTjoints_       = -1;
 	doCloseGaps_      = true;
 	maxAspectRatio_   = 2.0;
@@ -90,13 +96,13 @@ LRSplineVolume::LRSplineVolume(Go::SplineVolume *vol) {
 				                                &(*(knot_v+j)),
 				                                &(*(knot_w+k)),
 				                                &(*(coef+(k*n1*n2+j*n1+i)*(dim_+rational_))),
-				                                dim_, order_u_, order_v_, order_w_) );
+				                                dim_, order_[0], order_[1], order_[2]) );
 	int unique_u=0;
 	int unique_v=0;
 	int unique_w=0;
-	for(int i=0; i<n1+order_u_; i++) {// const u, spanning v
+	for(int i=0; i<n1+order_[0]; i++) {// const u, spanning v
 		int mult = 1;
-		while(i+1<n1+order_u_ && knot_u[i]==knot_u[i+1]) {
+		while(i+1<n1+order_[0] && knot_u[i]==knot_u[i+1]) {
 			i++;
 			mult++;
 		}
@@ -104,9 +110,9 @@ LRSplineVolume::LRSplineVolume(Go::SplineVolume *vol) {
 		meshrect_.push_back(new MeshRectangle(knot_u[i], knot_v[0],  knot_w[0],
 		                                      knot_u[i], knot_v[n2], knot_w[n3], mult));
 	}
-	for(int i=0; i<n2+order_v_; i++) {// const v, spanning u
+	for(int i=0; i<n2+order_[1]; i++) {// const v, spanning u
 		int mult = 1;
-		while(i+1<n2+order_v_ && knot_v[i]==knot_v[i+1]) {
+		while(i+1<n2+order_[1] && knot_v[i]==knot_v[i+1]) {
 			i++;
 			mult++;
 		}
@@ -114,9 +120,9 @@ LRSplineVolume::LRSplineVolume(Go::SplineVolume *vol) {
 		meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[i], knot_w[0],
 		                                      knot_u[n1], knot_v[i], knot_w[n3], mult));
 	}
-	for(int i=0; i<n3+order_w_; i++) {
+	for(int i=0; i<n3+order_[2]; i++) {
 		int mult = 1;
-		while(i+1<n3+order_w_ && knot_w[i]==knot_w[i+1]) {
+		while(i+1<n3+order_[2] && knot_w[i]==knot_w[i+1]) {
 			i++;
 			mult++;
 		}
@@ -148,17 +154,20 @@ LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v,
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
 #endif
+	order_.resize(3);
+	start_.resize(3);
+	end_.resize(3);
 	rational_ = rational;
 	dim_      = dim;
-	order_u_  = order_u;
-	order_v_  = order_v;
-	order_w_  = order_w;
-	start_u_  = knot_u[0];
-	start_v_  = knot_v[0];
-	start_w_  = knot_w[0];
-	end_u_    = knot_u[n1];
-	end_v_    = knot_v[n2];
-	end_w_    = knot_w[n3];
+	order_[0]  = order_u;
+	order_[1]  = order_v;
+	order_[2]  = order_w;
+	start_[0]  = knot_u[0];
+	start_[1]  = knot_v[0];
+	start_[2]  = knot_w[0];
+	end_[0]    = knot_u[n1];
+	end_[1]    = knot_v[n2];
+	end_[2]    = knot_w[n3];
 	maxTjoints_       = -1;
 	doCloseGaps_      = true;
 	maxAspectRatio_   = 2.0;
@@ -174,13 +183,13 @@ LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v,
 				                                knot_v+j,
 				                                knot_w+k,
 				                                coef+(k*n1*n2+j*n1+i)*(dim_+rational_),
-				                                dim_, order_u_, order_v_, order_w_) );
+				                                dim_, order_[0], order_[1], order_[2]) );
 	int unique_u=0;
 	int unique_v=0;
 	int unique_w=0;
-	for(int i=0; i<n1+order_u_; i++) {// const u, spanning v
+	for(int i=0; i<n1+order_[0]; i++) {// const u, spanning v
 		int mult = 1;
-		while(i+1<n1+order_u_ && knot_u[i]==knot_u[i+1]) {
+		while(i+1<n1+order_[0] && knot_u[i]==knot_u[i+1]) {
 			i++;
 			mult++;
 		}
@@ -188,9 +197,9 @@ LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v,
 		meshrect_.push_back(new MeshRectangle(knot_u[i], knot_v[0],  knot_w[0],
 		                                      knot_u[i], knot_v[n2], knot_w[n3], mult));
 	}
-	for(int i=0; i<n2+order_v_; i++) {// const v, spanning u
+	for(int i=0; i<n2+order_[1]; i++) {// const v, spanning u
 		int mult = 1;
-		while(i+1<n2+order_v_ && knot_v[i]==knot_v[i+1]) {
+		while(i+1<n2+order_[1] && knot_v[i]==knot_v[i+1]) {
 			i++;
 			mult++;
 		}
@@ -198,9 +207,9 @@ LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v,
 		meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[i], knot_w[0],
 		                                      knot_u[n1], knot_v[i], knot_w[n3], mult));
 	}
-	for(int i=0; i<n3+order_w_; i++) {
+	for(int i=0; i<n3+order_[2]; i++) {
 		int mult = 1;
-		while(i+1<n3+order_w_ && knot_w[i]==knot_w[i+1]) {
+		while(i+1<n3+order_[2] && knot_w[i]==knot_w[i+1]) {
 			i++;
 			mult++;
 		}
@@ -263,15 +272,15 @@ LRSplineVolume* LRSplineVolume::copy() const {
 	
 	returnvalue->rational_         = this->rational_;
 	returnvalue->dim_              = this->dim_;
-	returnvalue->order_u_          = this->order_u_;
-	returnvalue->order_v_          = this->order_v_;
-	returnvalue->order_w_          = this->order_w_;
-	returnvalue->start_u_          = this->start_u_;
-	returnvalue->start_v_          = this->start_v_;
-	returnvalue->start_w_          = this->start_w_;
-	returnvalue->end_u_            = this->end_u_;
-	returnvalue->end_v_            = this->end_v_;
-	returnvalue->end_w_            = this->end_w_;
+	returnvalue->order_[0]          = this->order_[0];
+	returnvalue->order_[1]          = this->order_[1];
+	returnvalue->order_[2]          = this->order_[2];
+	returnvalue->start_[0]          = this->start_[0];
+	returnvalue->start_[1]          = this->start_[1];
+	returnvalue->start_[2]          = this->start_[2];
+	returnvalue->end_[0]            = this->end_[0];
+	returnvalue->end_[1]            = this->end_[1];
+	returnvalue->end_[2]            = this->end_[2];
 	returnvalue->maxTjoints_       = this->maxTjoints_;
 	returnvalue->doCloseGaps_      = this->doCloseGaps_;
 	returnvalue->doAspectRatioFix_ = this->doAspectRatioFix_;
@@ -308,7 +317,7 @@ void LRSplineVolume::point(Go::Point &pt, double u, double v, double w, int iEl)
 	for(Basisfunction* b : element_[iEl]->support()) {
 		b->getControlPoint(cp);
 		
-		basis_ev = b->evaluate(u,v,w,  u!=end_u_, v!=end_v_, w!=end_w_);
+		basis_ev = b->evaluate(u,v,w,  u!=end_[0], v!=end_[1], w!=end_[2]);
 		pt += basis_ev*cp;
 	}
 	
@@ -333,7 +342,7 @@ void LRSplineVolume::point(std::vector<Go::Point> &pts, double u, double v, doub
 
 	for(Basisfunction* b : element_[iEl]->support() ) {
 		b->getControlPoint(cp);
-		b->evaluate(basis_ev, u,v,w, derivs, u!=end_u_, v!=end_v_, w!=end_w_);
+		b->evaluate(basis_ev, u,v,w, derivs, u!=end_[0], v!=end_[1], w!=end_[2]);
 		for(uint j=0; j<pts.size(); j++)
 			pts[j] += basis_ev[j]*cp;
 	}
@@ -353,7 +362,7 @@ void LRSplineVolume::computeBasis (double param_u, double param_v, double param_
 	int i=0;
 	
 	for(it=itStart; it!=itStop; ++it, ++i) {
-		(*it)->evaluate(values, param_u, param_v, param_w, 2, param_u!=end_u_, param_v!=end_v_, param_w!=end_w_);
+		(*it)->evaluate(values, param_u, param_v, param_w, 2, param_u!=end_[0], param_v!=end_[1], param_w!=end_[2]);
 	
 		result.basisValues[i]    = values[0];
 		result.basisDerivs_u[i]  = values[1];
@@ -381,7 +390,7 @@ void LRSplineVolume::computeBasis (double param_u, double param_v, double param_
 	
 	int i=0;
 	for(it=itStart; it!=itStop; ++it, ++i) {
-		(*it)->evaluate(values, param_u, param_v, param_w, 1, param_u!=end_u_, param_v!=end_v_, param_w!=end_w_);
+		(*it)->evaluate(values, param_u, param_v, param_w, 1, param_u!=end_[0], param_v!=end_[1], param_w!=end_[2]);
 		
 		result.basisValues[i]   = values[0];
 		result.basisDerivs_u[i] = values[1];
@@ -399,7 +408,7 @@ void LRSplineVolume::computeBasis(double param_u, double param_v, double param_w
 	result.preparePts(param_u, param_v, param_w, 0, 0, 0, nPts);
 	int i=0;
 	for(it=itStart; it!=itStop; ++it, ++i)
-		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_w, param_u!=end_u_, param_v!=end_v_, param_w!=end_w_);
+		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_w, param_u!=end_[0], param_v!=end_[1], param_w!=end_[2]);
 }
 
 void LRSplineVolume::computeBasis (double param_u,
@@ -418,16 +427,16 @@ void LRSplineVolume::computeBasis (double param_u,
 
 	int i=0;
 	for(it=itStart; it!=itStop; ++it, ++i)
-	    (*it)->evaluate(result[i], param_u, param_v, derivs, param_u!=end_u_, param_v!=end_v_, param_w!=end_w_);
+	    (*it)->evaluate(result[i], param_u, param_v, derivs, param_u!=end_[0], param_v!=end_[1], param_w!=end_[2]);
 }
 
 int LRSplineVolume::getElementContaining(double u, double v, double w) const {
 	int ans = 0;
 	for(Element *el : element_) {
 		if(el->getParmin(0) <= u && el->getParmin(1) <= v && el->getParmin(2) <= w) 
-			if((u < el->getParmax(0) || (u == end_u_ && u <= el->getParmax(0))) && 
-			   (v < el->getParmax(1) || (v == end_v_ && v <= el->getParmax(1))) && 
-			   (w < el->getParmax(2) || (w == end_w_ && w <= el->getParmax(2))))
+			if((u < el->getParmax(0) || (u == end_[0] && u <= el->getParmax(0))) && 
+			   (v < el->getParmax(1) || (v == end_[1] && v <= el->getParmax(1))) && 
+			   (w < el->getParmax(2) || (w == end_[2] && w <= el->getParmax(2))))
 				return ans;
 		ans++;
 	}
@@ -446,12 +455,12 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 	double min_du      = DBL_MAX;
 	double min_dv      = DBL_MAX;
 	double min_dw      = DBL_MAX;
-	int    best_startI = order_u_+2;
-	int    best_stopI  = order_u_+2;
-	int    best_startJ = order_v_+2;
-	int    best_stopJ  = order_v_+2;
-	int    best_startK = order_w_+2;
-	int    best_stopK  = order_w_+2;
+	int    best_startI = order_[0]+2;
+	int    best_stopI  = order_[0]+2;
+	int    best_startJ = order_[1]+2;
+	int    best_stopJ  = order_[1]+2;
+	int    best_startK = order_[2]+2;
+	int    best_stopK  = order_[2]+2;
 	double du          = umax - umin;
 	double dv          = vmax - vmin;
 	double dw          = wmax - wmin;
@@ -493,8 +502,8 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 
 		// min_du is defined as the minimum TOTAL knot span (of an entire basis function)
 		bool fixU = false;
-		int delta_startI = abs(startI - (order_u_+1)/2);
-		int delta_stopI  = abs(stopI  - (order_u_+1)/2);
+		int delta_startI = abs(startI - (order_[0]+1)/2);
+		int delta_stopI  = abs(stopI  - (order_[0]+1)/2);
 		if(  du <  min_du )
 			fixU = true;
 		if( du == min_du && delta_startI <= best_startI && delta_stopI  <= best_stopI )
@@ -508,8 +517,8 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 		}
 
 		bool fixV = false;
-		int delta_startJ = abs(startJ - (order_v_+1)/2);
-		int delta_stopJ  = abs(stopJ  - (order_v_+1)/2);
+		int delta_startJ = abs(startJ - (order_[1]+1)/2);
+		int delta_stopJ  = abs(stopJ  - (order_[1]+1)/2);
 		if(  dv <  min_dv )
 			fixV = true;
 		if( dv == min_dv && delta_startJ <= best_startJ && delta_stopJ  <= best_stopJ )
@@ -523,8 +532,8 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 		}
 
 		bool fixW = false;
-		int delta_startK = abs(startK - (order_w_+1)/2);
-		int delta_stopK  = abs(stopK  - (order_w_+1)/2);
+		int delta_startK = abs(startK - (order_[2]+1)/2);
+		int delta_stopK  = abs(stopK  - (order_[2]+1)/2);
 		if(  dw <  min_dw )
 			fixW = true;
 		if( dw == min_dw && delta_startK <= best_startK && delta_stopK  <= best_stopK )
@@ -593,12 +602,12 @@ void LRSplineVolume::getStructMeshLines(int iBasis, std::vector<MeshRectangle*>&
 	// find the largest knotspan in this function
 	double max_du = 0;
 	double max_dv = 0;
-	for(int j=0; j<order_u_; j++) {
+	for(int j=0; j<order_[0]; j++) {
 		double du = b->knot_u_[j+1]-b->knot_u_[j];
 		bool isZeroSpan =  MY_STUPID_FABS(du) < DOUBLE_TOL ;
 		max_du = (isZeroSpan || max_du>du) ? max_du : du;
 	}
-	for(int j=0; j<order_v_; j++) {
+	for(int j=0; j<order_[1]; j++) {
 		double dv = b->knot_v_[j+1]-b->knot_v_[j];
 		bool isZeroSpan =  MY_STUPID_FABS(dv) < DOUBLE_TOL ;
 		max_dv = (isZeroSpan || max_dv>dv) ? max_dv : dv;
@@ -606,12 +615,12 @@ void LRSplineVolume::getStructMeshLines(int iBasis, std::vector<MeshRectangle*>&
 
 	// to keep as "square" basis function as possible, only insert
 	// into the largest knot spans
-	for(int j=0; j<order_u_; j++) {
+	for(int j=0; j<order_[0]; j++) {
 		double du = b->knot_u_[j+1]-b->knot_u_[j];
 		if( MY_STUPID_FABS(du-max_du) < DOUBLE_TOL )
 			lines.push_back(new MeshRectangle(false, (b->knot_u_[j] + b->knot_u_[j+1])/2.0, vmin, vmax,1));
 	}
-	for(int j=0; j<order_v_; j++) {
+	for(int j=0; j<order_[1]; j++) {
 		double dv = b->knot_v_[j+1]-b->knot_v_[j];
 		if( MY_STUPID_FABS(dv-max_dv) < DOUBLE_TOL )
 			lines.push_back(new MeshRectangle(true, (b->knot_v_[j] + b->knot_v_[j+1])/2.0, umin, umax,1));
@@ -930,15 +939,15 @@ MeshRectangle* LRSplineVolume::insert_const_u_edge(double u, double start_v, dou
 #endif 
 
 MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
-	if(newRect->start_[0] < start_u_ ||
-	   newRect->start_[1] < start_v_ ||
-	   newRect->start_[2] < start_w_ ||
-	   newRect->stop_[0]  > end_u_  ||
-	   newRect->stop_[1]  > end_v_  ||
-	   newRect->stop_[2]  > end_w_ ) {
+	if(newRect->start_[0] < start_[0] ||
+	   newRect->start_[1] < start_[1] ||
+	   newRect->start_[2] < start_[2] ||
+	   newRect->stop_[0]  > end_[0]  ||
+	   newRect->stop_[1]  > end_[1]  ||
+	   newRect->stop_[2]  > end_[2] ) {
 		std::cerr << "Error: inserting meshrctangle " << *newRect << " outside parametric domain";
-		std::cerr << "(" << start_u_ << ", " << start_v_ << ", " << start_w_ << ") x ";
-		std::cerr << "(" <<   end_u_ << ", " <<   end_v_ << ", " <<   end_w_ << ") ";
+		std::cerr << "(" << start_[0] << ", " << start_[1] << ", " << start_[2] << ") x ";
+		std::cerr << "(" <<   end_[0] << ", " <<   end_[1] << ", " <<   end_[2] << ") ";
 		return NULL;
 	}
 
@@ -1051,14 +1060,14 @@ void LRSplineVolume::split(int constDir, Basisfunction *b, double new_knot, int 
 	newKnot[0] = new_knot;
 	std::sort(newKnot, newKnot + p+2);
 	if(constDir == 0) {
-		b1 = new Basisfunction(newKnot  ,  (*b)[1].begin(),  (*b)[2].begin(), b->cp(), b->dim(), order_u_, order_v_, order_w_, b->w()*alpha1);
-		b2 = new Basisfunction(newKnot+1,  (*b)[1].begin(),  (*b)[2].begin(), b->cp(), b->dim(), order_u_, order_v_, order_w_, b->w()*alpha2);
+		b1 = new Basisfunction(newKnot  ,  (*b)[1].begin(),  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha1);
+		b2 = new Basisfunction(newKnot+1,  (*b)[1].begin(),  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha2);
 	} else if(constDir == 1) {
-		b1 = new Basisfunction((*b)[0].begin(), newKnot   ,  (*b)[2].begin(), b->cp(), b->dim(), order_u_, order_v_, order_w_, b->w()*alpha1);
-		b2 = new Basisfunction((*b)[0].begin(), newKnot+1 ,  (*b)[2].begin(), b->cp(), b->dim(), order_u_, order_v_, order_w_, b->w()*alpha2);
+		b1 = new Basisfunction((*b)[0].begin(), newKnot   ,  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha1);
+		b2 = new Basisfunction((*b)[0].begin(), newKnot+1 ,  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha2);
 	} else { // insert in w
-		b1 = new Basisfunction((*b)[0].begin(), (*b)[1].begin(),  newKnot   , b->cp(), b->dim(), order_u_, order_v_, order_w_, b->w()*alpha1);
-		b2 = new Basisfunction((*b)[0].begin(), (*b)[1].begin(),  newKnot+1 , b->cp(), b->dim(), order_u_, order_v_, order_w_, b->w()*alpha2);
+		b1 = new Basisfunction((*b)[0].begin(), (*b)[1].begin(),  newKnot   , b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha1);
+		b2 = new Basisfunction((*b)[0].begin(), (*b)[1].begin(),  newKnot+1 , b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha2);
 	}
 
 	// add any brand new functions and detect their support elements
@@ -1109,22 +1118,22 @@ void LRSplineVolume::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions
 	for(Basisfunction *b : basis_) {
 		bool ok = true;
 		if( edge & WEST )
-			if((*b)[0][order_u_-depth] != start_u_) 
+			if((*b)[0][order_[0]-depth] != start_[0]) 
 				ok = false;
 		if( edge & EAST )
-			if((*b)[0][depth] != end_u_) 
+			if((*b)[0][depth] != end_[0]) 
 				ok = false;
 		if( edge & SOUTH )
-			if((*b)[1][order_v_-depth] != start_v_) 
+			if((*b)[1][order_[1]-depth] != start_[1]) 
 				ok = false;
 		if( edge & NORTH )
-			if((*b)[1][depth] != end_v_) 
+			if((*b)[1][depth] != end_[1]) 
 				ok = false;
 		if( edge & BOTTOM )
-			if((*b)[2][order_w_-depth] != start_w_) 
+			if((*b)[2][order_[2]-depth] != start_[2]) 
 				ok = false;
 		if( edge & TOP )
-			if((*b)[2][depth] != end_u_) 
+			if((*b)[2][depth] != end_[0]) 
 				ok = false;
 
 		if(ok)
@@ -1269,7 +1278,7 @@ bool LRSplineVolume::isLinearIndepByOverloading(bool verbose) {
 
 void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoints) const {
 	controlPoints.clear();
-	controlPoints.resize(order_u_*order_v_*order_w_*dim_, 0);
+	controlPoints.resize(order_[0]*order_[1]*order_[2]*dim_, 0);
 	Element *el = element_[iEl];
 	for(Basisfunction* b : el->support()) {
 		std::vector<double> knotU((*b)[0].begin(), (*b)[0].end() );
@@ -1285,15 +1294,15 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 		double max = el->umax();
 		while(knotU[++startU] < min);
 		while(true) {
-			int p    = order_u_-1;
+			int p    = order_[0]-1;
 			int newI = -1;
 			double z;
-			if(       knotU.size() < (uint) startU+order_u_   || knotU[startU+  order_u_-1] != min) {
+			if(       knotU.size() < (uint) startU+order_[0]   || knotU[startU+  order_[0]-1] != min) {
 				z    = min;
 				newI = startU;
-			} else if(knotU.size() < (uint) startU+2*order_u_ || knotU[startU+2*order_u_-1] != max ) {
+			} else if(knotU.size() < (uint) startU+2*order_[0] || knotU[startU+2*order_[0]-1] != max ) {
 				z    = max;
-				newI = startU + order_u_;
+				newI = startU + order_[0];
 			} else {
 				break;
 			}
@@ -1319,15 +1328,15 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 		max = el->vmax();
 		while(knotV[++startV] < min);
 		while(true) {
-			int p    = order_v_-1;
+			int p    = order_[1]-1;
 			int newI = -1;
 			double z;
-			if(       knotV.size() < (uint) startV+order_v_   || knotV[startV+  order_v_-1] != min) {
+			if(       knotV.size() < (uint) startV+order_[1]   || knotV[startV+  order_[1]-1] != min) {
 				z    = min;
 				newI = startV;
-			} else if(knotV.size() < (uint) startV+2*order_v_ || knotV[startV+2*order_v_-1] != max ) {
+			} else if(knotV.size() < (uint) startV+2*order_[1] || knotV[startV+2*order_[1]-1] != max ) {
 				z = max;
-				newI = startV + order_v_;
+				newI = startV + order_[1];
 			} else {
 				break;
 			}
@@ -1353,15 +1362,15 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 		max = el->getParmax(2);
 		while(knotW[++startW] < min);
 		while(true) {
-			int p    = order_w_-1;
+			int p    = order_[2]-1;
 			int newI = -1;
 			double z;
-			if(       knotW.size() < (uint) startW+order_w_   || knotW[startW+  order_w_-1] != min) {
+			if(       knotW.size() < (uint) startW+order_[2]   || knotW[startW+  order_[2]-1] != min) {
 				z    = min;
 				newI = startW;
-			} else if(knotW.size() < (uint) startW+2*order_w_ || knotW[startW+2*order_w_-1] != max ) {
+			} else if(knotW.size() < (uint) startW+2*order_[2] || knotW[startW+2*order_[2]-1] != max ) {
 				z = max;
-				newI = startW + order_w_;
+				newI = startW + order_[2];
 			} else {
 				break;
 			}
@@ -1384,9 +1393,9 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 		}
 		
 		int ip = 0;
-		for(int w=startW; w<startW+order_w_; w++)
-			for(int v=startV; v<startV+order_v_; v++)
-				for(int u=startU; u<startU+order_u_; u++)
+		for(int w=startW; w<startW+order_[2]; w++)
+			for(int v=startV; v<startV+order_[1]; v++)
+				for(int u=startU; u<startU+order_[0]; u++)
 					for(int d=0; d<dim_; d++)
 						controlPoints[ip++] += b->cp()[d]*rowU[u]*rowV[v]*rowW[w]*b->w();
 
@@ -1403,8 +1412,8 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 	std::vector<double> knots_u, knots_v;
 	getGlobalKnotVector(knots_u, knots_v);
 	int nmb_bas = basis_.size();
-	int n1 = knots_u.size() - order_u_;
-	int n2 = knots_v.size() - order_v_;
+	int n1 = knots_u.size() - order_[0];
+	int n2 = knots_v.size() - order_[1];
 	int fullDim = n1*n2;
 	bool fullVerbose   = fullDim < 30  && nmb_bas < 50;
 	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
@@ -1423,19 +1432,19 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 
 	for (int i = 0; i < nmb_bas; ++i) {
 		int startU, startV;
-		std::vector<double> locKnotU(basis_[i]->knot_u_, basis_[i]->knot_u_ + basis_[i]->order_u_+1);
-		std::vector<double> locKnotV(basis_[i]->knot_v_, basis_[i]->knot_v_ + basis_[i]->order_v_+1);
+		std::vector<double> locKnotU(basis_[i]->knot_u_, basis_[i]->knot_u_ + basis_[i]->order_[0]+1);
+		std::vector<double> locKnotV(basis_[i]->knot_v_, basis_[i]->knot_v_ + basis_[i]->order_[1]+1);
 		
 		for(startU=knots_u.size(); startU-->0; )
 			if(knots_u[startU] == basis_[i]->knot_u_[0]) break;
-		for(int j=0; j<basis_[i]->order_u_; j++) {
+		for(int j=0; j<basis_[i]->order_[0]; j++) {
 			if(knots_u[startU] == basis_[i]->knot_u_[j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
 			if(knots_v[startV] == basis_[i]->knot_v_[0]) break;
-		for(int j=0; j<basis_[i]->order_v_; j++) {
+		for(int j=0; j<basis_[i]->order_[1]; j++) {
 			if(knots_v[startV] == basis_[i]->knot_v_[j]) startV--;
 			else break;
 		}
@@ -1449,7 +1458,7 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 				for(uint k=0; k<rowU.size(); k++) {
 					#define U(x) ((long long) (locKnotU[x+k]/smallKnotU + 0.5))
 					long long z = (long long) (knots_u[curU] / smallKnotU + 0.5);
-					int p = order_u_-1;
+					int p = order_[0]-1;
 					if(z < U(0) || z > U(p+1)) {
 						newRowU[k] = rowU[k];
 						continue;
@@ -1471,7 +1480,7 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 				for(uint k=0; k<rowV.size(); k++) {
 					#define V(x) ((long long) (locKnotV[x+k]/smallKnotV + 0.5))
 					long long z = (long long) (knots_v[curV] / smallKnotV + 0.5);
-					int p = order_v_-1;
+					int p = order_[1]-1;
 					if(z < V(0) || z > V(p+1)) {
 						newRowV[k] = rowV[k];
 						continue;
@@ -1582,8 +1591,8 @@ void LRSplineVolume::getNullSpace(std::vector<std::vector<boost::rational<long l
 	std::vector<double> knots_u, knots_v;
 	getGlobalKnotVector(knots_u, knots_v);
 	int nmb_bas = basis_.size();
-	int n1 = knots_u.size() - order_u_;
-	int n2 = knots_v.size() - order_v_;
+	int n1 = knots_u.size() - order_[0];
+	int n2 = knots_v.size() - order_[1];
 	int fullDim = n1*n2;
 
 	std::vector<std::vector<boost::rational<long long> > > Ct;  // rational projection matrix (transpose of this)
@@ -1604,19 +1613,19 @@ void LRSplineVolume::getNullSpace(std::vector<std::vector<boost::rational<long l
 
 	for (int i = 0; i < nmb_bas; ++i) {
 		int startU, startV;
-		std::vector<double> locKnotU(basis_[i]->knot_u_, basis_[i]->knot_u_ + basis_[i]->order_u_+1);
-		std::vector<double> locKnotV(basis_[i]->knot_v_, basis_[i]->knot_v_ + basis_[i]->order_v_+1);
+		std::vector<double> locKnotU(basis_[i]->knot_u_, basis_[i]->knot_u_ + basis_[i]->order_[0]+1);
+		std::vector<double> locKnotV(basis_[i]->knot_v_, basis_[i]->knot_v_ + basis_[i]->order_[1]+1);
 		
 		for(startU=knots_u.size(); startU-->0; )
 			if(knots_u[startU] == basis_[i]->knot_u_[0]) break;
-		for(int j=0; j<basis_[i]->order_u_; j++) {
+		for(int j=0; j<basis_[i]->order_[0]; j++) {
 			if(knots_u[startU] == basis_[i]->knot_u_[j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
 			if(knots_v[startV] == basis_[i]->knot_v_[0]) break;
-		for(int j=0; j<basis_[i]->order_v_; j++) {
+		for(int j=0; j<basis_[i]->order_[1]; j++) {
 			if(knots_v[startV] == basis_[i]->knot_v_[j]) startV--;
 			else break;
 		}
@@ -1630,7 +1639,7 @@ void LRSplineVolume::getNullSpace(std::vector<std::vector<boost::rational<long l
 				for(uint k=0; k<rowU.size(); k++) {
 					#define U(x) ((long long) (locKnotU[x+k]/smallKnotU + 0.5))
 					long long z = (long long) (knots_u[curU] / smallKnotU + 0.5);
-					int p = order_u_-1;
+					int p = order_[0]-1;
 					if(z < U(0) || z > U(p+1)) {
 						newRowU[k] = rowU[k];
 						continue;
@@ -1652,7 +1661,7 @@ void LRSplineVolume::getNullSpace(std::vector<std::vector<boost::rational<long l
 				for(uint k=0; k<rowV.size(); k++) {
 					#define V(x) ((long long) (locKnotV[x+k]/smallKnotV + 0.5))
 					long long z = (long long) (knots_v[curV] / smallKnotV + 0.5);
-					int p = order_v_-1;
+					int p = order_[1]-1;
 					if(z < V(0) || z > V(p+1)) {
 						newRowV[k] = rowV[k];
 						continue;
@@ -1738,8 +1747,8 @@ bool LRSplineVolume::isLinearIndepByFloatingPointMappingMatrix(bool verbose) con
 	std::vector<double> knots_u, knots_v;
 	getGlobalKnotVector(knots_u, knots_v);
 	int nmb_bas = basis_.size();
-	int n1 = knots_u.size() - order_u_;
-	int n2 = knots_v.size() - order_v_;
+	int n1 = knots_u.size() - order_[0];
+	int n2 = knots_v.size() - order_[1];
 	int fullDim = n1*n2;
 	bool fullVerbose   = fullDim < 30  && nmb_bas < 50;
 	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
@@ -1748,19 +1757,19 @@ bool LRSplineVolume::isLinearIndepByFloatingPointMappingMatrix(bool verbose) con
 
 	for (int i = 0; i < nmb_bas; ++i) {
 		int startU, startV;
-		std::vector<double> locKnotU(basis_[i]->knot_u_, basis_[i]->knot_u_ + basis_[i]->order_u_+1);
-		std::vector<double> locKnotV(basis_[i]->knot_v_, basis_[i]->knot_v_ + basis_[i]->order_v_+1);
+		std::vector<double> locKnotU(basis_[i]->knot_u_, basis_[i]->knot_u_ + basis_[i]->order_[0]+1);
+		std::vector<double> locKnotV(basis_[i]->knot_v_, basis_[i]->knot_v_ + basis_[i]->order_[1]+1);
 		
 		for(startU=knots_u.size(); startU-->0; )
 			if(knots_u[startU] == basis_[i]->knot_u_[0]) break;
-		for(int j=0; j<basis_[i]->order_u_; j++) {
+		for(int j=0; j<basis_[i]->order_[0]; j++) {
 			if(knots_u[startU] == basis_[i]->knot_u_[j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
 			if(knots_v[startV] == basis_[i]->knot_v_[0]) break;
-		for(int j=0; j<basis_[i]->order_v_; j++) {
+		for(int j=0; j<basis_[i]->order_[1]; j++) {
 			if(knots_v[startV] == basis_[i]->knot_v_[j]) startV--;
 			else break;
 		}
@@ -1774,7 +1783,7 @@ bool LRSplineVolume::isLinearIndepByFloatingPointMappingMatrix(bool verbose) con
 				for(uint k=0; k<rowU.size(); k++) {
 					#define U(x) (locKnotU[x+k])
 					double z = knots_u[curU] ;
-					int p = order_u_-1;
+					int p = order_[0]-1;
 					if(z < U(0) || z > U(p+1)) {
 						newRowU[k] = rowU[k];
 						continue;
@@ -1796,7 +1805,7 @@ bool LRSplineVolume::isLinearIndepByFloatingPointMappingMatrix(bool verbose) con
 				for(uint k=0; k<rowV.size(); k++) {
 					#define V(x) (locKnotV[x+k])
 					double z = knots_v[curV];
-					int p = order_v_-1;
+					int p = order_[1]-1;
 					if(z < V(0) || z > V(p+1)) {
 						newRowV[k] = rowV[k];
 						continue;
@@ -1936,17 +1945,17 @@ double LRSplineVolume::makeIntegerKnots() {
 	// scale all basis functions values
 	Basisfunction *b;
 	for(Basisfunction *b : basis_) {
-		for(int j=0; j<order_u_+1; j++)
+		for(int j=0; j<order_[0]+1; j++)
 			b->knot_u_[j] = floor(b->knot_u_[j]/scale + 0.5);
-		for(int j=0; j<order_v_+1; j++)
+		for(int j=0; j<order_[1]+1; j++)
 			b->knot_v_[j] = floor(b->knot_v_[j]/scale + 0.5);
 	}
 	
 	// scale all LRSplineVolume values
-	start_u_ = floor(start_u_/scale + 0.5);
-	start_v_ = floor(start_v_/scale + 0.5);
-	end_u_   = floor(end_u_  /scale + 0.5);
-	end_v_   = floor(end_v_  /scale + 0.5);
+	start_[0] = floor(start_[0]/scale + 0.5);
+	start_[1] = floor(start_[1]/scale + 0.5);
+	end_[0]   = floor(end_[0]  /scale + 0.5);
+	end_[1]   = floor(end_[1]  /scale + 0.5);
 
 	return scale;
 }
@@ -1963,7 +1972,7 @@ void LRSplineVolume::getDiagonalBasisfunctions(std::vector<Basisfunction*> &resu
 	result.clear();
 	for(Basisfunction *b : basis_) {
 		bool isDiag = true;
-		for(int j=0; j<order_u_+1; j++)
+		for(int j=0; j<order_[0]+1; j++)
 			if(b->getknots(0)[j] != b->getknots(1)[j] || b->getknots(0)[j] != b->getknots(2)[j])
 				isDiag = false;
 		if(isDiag)
@@ -1973,12 +1982,12 @@ void LRSplineVolume::getDiagonalBasisfunctions(std::vector<Basisfunction*> &resu
 
 
 void LRSplineVolume::read(std::istream &is) {
-	start_u_ =  DBL_MAX;
-	end_u_   = -DBL_MAX;
-	start_v_ =  DBL_MAX;
-	end_v_   = -DBL_MAX;
-	start_w_ =  DBL_MAX;
-	end_w_   = -DBL_MAX;
+	start_[0] =  DBL_MAX;
+	end_[0]   = -DBL_MAX;
+	start_[1] =  DBL_MAX;
+	end_[1]   = -DBL_MAX;
+	start_[2] =  DBL_MAX;
+	end_[2]   = -DBL_MAX;
 
 	// first get rid of comments and spaces
 	ws(is); 
@@ -1993,9 +2002,9 @@ void LRSplineVolume::read(std::istream &is) {
 
 	// read actual parameters
 	int nBasis, nElements, nMeshRectangles;
-	is >> order_u_;        ws(is);
-	is >> order_v_;        ws(is);
-	is >> order_w_;        ws(is);
+	is >> order_[0];        ws(is);
+	is >> order_[1];        ws(is);
+	is >> order_[2];        ws(is);
 	is >> nBasis;          ws(is);
 	is >> nMeshRectangles; ws(is);
 	is >> nElements;       ws(is);
@@ -2005,7 +2014,7 @@ void LRSplineVolume::read(std::istream &is) {
 	meshrect_.resize(nMeshRectangles);
 	element_.resize(nElements);
 	basisVector.resize(nBasis);
-	int allOrder[] = {order_u_, order_v_, order_w_};
+	int allOrder[] = {order_[0], order_[1], order_[2]};
 
 	// get rid of more comments and spaces
 	firstChar = is.peek();
@@ -2049,12 +2058,12 @@ void LRSplineVolume::read(std::istream &is) {
 		element_[i] = new Element();
 		element_[i]->read(is);
 		element_[i]->updateBasisPointers(basisVector);
-		start_u_ = (element_[i]->getParmin(0) < start_u_) ? element_[i]->getParmin(0) : start_u_;
-		end_u_   = (element_[i]->getParmax(0) > end_u_  ) ? element_[i]->getParmax(0) : end_u_  ;
-		start_v_ = (element_[i]->getParmin(1) < start_v_) ? element_[i]->getParmin(1) : start_v_;
-		end_v_   = (element_[i]->getParmax(1) > end_v_  ) ? element_[i]->getParmax(1) : end_v_  ;
-		start_w_ = (element_[i]->getParmin(2) < start_w_) ? element_[i]->getParmin(2) : start_w_;
-		end_w_   = (element_[i]->getParmax(2) > end_w_  ) ? element_[i]->getParmax(2) : end_w_  ;
+		start_[0] = (element_[i]->getParmin(0) < start_[0]) ? element_[i]->getParmin(0) : start_[0];
+		end_[0]   = (element_[i]->getParmax(0) > end_[0]  ) ? element_[i]->getParmax(0) : end_[0]  ;
+		start_[1] = (element_[i]->getParmin(1) < start_[1]) ? element_[i]->getParmin(1) : start_[1];
+		end_[1]   = (element_[i]->getParmax(1) > end_[1]  ) ? element_[i]->getParmax(1) : end_[1]  ;
+		start_[2] = (element_[i]->getParmin(2) < start_[2]) ? element_[i]->getParmin(2) : start_[2];
+		end_[2]   = (element_[i]->getParmax(2) > end_[2]  ) ? element_[i]->getParmax(2) : end_[2]  ;
 	}
 }
 
@@ -2063,9 +2072,9 @@ void LRSplineVolume::write(std::ostream &os) const {
 	os << std::setprecision(16);
 	os << "# LRSPLINE VOLUME\n";
 	os << "#\tp1\tp2\tp3\tNbasis\tNline\tNel\tdim\trat\n\t";
-	os << order_u_ << "\t";
-	os << order_v_ << "\t";
-	os << order_w_ << "\t";
+	os << order_[0] << "\t";
+	os << order_[1] << "\t";
+	os << order_[2] << "\t";
 	os << basis_.size() << "\t";
 	os << meshrect_.size() << "\t";
 	os << element_.size() << "\t";
