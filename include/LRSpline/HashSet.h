@@ -197,6 +197,15 @@ public:
 		numb      = 0;
 		last      = data.end();
 	}
+	
+	//! \brief Default copy constructor
+	//! \details Creates a copy of the HashSet. 
+	HashSet(const HashSet<T> &other) {
+		data = other.data;
+		numb = other.numb;
+		last = this->data.end();
+		if(numb > 0) last--;
+	}
 
 	//! \brief insert an element in the container if it does not already exist
 	//! \param obj the element to insert

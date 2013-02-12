@@ -118,6 +118,7 @@ public:
 	HashSet_const_iterator<Basisfunction*> basisBegin()   const    { return basis_.begin(); };
 	HashSet_const_iterator<Basisfunction*> basisEnd()     const    { return basis_.end(); };
 	const HashSet<Basisfunction*>& getAllBasisfunctions() const    { return basis_ ;};
+	const std::vector<Element*>&   getAllElements()       const    { return element_ ;};
 	Element* getElement(int i)                                     { return element_[i]; };
 	Basisfunction* getBasisfunction(int iBasis) {
 		HashSet_iterator<Basisfunction*> it = basis_.begin();
