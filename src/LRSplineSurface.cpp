@@ -36,7 +36,6 @@ LRSplineSurface::LRSplineSurface() {
 	start_v_  = 0;
 	end_u_    = 0;
 	end_v_    = 0;
-	basis_    = HashSet<Basisfunction*>();
 	meshline_ = std::vector<Meshline*>(0);
 	element_  = std::vector<Element*>(0);
 	maxTjoints_       = -1;
@@ -86,12 +85,12 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 	selected_basis_green  = 0.2;
 	selected_basis_blue   = 0.05;
 
+
 	int n1 = surf->numCoefs_u();
 	int n2 = surf->numCoefs_v();
 	std::vector<double>::iterator coef  = surf->coefs_begin();
 	std::vector<double>::const_iterator knot_u = surf->basis(0).begin();
 	std::vector<double>::const_iterator knot_v = surf->basis(1).begin();
-	basis_ = HashSet<Basisfunction*>();
 	for(int j=0; j<n2; j++)
 		for(int i=0; i<n1; i++)
 			basis_.insert(new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim_+rational_), dim_, order_u_, order_v_));
@@ -158,7 +157,6 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 	selected_basis_green  = 0.2;
 	selected_basis_blue   = 0.05;
 
-	basis_ = HashSet<Basisfunction*>();
 	for(int j=0; j<n2; j++)
 		for(int i=0; i<n1; i++)
 			basis_.insert(new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim+rational), dim, order_u, order_v));
@@ -934,7 +932,8 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 	}
 	}
 
-	int nNewFunctions     = 0; // number of newly created functions eligable for testing in STEP 2
+	HashSet<Basisfunction*> newFuncStp1, newFuncStp2;
+	HashSet<Basisfunction*> removeFunc;
 
 	{ // STEP 1: test EVERY function against the NEW meshline
 #ifdef TIME_LRSPLINE
@@ -944,19 +943,18 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 #ifdef TIME_LRSPLINE
 	PROFILE("S1-basissplit");
 #endif
-	bool oneSplit = true;
-	while(oneSplit) {
-		oneSplit = false;
-		for(Basisfunction* b : basis_) {
-			if(newline->splits(b)) {
-				int nKnots;
-				if( ((nKnots=newline->nKnotsIn(b)) != newline->multiplicity_) ) {
-					nNewFunctions += split( const_u, b, const_par, newline->multiplicity_-nKnots );
-					oneSplit = true; // splitting deletes a basisfunction in the middle of the basis_ vector
-					break;
-				}
+	for(Basisfunction* b : basis_) {
+		if(newline->splits(b)) {
+			int nKnots;
+			if( ((nKnots=newline->nKnotsIn(b)) != newline->multiplicity_) ) {
+				removeFunc.insert(b);
+				split( const_u, b, const_par, newline->multiplicity_-nKnots, newFuncStp1 );
 			}
 		}
+	}
+	for(Basisfunction* b : removeFunc) {
+		basis_.erase(b);
+		delete b;
 	}
 	} // end profiler
 	{
@@ -975,24 +973,25 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 	PROFILE("STEP 2");
 #endif
 	meshline_.push_back(newline);
-	bool oneSplit = true;
-	while(oneSplit) {
-		oneSplit = false;
-		for(Basisfunction *b : basis_) {
-			for(Meshline *m : meshline_) {
-				if(m->splits(b)) {
-					int nKnots;
-					if( (nKnots=m->nKnotsIn(b)) != m->multiplicity_ ) {
-						split( !m->is_spanning_u(), b, m->const_par_, m->multiplicity_-nKnots);
-						oneSplit = true; // splitting deletes a basisfunction in the middle of the basis_ vector
-						break;
-					}
+	while(newFuncStp1.size() > 0) {
+		Basisfunction *b = newFuncStp1.pop();
+		bool splitMore = false;
+		for(Meshline *m : meshline_) {
+			if(m->splits(b)) {
+				int nKnots = m->nKnotsIn(b);
+				if( nKnots != m->multiplicity_ ) {
+					splitMore = true;
+					split( !m->is_spanning_u(), b, m->const_par_, m->multiplicity_-nKnots, newFuncStp1);
+					delete b;
+					break;
 				}
 			}
-			if(oneSplit) break;
 		}
-	} 
+		if(!splitMore)
+			basis_.insert(b);
+	}
 	} // end profiler (step 2)
+
 	return newline;
 }
 
@@ -1000,7 +999,7 @@ Meshline* LRSplineSurface::insert_const_v_edge(double v, double start_u, double 
 	return insert_line(false, v, start_u, stop_u, multiplicity);
 }
 
-int LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot, int multiplicity) {
+void LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions) {
 #ifdef TIME_LRSPLINE
 	PROFILE("split()");
 #endif
@@ -1011,7 +1010,7 @@ int LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot, 
 	int     p                = (insert_in_u) ? order_u_ : order_v_;
 	int     insert_index = 0;
 	if(new_knot < knot[0] || knot[p] < new_knot)
-		return 0;
+		return ;
 	while(knot[insert_index] < new_knot)
 		insert_index++;
 	double alpha1 = (insert_index == p)  ? 1.0 : (new_knot-knot[0])/(knot[p-1]-knot[0]);
@@ -1029,43 +1028,49 @@ int LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot, 
 	}
 
 	// add any brand new functions and detect their support elements
-	int newFunctions = 0;
 	HashSet_iterator<Basisfunction*> it = basis_.find(b1);
 	if(it != basis_.end()) {
 		**it += *b1;
 		delete b1;
-		b1 = NULL;
 	} else {
-		basis_.insert(b1);
-		updateSupport(b1, b->supportedElementBegin(), b->supportedElementEnd());
-		bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && (*b1)[0][order_u_]!=new_knot) ||
-		                                               (!insert_in_u && (*b1)[1][order_v_]!=new_knot)  );
-		if(recursive_split)
-			newFunctions += split( insert_in_u, b1, new_knot, multiplicity-1);
-		else
-			newFunctions++;
+		it = newFunctions.find(b1);
+		if(it != newFunctions.end()) {
+			**it += *b1;
+			delete b1;
+		} else {
+			updateSupport(b1, b->supportedElementBegin(), b->supportedElementEnd());
+			bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && (*b1)[0][order_u_]!=new_knot) ||
+			                                               (!insert_in_u && (*b1)[1][order_v_]!=new_knot)  );
+			if(recursive_split) {
+				split( insert_in_u, b1, new_knot, multiplicity-1, newFunctions);
+				delete b1;
+			} else {
+				newFunctions.insert(b1);
+			}
+		}
 	}
 	it = basis_.find(b2);
 	if(it != basis_.end()) {
 		**it += *b2;
 		delete b2;
-		b2 = NULL;
 	} else {
-		basis_.insert(b2);
-		updateSupport(b2, b->supportedElementBegin(), b->supportedElementEnd());
-		bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && (*b2)[0][0]!=new_knot) ||
-		                                               (!insert_in_u && (*b2)[1][0]!=new_knot)  );
-		if(recursive_split)
-			newFunctions += split( insert_in_u, b2, new_knot, multiplicity-1);
-		else
-			newFunctions++;
+		it = newFunctions.find(b2);
+		if(it != newFunctions.end()) {
+			**it += *b2;
+			delete b2;
+		} else {
+			updateSupport(b2, b->supportedElementBegin(), b->supportedElementEnd());
+			bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && (*b2)[0][0]!=new_knot) ||
+			                                               (!insert_in_u && (*b2)[1][0]!=new_knot)  );
+			if(recursive_split) {
+				split( insert_in_u, b2, new_knot, multiplicity-1, newFunctions);
+				delete b2;
+			} else {
+				newFunctions.insert(b2);
+			}
+		}
 	}
 
-	// remove old functions
-	basis_.erase(b);
-	delete b;
-
-	return newFunctions;
 }
 
 void LRSplineSurface::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth) const {
@@ -1300,7 +1305,14 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		if(knots_v[i+1]-knots_v[i] < smallKnotV && knots_v[i+1] != knots_v[i])
 			smallKnotV = knots_v[i+1]-knots_v[i];
 
-	for(Basisfunction *b : basis_) {
+	// HashSet_iterator<Basisfunction*>       it_begin  = basis_.begin();
+	// HashSet_iterator<Basisfunction*>       it_end    = basis_.end();
+	HashSet_const_iterator<Basisfunction*> cit_begin = basis_.begin();
+	HashSet_const_iterator<Basisfunction*> cit_end   = basis_.end();
+	HashSet_const_iterator<Basisfunction*> it;
+	// for(Basisfunction *b : basis_) {
+	for(it=cit_begin; it != cit_end; ++it) {
+		Basisfunction *b = *it;
 		int startU, startV;
 		std::vector<double> locKnotU((*b)[0].begin(), (*b)[0].end());
 		std::vector<double> locKnotV((*b)[1].begin(), (*b)[1].end());
@@ -1911,6 +1923,7 @@ void LRSplineSurface::read(std::istream &is) {
 	
 	meshline_.resize(nMeshlines);
 	element_.resize(nElements);
+	std::vector<Basisfunction*> basisVector(nBasis);
 
 	// get rid of more comments and spaces
 	firstChar = is.peek();
@@ -1925,6 +1938,7 @@ void LRSplineSurface::read(std::istream &is) {
 		Basisfunction *b = new Basisfunction(dim_, order_u_, order_v_);
 		b->read(is);
 		basis_.insert(b);
+		basisVector[i] = b;
 	}
 
 	// get rid of more comments and spaces
@@ -1952,7 +1966,7 @@ void LRSplineSurface::read(std::istream &is) {
 	for(int i=0; i<nElements; i++) {
 		element_[i] = new Element();
 		element_[i]->read(is);
-		element_[i]->updateBasisPointers(basis_);
+		element_[i]->updateBasisPointers(basisVector);
 		start_u_ = (element_[i]->umin() < start_u_) ? element_[i]->umin() : start_u_;
 		end_u_   = (element_[i]->umax() > end_u_  ) ? element_[i]->umax() : end_u_  ;
 		start_v_ = (element_[i]->vmin() < start_v_) ? element_[i]->vmin() : start_v_;

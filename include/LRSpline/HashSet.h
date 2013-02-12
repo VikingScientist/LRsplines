@@ -194,8 +194,8 @@ public:
 	//! \details Creates an empty container
 
 	HashSet() {
-		numb = 0;
-		last = data.end();
+		numb      = 0;
+		last      = data.end();
 	}
 
 	//! \brief insert an element in the container if it does not already exist
@@ -205,6 +205,11 @@ public:
 	void insert(const T &obj) {
 		long hc = obj->hashCode();
 		iter it = data.find(hc);
+
+		bool updateLast = false;
+		if(last == data.end() || hc > last->first)
+			updateLast = true;
+
 		if(it == data.end()) {
 			data[hc] = std::list<T>(1,obj);
 			numb++;
@@ -215,7 +220,7 @@ public:
 			data[hc].push_back(obj);
 			numb++;
 		}
-		if(last == data.end() || hc > last->first)
+		if(updateLast)
 			last = data.find(hc);
 	}
 
@@ -262,6 +267,29 @@ public:
 		return end();
 	}
 
+	//! \brief returns the first element, and removes this from the container
+	T pop() {
+		if(numb == 0)
+			return NULL;
+		
+		iter it = data.begin(); 
+		T ans   = it->second.front();
+		it->second.pop_front();
+		if(it->second.size() == 0)
+			data.erase(it);
+
+		numb--;
+		return ans;
+	}
+
+	//! \brief clears the container
+	void clear() {
+		for(iter it = data.begin(); it != data.end(); it++)
+			it->second.clear();
+		data.clear();
+		numb = 0;
+	}
+
 	//! \brief returns the number of unique hash codes in this container
 	//! \details this is the number of elements that produce distinct value upon calling T::hashFunction()
 	int uniqueHashCodes() const {
@@ -277,31 +305,40 @@ public:
 	//! \brief iterator to the beginning of the container.
 		//! \details dereferencing the iterator returns an object of class <T>
 	HashSet_const_iterator<T> begin() const {
-		return HashSet_const_iterator<T>(data.begin(), data.begin()->second.begin(), data.end());
+		return HashSet_const_iterator<T>(data.begin(),
+		                                 (numb==0)?dummyLast.end():data.begin()->second.begin(),
+		                                 data.end());
 	}
 
 	//! \brief iterator to one past the last element
 	//! \details dereferencing the iterator returns an object of class <T>
 	HashSet_const_iterator<T> end() const {
-		return HashSet_const_iterator<T>(data.end(), last->second.end(), data.end());
+		return HashSet_const_iterator<T>(data.end(),
+		                                 (numb==0)?dummyLast.end():last->second.end(),
+		                                 data.end());
 	}
 
 
 	//! \brief iterator to the beginning of the container.
 	//! \details dereferencing the iterator returns an object of class <T>
 	HashSet_iterator<T> begin() {
-		return HashSet_iterator<T>(data.begin(), data.begin()->second.begin(), data.end());
+		return HashSet_iterator<T>(data.begin(),
+		                           (numb==0)?dummyLast.end():data.begin()->second.begin(),
+		                           data.end());
 	}
 
 	//! \brief iterator to one past the last element
 	//! \details dereferencing the iterator returns an object of class <T>
 	HashSet_iterator<T> end() {
-		return HashSet_iterator<T>(data.end(), last->second.end(), data.end());
+		return HashSet_iterator<T>(data.end(),
+		                           (numb==0)?dummyLast.end():last->second.end(),
+		                           data.end());
 	}
 
-// private:
+private:
 	std::map<long, std::list<T> > data;
 	iter last;
+	std::list<T> dummyLast;
 	int  numb;
 
 };

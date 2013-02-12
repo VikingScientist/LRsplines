@@ -109,10 +109,10 @@ public:
 	int nMeshlines()              const                { return meshline_.size(); };
 
 	// more get-methods
-	std::vector<Meshline*>::iterator meshlineBegin()               { return meshline_.begin(); };
-	std::vector<Meshline*>::iterator meshlineEnd()                 { return meshline_.end(); };
-	std::vector<Element*>::iterator elementBegin()                 { return element_.begin(); };
-	std::vector<Element*>::iterator elementEnd()                   { return element_.end(); };
+	std::vector<Meshline*>::iterator       meshlineBegin()         { return meshline_.begin(); };
+	std::vector<Meshline*>::iterator       meshlineEnd()           { return meshline_.end(); };
+	std::vector<Element*>::iterator        elementBegin()          { return element_.begin(); };
+	std::vector<Element*>::iterator        elementEnd()            { return element_.end(); };
 	HashSet_iterator<Basisfunction*>       basisBegin()            { return basis_.begin(); };
 	HashSet_iterator<Basisfunction*>       basisEnd()              { return basis_.end(); };
 	HashSet_const_iterator<Basisfunction*> basisBegin()   const    { return basis_.begin(); };
@@ -156,7 +156,7 @@ public:
 	void writePostscriptMeshWithControlPoints(std::ostream &out, int nu=2, int nv=2) const ;
 
 private:
-	int split(bool insert_in_u, Basisfunction *b, double new_knot, int multiplicity=1);
+	void split(bool insert_in_u, Basisfunction* b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
 	Meshline* insert_line(bool const_u, double const_par, double start, double stop, int multiplicity);
 	
 	bool rational_;

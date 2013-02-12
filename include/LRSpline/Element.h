@@ -45,7 +45,7 @@ public:
 	int incrementOverloadCount() { return overloadCount++; }
 	int getOverloadCount() const { return overloadCount;   }
 
-	void updateBasisPointers(HashSet<Basisfunction*> &basis) ;
+	void updateBasisPointers(std::vector<Basisfunction*> &basis) ;
 
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;

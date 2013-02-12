@@ -91,12 +91,12 @@ Element* Element::split(bool split_u, double par_value) {
 	return newElement;
 }
 
-void Element::updateBasisPointers(HashSet<Basisfunction*> &basis) {
+void Element::updateBasisPointers(std::vector<Basisfunction*> &basis) {
 	for(uint i=0; i<support_ids_.size(); i++) {
 		// add pointer from Element to Basisfunction
-		// support_.insert(basis[support_ids_[i]]);
+		support_.insert(basis[support_ids_[i]]);
 		// add pointer from Basisfunction back to Element
-		// basis[support_ids_[i]]->addSupport(this);
+		basis[support_ids_[i]]->addSupport(this);
 	}
 }
 
