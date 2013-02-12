@@ -40,7 +40,8 @@ public:
 
 	int nKnotsIn(Basisfunction *basis) const;
 	bool equals(const MeshRectangle *rect) const;
-	bool overlaps(MeshRectangle *rect) const;
+	bool overlaps(const MeshRectangle *rect) const;
+	bool contains(const MeshRectangle *rect) const;
 	bool splits(Basisfunction *basis) const;
 	bool splits(Element *el) const;
 	int makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, int meshIndex) ;

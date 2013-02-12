@@ -2,6 +2,7 @@
 #define LRSPLINE_H
 
 #include "HashSet.h"
+#include "HashSet.h"
 #include <GoTools/geometry/Streamable.h>
 #include <vector>
 
@@ -12,7 +13,27 @@ enum refinementStrategy {
 	LR_ISOTROPIC_FUNC = 3,
 };
 
+
 namespace LR {
+
+// forms a 6 bit binary mask where each bit corresponds to a side
+// corners lines have 2 bits 'on'
+// corners vertices have 3 bits 'on'
+enum parameterEdge {
+NONE       = 0,
+WEST       = 1,    // 000001
+EAST       = 2,    // 000010
+SOUTH      = 4,    // 000100
+NORTH      = 8,    // 001000
+TOP        = 16,   // 010000
+BOTTOM     = 32,   // 100000
+// convienience variables for 2D case follows. In general use SOUTH|WEST, SOUTH|EAST, etc
+SOUTH_WEST = 5,    // 000101
+SOUTH_EAST = 7,    // 000110
+NORTH_WEST = 9,    // 001001
+NORTH_EAST = 10};  // 001010
+
+typedef enum parameterEdge parameterEdge;
 
 class Basisfunction;
 class Element;
