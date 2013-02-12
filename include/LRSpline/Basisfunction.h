@@ -33,6 +33,22 @@ class Basisfunction : public Go::Streamable {
 public:
 	Basisfunction(int dim, int order_u, int order_v);
 	/************************************************************************************************************************//**
+	 * \brief Constructor for arbitray high parametric dimension
+	 * \param physDim The dimension in the physical space, i.e. the number of components of the controlpoints
+	 * \param parDim The dimension in the parametric space, i.e. the number of local knot vectors
+	 * \param order List of polynomial orders (degree + 1) in each parametric direction
+	 ***************************************************************************************************************************/
+	template <typename RandomIterator>
+	Basisfunction(int physDim, int parDim, RandomIterator order) {
+		weight_       = 1;
+		id_           = -1;
+		hashCode_     = 0;
+		knots_.resize(parDim);
+		for(int i=0; i<parDim; i++)
+			knots_[i].resize(order[i]);
+		controlpoint_.resize(physDim);
+	}
+	/************************************************************************************************************************//**
 	 * \brief Constructor for bivariate Basisfunctions
 	 * \param knot_u Knot vector in first parametric direction
 	 * \param knot_v Knot vector in second parametric direction
@@ -61,54 +77,50 @@ public:
 	~Basisfunction();
 	Basisfunction* copy() const;
 
+	//evaluation functions
 	double evaluate(double u, double v, bool u_from_right=true, bool v_from_right=true) const;
-	void evaluate(std::vector<double> &results, double u, double v, int derivs, bool u_from_right=true, bool v_from_right=true) const;
+	double evaluate(double u, double v, double w, bool u_from_right=true, bool v_from_right=true, bool w_from_right=true) const;
+	void   evaluate(std::vector<double> &results, double u, double v, int derivs, bool u_from_right=true, bool v_from_right=true) const;
+	void   evaluate(std::vector<double> &results, const std::vector<double> &parPt, int derivs, const std::vector<bool> &from_right) const;
 
-	bool operator==(const Basisfunction &other) const;
-	void operator+=(const Basisfunction &other) ;
-	std::vector<double>& operator[](int i) { return knots_[i]; } ;
-	const std::vector<double>& operator[](int i) const { return knots_[i]; } ;
-
-	bool overlaps(Element *el) const;
-	bool addSupport(Element *el) ;
-	bool removeSupport(Element *el) ;
+	// Basisfunction -> Element interatcion (support)
+	bool                            overlaps(Element *el) const ;
+	bool                            addSupport(Element *el)     ;
+	bool                            removeSupport(Element *el)  ;
 	std::vector<Element*>::iterator supportedElementBegin(){ return support_.begin(); };
 	std::vector<Element*>::iterator supportedElementEnd()  { return support_.end();   };
 	const std::vector<Element*>     support() const        { return support_;         };
-
-	std::vector<Element*> getExtendedSupport() ;
-	std::vector<Element*> getMinimalExtendedSupport();
-
-	bool isOverloaded() const;
-	int getOverloadCount() const;
+	std::vector<Element*>           getExtendedSupport()        ;
+	std::vector<Element*>           getMinimalExtendedSupport() ;
+	bool                            isOverloaded()     const    ;
+	int                             getOverloadCount() const    ;
 
 	// get/set methods
-	void addPartialLine(Meshline *line);
-	void getControlPoint(Go::Point &pt) const;
 	void setId(int id)  { this->id_ = id; };
 	void setDimension(int dim)  ;
-	int getId() const   { return id_; };
-	int nSupportedElements() { return support_.size(); };
-	int nVariate()const { return knots_.size(); };
-	int dim()     const { return controlpoint_.size(); };
-	double umin() const { return knots_[0][0];         };
-	double umax() const { return knots_[0].back();     };
-	double vmin() const { return knots_[1][0];         };
-	double vmax() const { return knots_[1].back();     };
-	int order_u() const { return knots_[0].size()-1;   };
-	int order_v() const { return knots_[1].size()-1;   };
-	std::vector<double>& getknots_u()              {return knots_[0]; };
-	std::vector<double>& getknots_v()              {return knots_[1]; };
-	std::vector<double>::iterator cp()             {return controlpoint_.begin(); };
-	std::vector<double>::const_iterator cp() const {return controlpoint_.begin(); };
-	double cp(int i)                         const {return controlpoint_[i]; };
-	double w()                               const {return weight_; };
+	void   getControlPoint(Go::Point &pt)    const;
+	int    getId()                           const { return id_; };
+	int    nSupportedElements()              const { return support_.size(); };
+	int    nVariate()                        const { return knots_.size(); };
+	int    dim()                             const { return controlpoint_.size(); };
+	double getParmin(int i)                  const { return knots_[i][0];     };
+	double getParmax(int i)                  const { return knots_[i].back(); };
+	int    getOrder( int i)                  const { return knots_[i].size()-1;   };
+	std::vector<double>& getknots(int i)           { return knots_[i]; };
+	std::vector<double>::iterator cp()             { return controlpoint_.begin(); };
+	std::vector<double>::const_iterator cp() const { return controlpoint_.begin(); };
+	double cp(int i)                         const { return controlpoint_[i]; };
+	double w()                               const { return weight_; };
 	Go::Point getGrevilleParameter() const;
-	long hashCode() const ;
-	bool equals(const Basisfunction &other) const ;
-	// bool equals(Basisfunction *other) const ;
 
-	void test(int index, int order, std::vector<double> knot){std::cout << "test" <<std::endl;};
+	long hashCode() const ;
+
+	// operator overloading
+	bool equals(const Basisfunction &other) const ;
+	bool operator==(const Basisfunction &other) const;
+	void operator+=(const Basisfunction &other) ;
+	std::vector<double>&       operator[](int i)       { return knots_[i]; } ;
+	const std::vector<double>& operator[](int i) const { return knots_[i]; } ;
 
 	// IO-functions
 	virtual void read(std::istream &is);

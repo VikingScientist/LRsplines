@@ -45,11 +45,11 @@ Meshline* Meshline::copy() {
 int Meshline::nKnotsIn(Basisfunction *basis) const {
 	int hits = 0;
 	if(span_u_line_) {
-		for(int i=0; i<=basis->order_v(); i++)
+		for(int i=0; i<=basis->getOrder(1); i++)
 			if( MY_STUPID_FABS((*basis)[1][i] - const_par_) < DOUBLE_TOL )
 				hits++;
 	} else { // span-v_line
-		for(int i=0; i<=basis->order_u(); i++)
+		for(int i=0; i<=basis->getOrder(0); i++)
 			if( MY_STUPID_FABS((*basis)[0][i] - const_par_) < DOUBLE_TOL)
 				hits++;
 	}
@@ -84,12 +84,12 @@ bool Meshline::splits(Element *el) const {
 
 bool Meshline::touches(Basisfunction *basis) const {
 	if(span_u_line_) {
-		if( (*basis)[1][0] < const_par_ && const_par_ < (*basis)[1][basis->order_v()] &&
-		   (start_ < (*basis)[0][basis->order_u()]  || (*basis)[0][0] < stop_))
+		if( (*basis)[1][0] < const_par_ && const_par_ < (*basis)[1][basis->getOrder(1)] &&
+		   (start_ < (*basis)[0][basis->getOrder(0)]  || (*basis)[0][0] < stop_))
 			return true;
 	} else { // span-v line
-		if( (*basis)[0][0] < const_par_ && const_par_ < (*basis)[0][basis->order_u()] &&
-		   (start_ < (*basis)[1][basis->order_v()]  || (*basis)[1][0] < stop_))
+		if( (*basis)[0][0] < const_par_ && const_par_ < (*basis)[0][basis->getOrder(0)] &&
+		   (start_ < (*basis)[1][basis->getOrder(1)]  || (*basis)[1][0] < stop_))
 			return true;
 	}
 	return false;
@@ -97,12 +97,12 @@ bool Meshline::touches(Basisfunction *basis) const {
 
 bool Meshline::splits(Basisfunction *basis) const {
 	if(span_u_line_) {
-		if( (*basis)[1][0] < const_par_ && const_par_ < (*basis)[1][basis->order_v()] &&
-		    start_ <= (*basis)[0][0]  && (*basis)[0][basis->order_u()] <= stop_)
+		if( (*basis)[1][0] < const_par_ && const_par_ < (*basis)[1][basis->getOrder(1)] &&
+		    start_ <= (*basis)[0][0]  && (*basis)[0][basis->getOrder(0)] <= stop_)
 			return  true;
 	} else { // span-v line
-		if( (*basis)[0][0] < const_par_ && const_par_ < (*basis)[0][basis->order_u()] &&
-		    start_ <= (*basis)[1][0]  && (*basis)[1][basis->order_v()] <= stop_)
+		if( (*basis)[0][0] < const_par_ && const_par_ < (*basis)[0][basis->getOrder(0)] &&
+		    start_ <= (*basis)[1][0]  && (*basis)[1][basis->getOrder(1)] <= stop_)
 			return  true;
 	}
 	return false;

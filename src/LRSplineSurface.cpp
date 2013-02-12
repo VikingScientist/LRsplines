@@ -435,10 +435,10 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 	bool   only_insert_span_v_line = (umax-umin) >= maxAspectRatio_*(vmax-vmin);
 	// loop over all supported B-splines and choose the minimum one
 	for(Basisfunction* b : e->support()) {
-		double lowu  = b->umin();
-		double highu = b->umax();
-		double lowv  = b->vmin();
-		double highv = b->vmax();
+		double lowu  = b->getParmin(0);
+		double highu = b->getParmax(0);
+		double lowv  = b->getParmin(1);
+		double highv = b->getParmax(1);
 		double du = highu - lowu;
 		double dv = highv - lowv;
 		int startI=0;
@@ -503,10 +503,10 @@ void LRSplineSurface::getFullspanLines(int iEl, std::vector<Meshline*>& lines) {
 	bool   only_insert_span_v_line = (umax-umin) >= maxAspectRatio_*(vmax-vmin);
 	// loop over all supported B-splines and make sure that everyone is covered by meshline
 	for(Basisfunction *b : e->support()) {
-		umin = (umin > (*b).umin()) ? (*b).umin() : umin;
-		umax = (umax < (*b).umax()) ? (*b).umax() : umax;
-		vmin = (vmin > (*b).vmin()) ? (*b).vmin() : vmin;
-		vmax = (vmax < (*b).vmax()) ? (*b).vmax() : vmax;
+		umin = (umin > (*b).getParmin(0)) ? (*b).getParmin(0) : umin;
+		umax = (umax < (*b).getParmax(0)) ? (*b).getParmax(0) : umax;
+		vmin = (vmin > (*b).getParmin(1)) ? (*b).getParmin(1) : vmin;
+		vmax = (vmax < (*b).getParmax(1)) ? (*b).getParmax(1) : vmax;
 	}
 	if(!only_insert_span_v_line) 
 		lines.push_back(new Meshline(true, (e->vmin() + e->vmax())/2.0, umin, umax, 1));
@@ -517,10 +517,10 @@ void LRSplineSurface::getFullspanLines(int iEl, std::vector<Meshline*>& lines) {
 
 void LRSplineSurface::getStructMeshLines(int iBasis, std::vector<Meshline*>& lines) {
 	Basisfunction *b = getBasisfunction(iBasis);
-	double umin = b->umin();
-	double umax = b->umax();
-	double vmin = b->vmin();
-	double vmax = b->vmax();
+	double umin = b->getParmin(0);
+	double umax = b->getParmax(0);
+	double vmin = b->getParmin(1);
+	double vmax = b->getParmax(1);
 
 	// find the largest knotspan in this function
 	double max_du = 0;
@@ -963,7 +963,7 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 #endif
 	for(uint i=0; i<element_.size(); i++) {
 		if(newline->splits(element_[i]))
-			element_.push_back(element_[i]->split(!newline->is_spanning_u(), newline->const_par_));
+			element_.push_back(element_[i]->split(newline->is_spanning_u(), newline->const_par_));
 	}
 	} // end profiler (elementsplit)
 	} // end profiler (step 1)

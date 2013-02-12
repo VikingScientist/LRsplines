@@ -6,22 +6,34 @@
 namespace LR {
 
 Element::Element() {
-	start_u_ =  0;
-	start_v_ =  0;
-	stop_u_  =  0;
-	stop_v_  =  0;
 	id_      = -1;
 	overloadCount = 0;
 }
 
-Element::Element(double start_u, double start_v, double stop_u, double stop_v) {
-
-	start_u_ = start_u;
-	start_v_ = start_v;
-	stop_u_  = stop_u ;
-	stop_v_  = stop_v ;
+Element::Element(int dim) {
 	id_      = -1;
 	overloadCount = 0;
+	min.resize(dim);
+	max.resize(dim);
+}
+
+Element::Element(double start_u, double start_v, double stop_u, double stop_v) {
+	min.resize(2);
+	max.resize(2);
+
+	min[0] = start_u;
+	min[1] = start_v;
+	max[0] = stop_u ;
+	max[1] = stop_v ;
+	id_    = -1;
+	overloadCount = 0;
+}
+
+Element::Element(std::vector<double> &lowerLeft, std::vector<double> &upperRight) {
+	min.resize(lowerLeft.size());
+	max.resize(upperRight.size());
+	std::copy(lowerLeft.begin(),  lowerLeft.end(),  min.begin());
+	std::copy(upperRight.begin(), upperRight.end(), max.begin());
 }
 
 void Element::removeSupportFunction(Basisfunction *f) {
@@ -35,43 +47,27 @@ void Element::addSupportFunction(Basisfunction *f) {
 Element* Element::copy() {
 	Element *returnvalue = new Element();
 	
-	returnvalue->start_u_ = this->start_u_;
-	returnvalue->start_v_ = this->start_v_;
-	returnvalue->stop_u_ = this->stop_u_;
-	returnvalue->stop_v_ = this->stop_v_;
-	returnvalue->id_ = this->id_;
-	
-	// std::vector<Basisfunction*>::const_iterator it;
-	//for(it=element_[iEl]->supportBegin(); it<element_[iEl]->supportEnd(); it++)
-	//	      {
-	//	returnvalue -> support_.push_back(this->support_[i]->copy());
-	// }
-	/*
-	for(int i=0;i<support_.size(); i++)
-	  {
-	returnvalue -> support_.push_back(this->support_[i]->copy());
-	  }
-	*/
+	returnvalue->id_          = this->id_;
+	returnvalue->min          = this->min;    // it seems that the default vector operator= thing takes a deep copy 
+	returnvalue->max          = this->max;
 	returnvalue->support_ids_ = this->support_ids_;
 	
 	return returnvalue;
 }
 
 
-
-
-Element* Element::split(bool split_u, double par_value) {
+Element* Element::split(int splitDim, double par_value) {
 	Element *newElement = NULL;
-	if(split_u) {
-		if(par_value >= stop_u_ || par_value <= start_u_)
+	if(splitDim == 0) {
+		if(par_value >= max[0] || par_value <= min[0])
 			return NULL;
-		newElement = new Element(par_value, start_v_, stop_u_, stop_v_);
-		stop_u_ = par_value;
-	} else {
-		if(par_value >= stop_v_ || par_value <= start_v_)
+		newElement = new Element(par_value, min[1], max[0], max[1]);
+		max[0] = par_value;
+	} else if(splitDim == 1) {
+		if(par_value >= max[1] || par_value <= min[1])
 			return NULL;
-		newElement = new Element(start_u_, par_value, stop_u_, stop_v_);
-		stop_v_ = par_value;
+		newElement = new Element(min[0], par_value, max[0], max[1]);
+		max[1] = par_value;
 	}
 	for(Basisfunction *b : support_)
 		if(b->addSupport(newElement)) // tests for overlapping as well
@@ -104,18 +100,29 @@ void Element::updateBasisPointers(std::vector<Basisfunction*> &basis) {
 #define ASSERT_NEXT_CHAR(c) {ws(is); nextChar = is.get(); if(nextChar!=c) { std::cerr << "Error parsing element\n"; exit(326); } ws(is); }
 void Element::read(std::istream &is) {
 	char nextChar;
+	int dim;
 	is >> id_;
+	ASSERT_NEXT_CHAR('[');
+	is >> dim;
+	ASSERT_NEXT_CHAR(']');
 	ASSERT_NEXT_CHAR(':');
+	min.resize(dim);
+	max.resize(dim);
+
 	ASSERT_NEXT_CHAR('(');
-	is >> start_u_;
-	ASSERT_NEXT_CHAR(',');
-	is >> stop_u_;
+	is >> min[0];
+	for(int i=1; i<dim; i++) {
+		ASSERT_NEXT_CHAR(',');
+		is >> min[i];
+	}
 	ASSERT_NEXT_CHAR(')');
 	ASSERT_NEXT_CHAR('x');
 	ASSERT_NEXT_CHAR('(');
-	is >> start_v_;
-	ASSERT_NEXT_CHAR(',');
-	is >> stop_v_;
+	is >> max[0];
+	for(int i=1; i<dim; i++) {
+		ASSERT_NEXT_CHAR(',');
+		is >> max[i];
+	}
 	ASSERT_NEXT_CHAR(')');
 	ASSERT_NEXT_CHAR('{');
 
@@ -136,7 +143,14 @@ void Element::read(std::istream &is) {
 #undef ASSERT_NEXT_CHAR
 
 void Element::write(std::ostream &os) const {
-	os << id_ << ": (" << start_u_ << ", " << stop_u_ << ") x (" << start_v_ << ", " << stop_v_ << ")";
+	os << id_ << " [" << min.size() << "] : ";
+	os << "(" << min[0];
+	for(uint i=1; i<min.size(); i++) 
+		os << ", " << min[i] ;
+	os << ") x (" << max[0];
+	for(uint i=1; i<max.size(); i++) 
+		os << ", " << max[i] ;
+	os << ")";
 	os << "    {";
 	bool isFirst = true;
 	for(Basisfunction *b : support_) {
@@ -150,8 +164,8 @@ void Element::write(std::ostream &os) const {
 bool Element::isOverloaded()  const {
 	int n = support_.size();
 	if(n > 0) {
-		int p1 = (*support_.begin())->order_u();
-		int p2 = (*support_.begin())->order_v();
+		int p1 = (*support_.begin())->getOrder(0);
+		int p2 = (*support_.begin())->getOrder(1);
 		if(n > p1*p2)
 			return true;
 	}

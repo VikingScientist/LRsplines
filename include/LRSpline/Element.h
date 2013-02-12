@@ -14,17 +14,19 @@ class Element : public Go::Streamable {
 
 public:
 	Element();
+	Element(int dim);
 	Element(double start_u, double start_v, double stop_u, double stop_v);
+	Element(std::vector<double> &lowerLeft, std::vector<double> &upperRight);
 	void removeSupportFunction(Basisfunction *f);
 	void addSupportFunction(Basisfunction *f);
-	Element *split(bool split_u, double par_value);
+	Element *split(int splitDim, double par_value);
 	Element* copy();
 	// get/set methods
-	double umin() const         { return start_u_; };
-	double vmin() const         { return start_v_; };
-	double umax() const         { return stop_u_;  };
-	double vmax() const         { return stop_v_;  };
-	double area() const         { return (stop_v_-start_v_)*(stop_u_-start_u_);  };
+	double umin() const         { return min[0]; };
+	double vmin() const         { return min[1]; };
+	double umax() const         { return max[0]; };
+	double vmax() const         { return max[1]; };
+	double area() const         { return (max[1]-min[1])*(max[0]-min[0]);  };
 	HashSet_iterator<Basisfunction*> supportBegin()                 { return support_.begin(); };
 	HashSet_iterator<Basisfunction*> supportEnd()                   { return support_.end();   };
 	HashSet_const_iterator<Basisfunction*> constSupportBegin()const { return support_.begin(); };
@@ -33,14 +35,14 @@ public:
 	// Basisfunction* supportFunction(int i) { return support_[i];   };
 	int nBasisFunctions() const           { return support_.size(); };
 	void setId(int id)                    { this->id_ = id; };
-	int getId() const                     { return id_; };
-	void setUmin(double u)                           { start_u_ = u; };
-	void setVmin(double v)                           { start_v_ = v; };
-	void setUmax(double u)                           { stop_u_  = u; };
-	void setVmax(double v)                           { stop_v_  = v; };
+	int  getId() const                    { return id_; };
+	int  getDim() const                   { return min.size(); };
+	void setUmin(double u)                { min[0] = u; };
+	void setVmin(double v)                { min[1] = v; };
+	void setUmax(double u)                { max[0] = u; };
+	void setVmax(double v)                { max[1] = v; };
 
 	bool isOverloaded() const;
-	// int overloadedBasisCount() const;
 	void resetOverloadCount()    { overloadCount = 0;      }
 	int incrementOverloadCount() { return overloadCount++; }
 	int getOverloadCount() const { return overloadCount;   }
@@ -51,10 +53,8 @@ public:
 	virtual void write(std::ostream &os) const;
 
 private:
-	double start_u_;
-	double start_v_;
-	double stop_u_;
-	double stop_v_;
+	std::vector<double> min;  // lower left corner in typical 2 or 3 dimensions
+	std::vector<double> max;  // upper right corner 
 	int id_;
 
 	HashSet<Basisfunction*> support_;
