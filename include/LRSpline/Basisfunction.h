@@ -51,7 +51,7 @@ public:
 		hashCode_     = 0;
 		knots_.resize(parDim);
 		for(int i=0; i<parDim; i++)
-			knots_[i].resize(order[i]);
+			knots_[i].resize(order[i]+1);
 		controlpoint_.resize(physDim);
 	}
 

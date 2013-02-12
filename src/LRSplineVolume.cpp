@@ -2019,17 +2019,19 @@ void LRSplineVolume::read(std::istream &is) {
 
 	// read actual parameters
 	int nBasis, nElements, nMeshRectangles;
-	is >> order_u_;    ws(is);
-	is >> order_v_;    ws(is);
-	is >> order_w_;    ws(is);
-	is >> nBasis;      ws(is);
-	is >> nMeshRectangles;  ws(is);
-	is >> nElements;   ws(is);
-	is >> dim_;        ws(is);
-	is >> rational_;   ws(is);
+	is >> order_u_;        ws(is);
+	is >> order_v_;        ws(is);
+	is >> order_w_;        ws(is);
+	is >> nBasis;          ws(is);
+	is >> nMeshRectangles; ws(is);
+	is >> nElements;       ws(is);
+	is >> dim_;            ws(is);
+	is >> rational_;       ws(is);
 	
 	meshrect_.resize(nMeshRectangles);
 	element_.resize(nElements);
+	basisVector.resize(nBasis);
+	int allOrder[] = {order_u_, order_v_, order_w_};
 
 	// get rid of more comments and spaces
 	firstChar = is.peek();
@@ -2041,7 +2043,7 @@ void LRSplineVolume::read(std::istream &is) {
 
 	// read all basisfunctions
 	for(int i=0; i<nBasis; i++) {
-		Basisfunction *b = new Basisfunction(dim_, order_u_, order_v_);
+		Basisfunction *b = new Basisfunction(dim_, 3, allOrder);
 		b->read(is);
 		basis_.insert(b);
 		basisVector[i] = b;
