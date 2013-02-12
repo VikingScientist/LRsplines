@@ -8,14 +8,8 @@
 #include <boost/rational.hpp>
 #include <GoTools/geometry/SplineSurface.h>
 #include "Basisfunction.h"
+#include "LRSpline.h"
 #include "HashSet.h"
-
-enum refinementStrategy {
-	LR_SAFE = 0,
-	LR_MINSPAN = 1,
-	LR_ISOTROPIC_EL = 2,
-	LR_ISOTROPIC_FUNC = 3,
-};
 
 
 namespace LR {
@@ -24,7 +18,7 @@ class Basisfunction;
 class Meshline;
 class Element;
 
-class LRSplineSurface : public Go::Streamable {
+class LRSplineSurface : public LRSpline {
 
 public:
 	LRSplineSurface();
@@ -56,17 +50,6 @@ public:
 	void refineElement(const std::vector<int> &indices);
 	void refineByDimensionIncrease(const std::vector<double> &error, double beta);
 
-	// set refinement state parameters
-	void setRefStrat(enum refinementStrategy strat) { refStrat_        = strat;    };
-	void setRefSymmetry(int symmetry)               { this->symmetry_  = symmetry; };
-	void setRefMultiplicity(int mult)               { refKnotlineMult_ = mult;     };
-	void setMaxTjoints(int n)                       { maxTjoints_      = n;        };
-	void setCloseGaps(bool doClose)                 { doCloseGaps_     = doClose;  };
-	void setMaxAspectRatio(double r, bool aposterioriFix=true) {
-		maxAspectRatio_ = r;
-		doAspectRatioFix_ = aposterioriFix;
-	}
-
 	// (private) refinement functions
 	Meshline* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	Meshline* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
@@ -89,8 +72,6 @@ public:
 	                   std::vector<Element*>::iterator start,
 	                   std::vector<Element*>::iterator end ) ;
 	
-	void generateIDs() const;
-
 	// common get methods
 	void getGlobalKnotVector      (std::vector<double> &knot_u, std::vector<double> &knot_v) const;
 	void getGlobalUniqueKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const;
@@ -104,8 +85,6 @@ public:
 	int order_u()                 const                { return order_u_; };
 	int order_v()                 const                { return order_v_; };
 	bool rational()               const                { return rational_; };
-	int nBasisFunctions()         const                { return basis_.size(); };
-	int nElements()               const                { return element_.size(); };
 	int nMeshlines()              const                { return meshline_.size(); };
 
 	// more get-methods
@@ -161,26 +140,13 @@ private:
 	void split(bool insert_in_u, Basisfunction* b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
 	Meshline* insert_line(bool const_u, double const_par, double start, double stop, int multiplicity);
 	
-	bool rational_;
-	HashSet<Basisfunction*> basis_;
 	std::vector<Meshline*> meshline_;
-	std::vector<Element*> element_;
-	int dim_;
 	int order_u_;
 	int order_v_;
 	double start_u_;
 	double start_v_;
 	double end_u_;
 	double end_v_;
-
-	// refinement parameters
-	enum refinementStrategy refStrat_;
-	int                     refKnotlineMult_;
-	int                     symmetry_;
-	int                     maxTjoints_;
-	bool                    doCloseGaps_;
-	bool                    doAspectRatioFix_;
-	double                  maxAspectRatio_;
 
 	// plotting parameters
 	double element_red;

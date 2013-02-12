@@ -1205,14 +1205,6 @@ void LRSplineVolume::updateSupport(Basisfunction *f) {
 	updateSupport(f, element_.begin(), element_.end());
 }
 
-void LRSplineVolume::generateIDs() const {
-	uint i=0;
-	for(Basisfunction *b : basis_)
-		b->setId(i++);
-	for(i=0; i<element_.size(); i++) 
-		element_[i]->setId(i);
-}
-
 bool LRSplineVolume::isLinearIndepByOverloading(bool verbose) {
 	std::vector<Basisfunction*>           overloaded;
 	std::vector<Element*>::iterator       eit;

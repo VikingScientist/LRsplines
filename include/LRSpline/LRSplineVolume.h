@@ -6,6 +6,7 @@
 #include <GoTools/geometry/Streamable.h>
 #include <GoTools/trivariate/SplineVolume.h>
 #include <boost/rational.hpp>
+#include "LRSpline.h"
 #include "HashSet.h"
 #include "Basisfunction.h"
 #include "LRSplineSurface.h"
@@ -16,7 +17,7 @@ class Basisfunction;
 class MeshRectangle;
 class Element;
 
-class LRSplineVolume : public Go::Streamable {
+class LRSplineVolume : public LRSpline {
 
 public:
 	LRSplineVolume();
@@ -51,17 +52,6 @@ public:
 	void refineByDimensionIncrease(const std::vector<double> &error, double beta);
 	*/
 
-	// set refinement state parameters
-	void setRefStrat(enum refinementStrategy strat) { refStrat_        = strat;    };
-	void setRefSymmetry(int symmetry)               { this->symmetry_  = symmetry; };
-	void setRefMultiplicity(int mult)               { refKnotlineMult_ = mult;     };
-	void setMaxTjoints(int n)                       { maxTjoints_      = n;        };
-	void setCloseGaps(bool doClose)                 { doCloseGaps_     = doClose;  };
-	void setMaxAspectRatio(double r, bool aposterioriFix=true) {
-		maxAspectRatio_ = r;
-		doAspectRatioFix_ = aposterioriFix;
-	}
-
 	// (private) refinement functions
 	void getFullspanRects(  int iEl,    std::vector<MeshRectangle*>& lines);
 	void getMinspanRects(   int iEl,    std::vector<MeshRectangle*>& lines);
@@ -86,8 +76,6 @@ public:
 	                   std::vector<Element*>::iterator start,
 	                   std::vector<Element*>::iterator end ) ;
 	
-	void generateIDs() const;
-
 	// common get methods
 	void getGlobalKnotVector      (std::vector<double> &knot_u,
 	                               std::vector<double> &knot_v,
@@ -106,8 +94,6 @@ public:
 	int order_v()                 const                { return order_v_; };
 	int order_w()                 const                { return order_w_; };
 	bool rational()               const                { return rational_; };
-	int nBasisFunctions()         const                { return basis_.size(); };
-	int nElements()               const                { return element_.size(); };
 	int nMeshRectangles()         const                { return meshrect_.size(); };
 
 	// more get-methods
@@ -155,12 +141,7 @@ public:
 private:
 	void split(int constDir, Basisfunction *b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
 	
-	bool rational_;
-	HashSet<Basisfunction*> basis_;
-	std::vector<Basisfunction*> basisVector; // only used in read/write functions
 	std::vector<MeshRectangle*> meshrect_;
-	std::vector<Element*> element_;
-	int dim_;
 	int order_u_;
 	int order_v_;
 	int order_w_;
@@ -171,14 +152,6 @@ private:
 	double end_v_;
 	double end_w_;
 
-	// refinement parameters
-	enum refinementStrategy refStrat_;
-	int                     refKnotlineMult_;
-	int                     symmetry_;
-	int                     maxTjoints_;
-	bool                    doCloseGaps_;
-	bool                    doAspectRatioFix_;
-	double                  maxAspectRatio_;
 
 };
 
