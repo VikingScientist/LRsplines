@@ -30,9 +30,6 @@ public:
 	bool splits(Element *el) const;
 	bool touches(Element *el) const;
 
-	void addPartialTouch(Basisfunction *basis);
-	void removePartialTouch(Basisfunction *basis);
-
 	bool is_spanning_u() const;
 
 	bool operator==(const Meshline &other) const;
@@ -47,7 +44,6 @@ public:
 	double start_;
 	double stop_;
 	int multiplicity_;
-	std::vector<Basisfunction*> touching_Basisfunction;
 
 // even more private (only used for linear independence testing)
 	enum meshlineExtension type_;

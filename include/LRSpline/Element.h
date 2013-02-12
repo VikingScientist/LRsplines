@@ -24,10 +24,11 @@ public:
 	double umax() const         { return stop_u_;  };
 	double vmax() const         { return stop_v_;  };
 	double area() const         { return (stop_v_-start_v_)*(stop_u_-start_u_);  };
-	std::vector<Basisfunction*>::iterator supportBegin() { return support_.begin(); };
-	std::vector<Basisfunction*>::iterator supportEnd()   { return support_.end();   };
-	std::vector<Basisfunction*>::const_iterator supportBegin()const { return support_.begin(); };
-	std::vector<Basisfunction*>::const_iterator supportEnd() const  { return support_.end();   };
+	std::vector<Basisfunction*>::iterator supportBegin()             { return support_.begin(); };
+	std::vector<Basisfunction*>::iterator supportEnd()               { return support_.end();   };
+	std::vector<Basisfunction*>::const_iterator supportBegin() const { return support_.begin(); };
+	std::vector<Basisfunction*>::const_iterator supportEnd()   const { return support_.end();   };
+	const std::vector<Basisfunction*> support()                const { return support_;   };
 	Basisfunction* supportFunction(int i) { return support_[i];   };
 	int nBasisFunctions() const           { return support_.size(); };
 	void setId(int id)                    { this->id_ = id; };

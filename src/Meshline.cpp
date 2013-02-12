@@ -27,10 +27,6 @@ Meshline::Meshline(bool span_u_line, double const_par, double start, double stop
 }
 
 Meshline::~Meshline() {
-/*
-	for(uint i=0; i<touching_Basisfunction.size(); i++)
-		touching_Basisfunction[i]->removePartialLine((Meshline*) this);
-*/
 }
 
 
@@ -44,23 +40,6 @@ Meshline* Meshline::copy() {
 	 returnvalue->multiplicity_= this->multiplicity_;
 	 returnvalue->type_        = this->type_;
 	 return returnvalue;
-}
-
-
-
-void Meshline::addPartialTouch(Basisfunction *basis) {
-	// touching_Basisfunction.push_back(basis);
-}
-
-void Meshline::removePartialTouch(Basisfunction *basis) {
-/*
-	for(uint i=0; i<touching_Basisfunction.size(); i++) {
-		if( *touching_Basisfunction[i] == *basis) {
-			touching_Basisfunction.erase(touching_Basisfunction.begin() + i);
-			return;
-		}
-	}
-*/
 }
 
 int Meshline::nKnotsIn(Basisfunction *basis) const {

@@ -56,8 +56,9 @@ public:
 	bool overlaps(Element *el) const;
 	bool addSupport(Element *el) ;
 	bool removeSupport(Element *el) ;
-	std::vector<Element*>::iterator supportedElementBegin() ;
-	std::vector<Element*>::iterator supportedElementEnd() ;
+	std::vector<Element*>::iterator supportedElementBegin(){ return support_.begin(); };
+	std::vector<Element*>::iterator supportedElementEnd()  { return support_.end();   };
+	const std::vector<Element*>     support() const        { return support_;         };
 
 	std::vector<Element*> getExtendedSupport() ;
 	std::vector<Element*> getMinimalExtendedSupport();
@@ -96,13 +97,11 @@ public:
 
 private:
 
-	std::vector<std::vector<double> > knots_;
-	std::vector<double> controlpoint_;
-	int dim_;
+	int    id_;
 	double weight_;
-	std::vector<Element*> support_;
-	int id_;
-	int order_;
+	std::vector<double>               controlpoint_;
+	std::vector<std::vector<double> > knots_;
+	std::vector<Element*>             support_;
 
 };
 

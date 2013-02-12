@@ -36,40 +36,33 @@ void Element::removeSupportFunction(Basisfunction *f) {
 }
 
 void Element::addSupportFunction(Basisfunction *f) {
-	// for(uint i=0; i<support_.size(); i++) {
-		// if(f == support_[i]) {
-			// return;
-		// }
-	// }
 	support_.push_back(f);
-	// f->addSupport(this);
 }
 
-Element* Element::copy()
+Element* Element::copy() {
+	Element *returnvalue = new Element();
+	
+	returnvalue->start_u_ = this->start_u_;
+	returnvalue->start_v_ = this->start_v_;
+	returnvalue->stop_u_ = this->stop_u_;
+	returnvalue->stop_v_ = this->stop_v_;
+	returnvalue->id_ = this->id_;
+	
+	// std::vector<Basisfunction*>::const_iterator it;
+	//for(it=element_[iEl]->supportBegin(); it<element_[iEl]->supportEnd(); it++)
+	//	      {
+	//	returnvalue -> support_.push_back(this->support_[i]->copy());
+	// }
+	/*
+	for(int i=0;i<support_.size(); i++)
 	  {
-	    Element *returnvalue = new Element();
-	    
-	    returnvalue->start_u_ = this->start_u_;
-	    returnvalue->start_v_ = this->start_v_;
-	    returnvalue->stop_u_ = this->stop_u_;
-	    returnvalue->stop_v_ = this->stop_v_;
-	    returnvalue->id_ = this->id_;
-	    
-	    // std::vector<Basisfunction*>::const_iterator it;
-	    //for(it=element_[iEl]->supportBegin(); it<element_[iEl]->supportEnd(); it++)
-	    //	      {
-	    //	returnvalue -> support_.push_back(this->support_[i]->copy());
-	    // }
-	    /*
-	    for(int i=0;i<support_.size(); i++)
-	      {
-		returnvalue -> support_.push_back(this->support_[i]->copy());
-	      }
-	    */
-	    returnvalue->support_ids_ = this->support_ids_;
-	    
-	    return returnvalue;
+	returnvalue -> support_.push_back(this->support_[i]->copy());
 	  }
+	*/
+	returnvalue->support_ids_ = this->support_ids_;
+	
+	return returnvalue;
+}
 
 
 

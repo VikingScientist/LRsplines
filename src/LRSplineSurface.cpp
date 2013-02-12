@@ -281,12 +281,11 @@ void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl, bool u_f
 
 	pt.resize(dim_);
 	pt.setValue(0.0);
-	std::vector<Basisfunction*>::const_iterator it;
 	
-	for(it=element_[iEl]->supportBegin(); it<element_[iEl]->supportEnd(); it++) {
-		(**it).getControlPoint(cp);
+	for(Basisfunction* b : element_[iEl]->support()) {
+		b->getControlPoint(cp);
 		
-		basis_ev = (**it).evaluate(u,v, u_from_right, v_from_right);
+		basis_ev = b->evaluate(u,v, u_from_right, v_from_right);
 		pt += basis_ev*cp;
 	}
 	
@@ -300,12 +299,11 @@ void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl) const {
 	pt.setValue(0.0);
 	if(iEl == -1)
 		iEl = getElementContaining(u,v);
-	std::vector<Basisfunction*>::const_iterator it;
-	
-	for(it=element_[iEl]->supportBegin(); it<element_[iEl]->supportEnd(); it++) {
-		(**it).getControlPoint(cp);
+
+	for(Basisfunction* b : element_[iEl]->support()) {
+		b->getControlPoint(cp);
 		
-		basis_ev = (**it).evaluate(u,v, u!=end_u_, v!=end_v_);
+		basis_ev = b->evaluate(u,v, u!=end_u_, v!=end_v_);
 		pt += basis_ev*cp;
 	}
 	
@@ -327,10 +325,9 @@ void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int
 
 	if(iEl == -1)
 		iEl = getElementContaining(u,v);
-	std::vector<Basisfunction*>::const_iterator it;
-	for(it=element_[iEl]->supportBegin(); it<element_[iEl]->supportEnd(); it++) {
-		(**it).getControlPoint(cp);
-		(**it).evaluate(basis_ev, u,v, derivs, u!=end_u_, v!=end_v_);
+	for(Basisfunction* b : element_[iEl]->support() ) {
+		b->getControlPoint(cp);
+		b->evaluate(basis_ev, u,v, derivs, u!=end_u_, v!=end_v_);
 		for(uint j=0; j<pts.size(); j++)
 			pts[j] += basis_ev[j]*cp;
 	}
@@ -425,7 +422,6 @@ int LRSplineSurface::getElementContaining(double u, double v) const {
 
 void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 	Element *e = element_[iEl];
-	std::vector<Basisfunction*>::iterator it;
 	double umin = e->umin();
 	double umax = e->umax();
 	double vmin = e->vmin();
@@ -439,24 +435,24 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 	bool   only_insert_span_u_line = (vmax-vmin) >= maxAspectRatio_*(umax-umin);
 	bool   only_insert_span_v_line = (umax-umin) >= maxAspectRatio_*(vmax-vmin);
 	// loop over all supported B-splines and choose the minimum one
-	for(it=e->supportBegin(); it<e->supportEnd(); it++) {
-		double lowu  = (**it).umin();
-		double highu = (**it).umax();
-		double lowv  = (**it).vmin();
-		double highv = (**it).vmax();
+	for(Basisfunction* b : e->support()) {
+		double lowu  = b->umin();
+		double highu = b->umax();
+		double lowv  = b->vmin();
+		double highv = b->vmax();
 		double du = highu - lowu;
 		double dv = highv - lowv;
 		int startI=0;
 		int stopI=0;
 		int startJ=0;
 		int stopJ=0;
-		while((**it)[0][startI] <= e->umin())
+		while((*b)[0][startI] <= e->umin())
 			startI++;
-		while((**it)[0][stopI]  <  e->umax())
+		while((*b)[0][stopI]  <  e->umax())
 			stopI++;
-		while((**it)[1][startJ] <= e->vmin())
+		while((*b)[1][startJ] <= e->vmin())
 			startJ++;
-		while((**it)[1][stopJ]  <  e->vmax())
+		while((*b)[1][stopJ]  <  e->vmax())
 			stopJ++;
 
 		// min_du is defined as the minimum TOTAL knot span (of an entire basis function)
@@ -499,7 +495,6 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 }
 
 void LRSplineSurface::getFullspanLines(int iEl, std::vector<Meshline*>& lines) {
-	std::vector<Basisfunction*>::iterator it;
 	Element *e = element_[iEl];
 	double umin = e->umin();
 	double umax = e->umax();
@@ -508,11 +503,11 @@ void LRSplineSurface::getFullspanLines(int iEl, std::vector<Meshline*>& lines) {
 	bool   only_insert_span_u_line = (vmax-vmin) >= maxAspectRatio_*(umax-umin);
 	bool   only_insert_span_v_line = (umax-umin) >= maxAspectRatio_*(vmax-vmin);
 	// loop over all supported B-splines and make sure that everyone is covered by meshline
-	for(it=e->supportBegin(); it<e->supportEnd(); it++) {
-		umin = (umin > (**it).umin()) ? (**it).umin() : umin;
-		umax = (umax < (**it).umax()) ? (**it).umax() : umax;
-		vmin = (vmin > (**it).vmin()) ? (**it).vmin() : vmin;
-		vmax = (vmax < (**it).vmax()) ? (**it).vmax() : vmax;
+	for(Basisfunction *b : e->support()) {
+		umin = (umin > (*b).umin()) ? (*b).umin() : umin;
+		umax = (umax < (*b).umax()) ? (*b).umax() : umax;
+		vmin = (vmin > (*b).vmin()) ? (*b).vmin() : vmin;
+		vmax = (vmax < (*b).vmax()) ? (*b).vmax() : vmax;
 	}
 	if(!only_insert_span_v_line) 
 		lines.push_back(new Meshline(true, (e->vmin() + e->vmax())/2.0, umin, umax, 1));
@@ -977,15 +972,13 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 	PROFILE("STEP 2");
 #endif
 	meshline_.push_back(newline);
-	std::vector<Meshline*>::iterator mit;
 	for(uint i=nOldFunctions-nRemovedFunctions-1; i<basis_.size(); i++) {
-		//for(mit=basis_[i]->partialLineBegin(); mit!=basis_[i]->partialLineEnd(); mit++) {
-		for(mit=meshline_.begin(); mit<meshline_.end(); mit++) {
-			if((*mit)->splits(basis_[i])) {
+		for(Meshline *m : meshline_) {
+			if(m->splits(basis_[i])) {
 				int nKnots;
-				if( (nKnots=(*mit)->nKnotsIn(basis_[i])) != (*mit)->multiplicity_ ) {
-					// basis_[i]->removePartialLine( (*mit) );
-					split( !(*mit)->is_spanning_u(), i, (*mit)->const_par_, (*mit)->multiplicity_-nKnots);
+				if( (nKnots=m->nKnotsIn(basis_[i])) != m->multiplicity_ ) {
+					// basis_[i]->removePartialLine( m );
+					split( !m->is_spanning_u(), i, m->const_par_, m->multiplicity_-nKnots);
 					i--; // splitting deletes a basisfunction in the middle of the basis_ vector
 					break;
 				}
@@ -1030,11 +1023,10 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 	}
 
 	// search for existing function (to make search local b1 and b2 is contained in the *el element)
-	std::vector<Element*>::iterator el_it;
 	Element *el=NULL;
-	for(el_it=b->supportedElementBegin(); el_it<b->supportedElementEnd(); el_it++) {
-		if(b1->overlaps(*el_it) && b2->overlaps(*el_it)) {
-			el = *el_it;
+	for(Element* e : b->support()) {
+		if(b1->overlaps(e) && b2->overlaps(e)) {
+			el = e;
 			break;
 		}
 	}
@@ -1216,7 +1208,6 @@ void LRSplineSurface::generateIDs() const {
 
 bool LRSplineSurface::isLinearIndepByOverloading(bool verbose) {
 	std::vector<Basisfunction*>           overloaded;
-	std::vector<Element*>::iterator       eit;
 	std::vector<int>                      singleElms;
 	std::vector<int>                      multipleElms;
 	std::vector<int>                      singleBasis;
@@ -1240,8 +1231,8 @@ bool LRSplineSurface::isLinearIndepByOverloading(bool verbose) {
 		singleElms.clear();
 		multipleElms.clear();
 		for(uint i=0; i<overloaded.size(); i++)
-			for(eit=overloaded[i]->supportedElementBegin(); eit<overloaded[i]->supportedElementEnd(); eit++)
-				(*eit)->incrementOverloadCount();
+			for(Element* e : overloaded[i]->support()) 
+				e->incrementOverloadCount();
 		for(uint i=0; i<element_.size(); i++) {
 			if(element_[i]->getOverloadCount() > 1)
 				multipleElms.push_back(i);
@@ -1994,20 +1985,15 @@ void LRSplineSurface::write(std::ostream &os) const {
 	os << dim_ << "\t";
 	os << rational_ << "\n";
 
-	std::vector<Element*>::const_iterator eit;
-	std::vector<Basisfunction*>::const_iterator bit;
-	std::vector<Meshline*>::const_iterator mit;
 	os << "# Basis functions:\n";
-	int i=0; 
-	for(bit=basis_.begin(); bit<basis_.end(); bit++, i++)
-		os << **bit << std::endl;
-	i = 0;
+	for(Basisfunction* b : basis_) 
+		os << *b << std::endl;
 	os << "# Mesh lines:\n";
-	for(mit=meshline_.begin(); mit<meshline_.end(); mit++, i++)
-		os << **mit << std::endl;
+	for(Meshline* m : meshline_)  
+		os << *m << std::endl;
 	os << "# Elements:\n";
-	for(eit=element_.begin(); eit<element_.end(); eit++, i++)
-		os << **eit << std::endl;
+	for(Element* e : element_)
+		os << *e << std::endl;
 }
 
 void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, std::vector<int> *colorElements) const {

@@ -200,14 +200,6 @@ void Basisfunction::getControlPoint(Go::Point &pt) const {
 		pt[d] = controlpoint_[d];
 }
 
-std::vector<Element*>::iterator Basisfunction::supportedElementBegin()  {
-	return support_.begin();
-}
-
-std::vector<Element*>::iterator Basisfunction::supportedElementEnd()  {
-	return support_.end();
-}
-
 bool Basisfunction::removeSupport(Element *el) {
 	for(uint i=0; i<support_.size(); i++) {
 		if(el == support_[i]) {
@@ -237,19 +229,10 @@ bool Basisfunction::overlaps(Element *el) const {
 std::vector<Element*> Basisfunction::getExtendedSupport() {
 	std::set<Element*> ans ;
 
-	Element *e;
-	Basisfunction *b;
-	std::vector<Element*>::iterator eit1, eit2;
-	std::vector<Basisfunction*>::iterator bit;
-	for(eit1=support_.begin(); eit1!=support_.end(); eit1++) {
-		e = *eit1;
-		for(bit=e->supportBegin(); bit!=e->supportEnd(); bit++) {
-			b = *bit;
-			for(eit2=b->supportedElementBegin(); eit2!=b->supportedElementEnd(); eit2++)
-				ans.insert(*eit2);
-
-		}
-	}
+	for(Element* e : support_)
+		for(Basisfunction* b : e->support())
+			for(Element* e2 : b->support())
+				ans.insert(e2);
 	std::vector<Element*> ans_vector(ans.size());
 	std::copy(ans.begin(), ans.end(), ans_vector.begin());
 	return ans_vector;
@@ -259,11 +242,6 @@ std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 	double min_du = DBL_MAX;
 	double min_dv = DBL_MAX;
 	Basisfunction *smallestGuy = NULL;
-
-	Element *e;
-	Basisfunction *b;
-	std::vector<Element*>::iterator it;
-	std::vector<Basisfunction*>::iterator bit;
 
 	bool edgeUmin = (knots_[0][0] == knots_[0][knots_[0].size()-2]);
 	bool edgeUmax = (knots_[0][1] == knots_[0][knots_[0].size()-1]);
@@ -275,10 +253,8 @@ std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 	if(! (edgeVmin || edgeVmax) )
 		min_dv = vmax() - vmin();
 
-	for(it=support_.begin(); it!=support_.end(); it++) {
-		e = *it;
-		for(bit=e->supportBegin(); bit!=e->supportEnd(); bit++) {
-			b = *bit;
+	for(Element* e : support_) {
+		for(Basisfunction* b : e->support()) {
 			if( ((b->umin() <  this->umin() && b->umax() >= this->umax()) || 
 			     (b->umin() <= this->umin() && b->umax() >  this->umax())) &&  // extend left OR right of the u-directions
 			    ((b->vmin() <  this->vmin() && b->vmax() >= this->vmax()) || 
@@ -293,10 +269,8 @@ std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 		}
 	}
 	if(smallestGuy == NULL) {
-		for(it=support_.begin(); it!=support_.end(); it++) {
-			e = *it;
-			for(bit=e->supportBegin(); bit!=e->supportEnd(); bit++) {
-				b = *bit;
+		for(Element* e : support_) {
+			for(Basisfunction* b : e->support()) {
 				if(  b->umin() <= this->umin()    && 
 				     b->umax() >= this->umax()    && 
 				     b->vmin() <= this->vmin()    && 
