@@ -32,8 +32,7 @@ public:
 	LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v, double *coef, int dim, bool rational=false);
 	~LRSplineSurface();
 
-	LRSplineSurface &operator=(LRSplineSurface& copythis);
-	LRSplineSurface* copy();
+	LRSplineSurface* copy() const;
 	// surface evaluation
 	virtual void point(Go::Point &pt, double u, double v, int iEl=-1) const;
 	virtual void point(Go::Point &pt, double u, double v, int iEl, bool u_from_right, bool v_from_right) const;
@@ -119,6 +118,7 @@ public:
 	HashSet_const_iterator<Basisfunction*> basisEnd()     const    { return basis_.end(); };
 	const HashSet<Basisfunction*>& getAllBasisfunctions() const    { return basis_ ;};
 	const std::vector<Element*>&   getAllElements()       const    { return element_ ;};
+	Meshline* getMeshline(int i)                                   { return meshline_[i]; };
 	Element* getElement(int i)                                     { return element_[i]; };
 	Basisfunction* getBasisfunction(int iBasis) {
 		HashSet_iterator<Basisfunction*> it = basis_.begin();

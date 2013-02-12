@@ -21,7 +21,7 @@ public:
 	              double stop_w,
 	              int multiplicity=1);
 	~MeshRectangle();
-	MeshRectangle* copy();
+	MeshRectangle* copy() const;
 
 	int nKnotsIn(Basisfunction *basis) const;
 	bool equals(const MeshRectangle *rect) const;

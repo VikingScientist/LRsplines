@@ -204,18 +204,28 @@ LRSplineSurface::~LRSplineSurface() {
 }
 
 
-LRSplineSurface* LRSplineSurface::copy()
-{
+LRSplineSurface* LRSplineSurface::copy() const {
+	generateIDs();
+
+	std::vector<Basisfunction*> basisVector;
+
+	// flat list to make it quicker to update pointers from Basisfunction to Element and back again
 	LRSplineSurface *returnvalue = new LR::LRSplineSurface();
 	
-	for(Basisfunction* b : basis_) 
-		returnvalue->basis_.insert(b->copy());
+	for(Basisfunction* b : basis_) {
+		Basisfunction *newB = b->copy();
+		returnvalue -> basis_.insert(newB);
+		basisVector.push_back(newB);
+	}
 	
-	for(int i = 0; i < this->nElements();i++)
-		{returnvalue -> element_.push_back(this->element_[i]->copy());}
+	for(Element *e : element_) {
+		Element* newEl = e->copy();
+		returnvalue -> element_.push_back(newEl);
+		newEl->updateBasisPointers(basisVector);
+	}
 	
-	for(int i = 0; i < this->nMeshlines();i++)
-		{returnvalue -> meshline_.push_back(this-> meshline_[i]->copy());}
+	for(Meshline *m : meshline_)
+		returnvalue -> meshline_.push_back(m->copy());
 	
 	returnvalue->rational_         = this->rational_;
 	returnvalue->dim_              = this->dim_;
@@ -229,48 +239,9 @@ LRSplineSurface* LRSplineSurface::copy()
 	returnvalue->doCloseGaps_      = this->doCloseGaps_;
 	returnvalue->doAspectRatioFix_ = this->doAspectRatioFix_;
 	returnvalue->maxAspectRatio_   = this->maxAspectRatio_;
-
-	
-	for(Basisfunction* b : basis_) 
-		returnvalue->updateSupport(b);
 	
 	return returnvalue;
 }
-
-LRSplineSurface& LRSplineSurface::operator=( LRSplineSurface &copythis)
-	  {
-	    //cout << "dfghjn";
-	    //rational_= get_rational_value();
-	    // evtl. geht auch:
-	    // rational_ = copythis->rational_;   oder?  rational_ = copythis.rational_;
-	    // mit this
-	    // this->rational_ = copythis->rational_;
-	    // das gleiche fuer alle variablen von interesse ....
-	    //basis_=get_basis();
-	    //basis_= copythis.basis_;
-
-	    this->basis_= copythis.basis_;
-	    this->rational_= copythis.rational_;
-	    
-	    this->meshline_= copythis.meshline_;
-	    this->element_ = copythis.element_;
-	    this->dim_ = copythis.dim_;
-	    this->order_u_ = copythis.order_u_;
-	    this->order_v_ = copythis.order_v_;
-	    this->start_u_ = copythis.start_u_;
-	    this->start_v_ = copythis.start_v_;
-	    this->end_u_ = copythis.end_u_;
-	    this->end_v_ = copythis.end_v_;
-
-
-
-	    return *this;
-	  }
-
-  //void LRSplineSurface::change_coefs(std::vector<double> coefs){
-
-  //}
-
 
 void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl, bool u_from_right, bool v_from_right) const {
 	Go::Point cp;

@@ -24,8 +24,7 @@ public:
 	LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w, double *knot_u, double *knot_v, double *knot_w, double *coef, int dim, bool rational=false);
 	~LRSplineVolume();
 
-	LRSplineVolume &operator=(LRSplineVolume& copythis);
-	LRSplineVolume* copy();
+	LRSplineVolume* copy() const;
 	// surface evaluation
 	virtual void point(Go::Point &pt, double u, double v, double w, int iEl=-1) const;
 	virtual void point(Go::Point &pt, double u, double v, double w, int iEl, bool u_from_right, bool v_from_right, bool w_from_right) const;

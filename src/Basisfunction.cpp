@@ -608,13 +608,22 @@ void Basisfunction::operator+=(const Basisfunction &other) {
 }
 
 /************************************************************************************************************************//**
- * \brief Returns a deep copy of the B-spline with all the same knot vectors, controlpoints and supported elements
+ * \brief Returns a deep copy of the B-spline with all the same knot vectors and controlpoints. Note: Does not copy supported elements
  ***************************************************************************************************************************/
 Basisfunction* Basisfunction::copy() const {
-    Basisfunction *returnValue = new Basisfunction(knots_[0].begin(), knots_[1].begin(), controlpoint_.begin(), controlpoint_.size(), knots_[0].size()+1, knots_[1].size()+1, weight_);
-	returnValue->setId(id_);
-	for(Element *el : support_)
-		returnValue->addSupport(el);
+
+	std::vector<int> order;
+	for(uint i=0; i<knots_.size(); i++) 
+		order.push_back(knots_[i].size()-1);
+    Basisfunction *returnValue = new Basisfunction(controlpoint_.size(), knots_.size(), order);
+
+	for(uint i=0; i<knots_.size(); i++) 
+		std::copy(knots_[i].begin(), knots_[i].end(), returnValue->knots_[i].begin());
+
+	std::copy(controlpoint_.begin(), controlpoint_.end(), returnValue->controlpoint_.begin());
+	returnValue->weight_ = weight_;
+	returnValue->id_     = id_;
+
 	return returnValue;
 }
 

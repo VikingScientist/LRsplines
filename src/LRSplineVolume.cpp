@@ -238,19 +238,28 @@ LRSplineVolume::~LRSplineVolume() {
 }
 
 
-LRSplineVolume* LRSplineVolume::copy()
-{
-	/*
+LRSplineVolume* LRSplineVolume::copy() const {
+	generateIDs();
+
+	std::vector<Basisfunction*> basisVector;
+
+	// flat list to make it quicker to update pointers from Basisfunction to Element and back again
 	LRSplineVolume *returnvalue = new LR::LRSplineVolume();
 	
-	for(int i = 0; i< this->nBasisFunctions();i++)
-		{returnvalue -> basis_.push_back(this->basis_[i]->copy());}
+	for(Basisfunction* b : basis_) {
+		Basisfunction *newB = b->copy();
+		returnvalue -> basis_.insert(newB);
+		basisVector.push_back(newB);
+	}
 	
-	for(int i = 0; i < this->nElements();i++)
-		{returnvalue -> element_.push_back(this->element_[i]->copy());}
+	for(Element *e : element_) {
+		Element* newEl = e->copy();
+		returnvalue -> element_.push_back(newEl);
+		newEl->updateBasisPointers(basisVector);
+	}
 	
-	for(int i = 0; i < this->nMeshRectangles();i++)
-		{returnvalue -> meshrect_.push_back(this-> meshrect_[i]->copy());}
+	for(MeshRectangle *m : meshrect_)
+		returnvalue -> meshrect_.push_back(m->copy());
 	
 	returnvalue->rational_         = this->rational_;
 	returnvalue->dim_              = this->dim_;
@@ -267,35 +276,8 @@ LRSplineVolume* LRSplineVolume::copy()
 	returnvalue->doCloseGaps_      = this->doCloseGaps_;
 	returnvalue->doAspectRatioFix_ = this->doAspectRatioFix_;
 	returnvalue->maxAspectRatio_   = this->maxAspectRatio_;
-
-	
-	for(int i = 0; i< this->nBasisFunctions();i++)
-		{returnvalue -> updateSupport(returnvalue->basis_[i]);}
 	
 	return returnvalue;
-	*/
-	return NULL;
-}
-
-LRSplineVolume& LRSplineVolume::operator=( LRSplineVolume &copythis) {
-
-	this->basis_     = copythis.basis_;
-	this->rational_  = copythis.rational_;
-	
-	this->meshrect_  = copythis.meshrect_;
-	this->element_   = copythis.element_;
-	this->dim_       = copythis.dim_;
-	this->order_u_   = copythis.order_u_;
-	this->order_v_   = copythis.order_v_;
-	this->order_w_   = copythis.order_w_;
-	this->start_u_   = copythis.start_u_;
-	this->start_v_   = copythis.start_v_;
-	this->start_w_   = copythis.start_w_;
-	this->end_u_     = copythis.end_u_;
-	this->end_v_     = copythis.end_v_;
-	this->end_w_     = copythis.end_w_;
-
-	return *this;
 }
 
 void LRSplineVolume::point(Go::Point &pt, double u, double v, double w, int iEl, bool u_from_right, bool v_from_right, bool w_from_right) const {

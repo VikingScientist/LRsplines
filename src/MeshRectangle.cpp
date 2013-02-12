@@ -50,10 +50,10 @@ MeshRectangle::~MeshRectangle() {
 }
 
 
-MeshRectangle* MeshRectangle::copy() {
+MeshRectangle* MeshRectangle::copy() const {
 	 MeshRectangle *returnvalue     = new MeshRectangle();
 	 
-	 returnvalue->start_        = this->start_;
+	 returnvalue->start_        = this->start_; // apperently vector::operator=() takes a deep copy
 	 returnvalue->stop_         = this->stop_ ;
 	 returnvalue->multiplicity_ = this->multiplicity_;
 	 returnvalue->constDir_     = this->constDir_;

@@ -60,7 +60,7 @@ void Element::addSupportFunction(Basisfunction *f) {
 }
 
 /************************************************************************************************************************//**
- * \brief Makes a deep copy of the Element and returns a pointer to this (caller responsible for freeing memory)
+ * \brief Makes a deep copy of the Element and returns a pointer to this (caller responsible for freeing memory). Note: Does not copy support Basisfunction
  ***************************************************************************************************************************/
 Element* Element::copy() {
 	Element *returnvalue = new Element();
@@ -68,7 +68,9 @@ Element* Element::copy() {
 	returnvalue->id_          = this->id_;
 	returnvalue->min          = this->min;    // it seems that the default vector operator= thing takes a deep copy 
 	returnvalue->max          = this->max;
-	returnvalue->support_ids_ = this->support_ids_;
+
+	for(Basisfunction* b : support_)
+		returnvalue->support_ids_.push_back(b->getId());
 	
 	return returnvalue;
 }
