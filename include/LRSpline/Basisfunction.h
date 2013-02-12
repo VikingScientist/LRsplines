@@ -29,6 +29,12 @@ typedef enum parameterEdge parameterEdge;
 class Element;
 class Meshline;
 
+/************************************************************************************************************************//**
+ * \brief Basisfunction class to store the individual B-splines which make up the LR B-spline space
+ * \details Stores the local knot vectors corresponding in each parametric direction (two for bivariate surfaces, three for
+ *          trivariate volumes) as well as the control point and scaling weight. Used for evaluation of the B-splines and
+ *          all their derivatives. The class does also have pointers back to the elements which they have support on
+ ***************************************************************************************************************************/
 class Basisfunction : public Go::Streamable {
 public:
 	Basisfunction(int dim, int order_u, int order_v);

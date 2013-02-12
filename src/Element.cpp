@@ -5,18 +5,32 @@
 
 namespace LR {
 
+/************************************************************************************************************************//**
+ * \brief Default constructor
+ ***************************************************************************************************************************/
 Element::Element() {
 	id_      = -1;
 	overloadCount = 0;
 }
 
+/************************************************************************************************************************//**
+ * \brief Constructor
+ * \param dim The dimension of the element (2 for SplineSurfaces, 3 for SplineVolumes)
+ ***************************************************************************************************************************/
 Element::Element(int dim) {
-	id_      = -1;
+	id_           = -1;
 	overloadCount = 0;
 	min.resize(dim);
 	max.resize(dim);
 }
 
+/************************************************************************************************************************//**
+ * \brief Surface element constructor
+ * \param start_u Lower left u-coordinate
+ * \param start_v Lower left v-coordinate
+ * \param stop_u  Upper right u-coordinate
+ * \param stop_v  Upper right v-coordinate
+ ***************************************************************************************************************************/
 Element::Element(double start_u, double start_v, double stop_u, double stop_v) {
 	min.resize(2);
 	max.resize(2);
@@ -29,14 +43,25 @@ Element::Element(double start_u, double start_v, double stop_u, double stop_v) {
 	overloadCount = 0;
 }
 
+/************************************************************************************************************************//**
+ * \brief Removes one basisfunction from the list of supported Basisfunctions
+ * \param f The pointer to the Basisfunction to remove
+ ***************************************************************************************************************************/
 void Element::removeSupportFunction(Basisfunction *f) {
 	support_.erase(f);
 }
 
+/************************************************************************************************************************//**
+ * \brief Adds one basisfunction from the list of supported Basisfunctions
+ * \param f The pointer to the Basisfunction to add
+ ***************************************************************************************************************************/
 void Element::addSupportFunction(Basisfunction *f) {
 	support_.insert(f);
 }
 
+/************************************************************************************************************************//**
+ * \brief Makes a deep copy of the Element and returns a pointer to this (caller responsible for freeing memory)
+ ***************************************************************************************************************************/
 Element* Element::copy() {
 	Element *returnvalue = new Element();
 	
@@ -49,6 +74,12 @@ Element* Element::copy() {
 }
 
 
+/************************************************************************************************************************//**
+ * \brief Splits an element into two new ones by reducing the size of this element and returning a new element.
+ * \param splitDim The constant parameter direction to split the element
+ * \param par_value The parameter value to do the splitting
+ * \returns The new element resulting from the splitting
+ ***************************************************************************************************************************/
 Element* Element::split(int splitDim, double par_value) {
 	Element *newElement = NULL;
 	if(par_value >= max[splitDim] || par_value <= min[splitDim])
@@ -80,6 +111,10 @@ Element* Element::split(int splitDim, double par_value) {
 	return newElement;
 }
 
+/************************************************************************************************************************//**
+ * \brief Only used at the end of the read function. Updates the element-to-basisfunction and back again pointers.
+ * \param basis The flat vector list of basisfunctions
+ ***************************************************************************************************************************/
 void Element::updateBasisPointers(std::vector<Basisfunction*> &basis) {
 	for(uint i=0; i<support_ids_.size(); i++) {
 		// add pointer from Element to Basisfunction
@@ -89,6 +124,10 @@ void Element::updateBasisPointers(std::vector<Basisfunction*> &basis) {
 	}
 }
 
+/************************************************************************************************************************//**
+ * \brief Reads formatted input from input stream
+ * \param is The input stream to read from 
+ ***************************************************************************************************************************/
 // convenience macro for reading formated input
 #define ASSERT_NEXT_CHAR(c) {ws(is); nextChar = is.get(); if(nextChar!=c) { std::cerr << "Error parsing element\n"; exit(326); } ws(is); }
 void Element::read(std::istream &is) {
@@ -135,6 +174,10 @@ void Element::read(std::istream &is) {
 }
 #undef ASSERT_NEXT_CHAR
 
+/************************************************************************************************************************//**
+ * \brief Writes the element primitive to output stream
+ * \param os The output stream to write to
+ ***************************************************************************************************************************/
 void Element::write(std::ostream &os) const {
 	os << id_ << " [" << min.size() << "] : ";
 	os << "(" << min[0];
@@ -154,13 +197,27 @@ void Element::write(std::ostream &os) const {
 	os << "}";
 }
 
+/************************************************************************************************************************//**
+ * \brief Checks if an element is overloaded by having too many Basisfunctions with support on this element
+ * \returns True if more than (p+1)*(q+1) Basisfunctions have support on this element, where p and q are the polynomial degrees.
+            In case of trivariate LRspline Volumes (p+1)*(q+1)*(r+1) is used
+ ***************************************************************************************************************************/
 bool Element::isOverloaded()  const {
 	int n = support_.size();
+	Basisfunction *b = *support_.begin();
 	if(n > 0) {
-		int p1 = (*support_.begin())->getOrder(0);
-		int p2 = (*support_.begin())->getOrder(1);
-		if(n > p1*p2)
-			return true;
+		if(b->nVariate() == 2) { // surfaces
+			int p1 = (*support_.begin())->getOrder(0);
+			int p2 = (*support_.begin())->getOrder(1);
+			if(n > p1*p2)
+				return true;
+		} else if(b->nVariate() == 3) { // volumes
+			int p1 = (*support_.begin())->getOrder(0);
+			int p2 = (*support_.begin())->getOrder(1);
+			int p3 = (*support_.begin())->getOrder(2);
+			if(n > p1*p2*p3)
+				return true;
+		}
 	}
 	return false;
 }
