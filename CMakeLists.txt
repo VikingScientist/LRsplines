@@ -29,6 +29,23 @@ IF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
   ENDIF(HAVE_0x)
 ENDIF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
+# Check that the required C++11 features are available
+CHECK_CXX_SOURCE_COMPILES("
+                          #include <map>
+                          #include <list>
+                          int main(void)
+                          { 
+                            std::map<int, std::list<int> > loop;
+                            loop.insert(std::make_pair(1,std::list<int>(1)));
+                            std::map<int, std::list<int >>::iterator it = loop.begin();
+                            for (int a : it->second)
+                              ;
+                          }
+                          " COMPILER_SATISFIES_CXX11)
+IF (NOT COMPILER_SATISFIES_CXX11)
+  MESSAGE(FATAL_ERROR "Compiler do not provide C++-11 features required, bailing")
+ENDIF(NOT COMPILER_SATISFIES_CXX11)
+
 ENABLE_TESTING()
 
 # Required packages
