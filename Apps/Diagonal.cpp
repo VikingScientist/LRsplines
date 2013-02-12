@@ -6,6 +6,7 @@
 #include <cstring>
 #include <GoTools/geometry/SplineSurface.h>
 #include "LRSpline/LRSplineSurface.h"
+#include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/Element.h"
 #include "LRSpline/Basisfunction.h"
 
@@ -21,11 +22,13 @@ int main(int argc, char **argv) {
 	int m         = 1;
 	int scheme    = 0;
 	bool dumpfile = false;
+	bool vol       = false;
 	string parameters(" parameters: \n" \
 	                  "   -p      <n> polynomial DEGREE (order-1) of the basis\n" \
 	                  "   -n      <n> number of iterations\n" \
 	                  "   -m      <n> knot multiplicity\n" \
 	                  "   -dumpfile   create .eps and .m files of the meshes\n" \
+	                  "   -vol        enforce a volumetric test case\n"\
 	                  "   -scheme <n> refinement scheme (0=FULLSPAN, 1=MINSPAN, 2=STRUCT)\n" \
 	                  "   -help    display (this) help information\n");
 	
@@ -41,6 +44,8 @@ int main(int argc, char **argv) {
 			m = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-dumpfile") == 0)
 			dumpfile = true;
+		else if(strcmp(argv[i], "-vol") == 0)
+			vol = true;
 		else if(strcmp(argv[i], "-help") == 0) {
 			cout << "usage: " << argv[0] << endl << parameters;
 			exit(0);
@@ -70,76 +75,113 @@ int main(int argc, char **argv) {
 	// make a uniform integer knot vector
 	double knot_u[] = {0,0,1,1};
 	double knot_v[] = {0,0,1,1};
-	double cp[]     = {0,0,
+	double knot_w[] = {0,0,1,1};
+	double cp2[]    = {0,0,
 	                   1,0,
 	                   0,1,
 	                   1,1};
-		
-	// make two identical surfaces
-	SplineSurface   ss(2, 2, 2, 2, knot_u, knot_v, cp, 2, false);
-	ss.raiseOrder(p-1, p-1);
-	LRSplineSurface lr(&ss);
+	double cp3[]    = {0,0,0,
+	                   1,0,0,
+	                   0,1,0,
+	                   1,1,0,
+	                   0,0,1,
+	                   1,0,1,
+	                   0,1,1,
+	                   1,1,1};
+
+	// make two identical splines
+	LRSplineSurface *lrs;
+	LRSplineVolume  *lrv;
+	if(vol) {
+		SplineVolume   sv(2, 2, 2, 2, 2, 2, knot_u, knot_v, knot_w, cp3, 3, false);
+		sv.raiseOrder(p-1, p-1, p-1);
+		lrv = new LRSplineVolume(&sv);
+	} else {
+		SplineSurface   ss(2, 2, 2, 2, knot_u, knot_v, cp2, 2, false);
+		ss.raiseOrder(p-1, p-1);
+		lrs = new LRSplineSurface(&ss);
+	}
 
 	// setup refinement parameters
-	lr.setRefMultiplicity(m);
+	enum refinementStrategy strat;
 	if(scheme == 0)
-		lr.setRefStrat(LR_SAFE);
+		strat = LR_SAFE;
 	else if(scheme == 1)
-		lr.setRefStrat(LR_MINSPAN);
+		strat = LR_MINSPAN;
 	else if(scheme == 2)
-		lr.setRefStrat(LR_ISOTROPIC_FUNC);
-	
+		strat = LR_ISOTROPIC_FUNC;
+	if(vol) {
+		lrv->setRefMultiplicity(m);
+		lrv->setRefStrat(strat);
+	} else {
+		lrs->setRefMultiplicity(m);
+		lrs->setRefStrat(strat);
+	}
+
 	// for all iterations
 	for(int n=0; n<N; n++) {
-		lr.generateIDs();
 		vector<int> indices;
 
 		if(scheme < 2) {
-			lr.getDiagonalElements(indices);
-			lr.refineElement(indices);
+			if(vol) {
+				lrv->generateIDs();
+				lrv->getDiagonalElements(indices);
+				lrv->refineElement(indices);
+			} else {
+				lrs->generateIDs();
+				lrs->getDiagonalElements(indices);
+				lrs->refineElement(indices);
+			}
 		} else if(scheme == 2) {
-			lr.getDiagonalBasisfunctions(indices);
-			lr.refineBasisFunction(indices);
+			if(vol) {
+				// lrv->generateIDs();
+				// lrv->getDiagonalBasisfunctions(indices);
+				// lrv->refineBasisFunction(indices);
+			} else {
+				lrs->generateIDs();
+				lrs->getDiagonalBasisfunctions(indices);
+				lrs->refineBasisFunction(indices);
+			}
 		}
 
 		// draw result files (with next refinement-step-diagonal shaded)
-		if(dumpfile) {
+		if(dumpfile && !vol) {
 			vector<int> diagElms, diagFuncs;
-			lr.getDiagonalElements(diagElms);
-			lr.getDiagonalBasisfunctions(diagFuncs);
+			lrs->getDiagonalElements(diagElms);
+			lrs->getDiagonalBasisfunctions(diagFuncs);
 			char filename[128];
 
 			sprintf(filename, "index_%02d.eps", n+1);
 			ofstream out;
 			out.open(filename);
 			if(scheme < 2)
-				lr.writePostscriptMesh(out, true, &diagElms);
+				lrs->writePostscriptMesh(out, true, &diagElms);
 			else
-				lr.writePostscriptMesh(out);
+				lrs->writePostscriptMesh(out);
 			out.close();
 
 			sprintf(filename, "parameter_%02d.eps", n+1);
 			out.open(filename);
 			if(scheme < 2)
-				lr.writePostscriptElements(out, 2,2, true, &diagElms);
+				lrs->writePostscriptElements(out, 2,2, true, &diagElms);
 			else 
-				lr.writePostscriptElements(out, 2,2, true);
+				lrs->writePostscriptElements(out, 2,2, true);
 			out.close();
 
 			sprintf(filename, "func_%02d.eps", n+1);
 			out.open(filename);
 			if(scheme == 2)
-				lr.writePostscriptFunctionSpace(out, &diagFuncs);
+				lrs->writePostscriptFunctionSpace(out, &diagFuncs);
 			else
-				lr.writePostscriptFunctionSpace(out);
+				lrs->writePostscriptFunctionSpace(out);
 			out.close();
 			
 			out.open("dof.m", ios::app);
-			out << lr.nBasisFunctions() << endl;
+			out << lrs->nBasisFunctions() << endl;
 			out.close();
 
 			out.open("elements.m", ios::app);
-			out << lr.nElements() << endl;
+			out << lrs->nElements() << endl;
 			out.close();
 		}
 	}
@@ -149,14 +191,29 @@ int main(int argc, char **argv) {
 	vector<int> multipleOverloadedElements;
 
 	// harvest some statistics and display these results
-	lr.generateIDs();
+	int nBasis      = 0;
+	int nElements   = 0;
+	int nMeshlines  = 0;
+	if(vol) lrv->generateIDs();
+	else    lrs->generateIDs();
 	double avgBasisToElement = 0;
 	double avgBasisToLine    = 0;
 	int maxBasisToElement    = -1;
 	int minBasisToElement    = 9999999;
 	int nOverloadedElms      = 0;
 	int nOverloadedBasis     = 0;
-	for(Basisfunction* b : lr.getAllBasisfunctions()) {
+	if(vol) {
+		nBasis     = lrv->nBasisFunctions();
+		nElements  = lrv->nElements();
+		nMeshlines = lrv->nMeshRectangles();
+	} else {
+		nBasis     = lrs->nBasisFunctions();
+		nElements  = lrs->nElements();
+		nMeshlines = lrs->nMeshlines();
+	}
+	HashSet<Basisfunction*> basis    = (vol) ? lrv->getAllBasisfunctions() : lrs->getAllBasisfunctions();
+	vector<Element*>        elements = (vol) ? lrv->getAllElements()       : lrs->getAllElements();
+	for(Basisfunction* b : basis) {
 		int nE = b->nSupportedElements();
 		maxBasisToElement = (maxBasisToElement > nE) ? maxBasisToElement : nE;
 		minBasisToElement = (minBasisToElement < nE) ? minBasisToElement : nE;
@@ -166,37 +223,33 @@ int main(int argc, char **argv) {
 			overloadedBasis.push_back(b->getId());
 		}
 	}
-	avgBasisToElement /= lr.nBasisFunctions();
-	avgBasisToLine    /= lr.nBasisFunctions();
+	avgBasisToElement /= nBasis;
+	avgBasisToLine    /= nBasis;
 
-	vector<Element*>::iterator eit;
 	double avgElementToBasis       = 0;
 	double avgSquareElementToBasis = 0;
-	double hashCodePercentage      = ((double)lr.getAllBasisfunctions().uniqueHashCodes())/lr.nBasisFunctions();
+	double hashCodePercentage      = ((double)basis.uniqueHashCodes())/nBasis;
 	int maxElementToBasis          = -1;
 	int minElementToBasis          = 9999999;
-	for(eit=lr.elementBegin(); eit!=lr.elementEnd(); eit++) {
-		int nB = (*eit)->nBasisFunctions();
+	for(Element *e : elements) {
+		int nB = e->nBasisFunctions();
 		maxElementToBasis       = (maxElementToBasis > nB) ? maxElementToBasis : nB;
 		minElementToBasis       = (minElementToBasis < nB) ? minElementToBasis : nB;
 		avgElementToBasis       += nB;
 		avgSquareElementToBasis += nB*nB;
-		if((*eit)->isOverloaded()) {
+		if(e->isOverloaded()) {
 			nOverloadedElms++;
-			overloadedElements.push_back((*eit)->getId());
-			// int nCount = (*eit)->overloadedBasisCount();
-			// if(nCount >= 2)
-				// multipleOverloadedElements.push_back((*eit)->getId());
+			overloadedElements.push_back(e->getId());
 		}
 	}
-	avgElementToBasis /= lr.nElements();
-	avgSquareElementToBasis /= lr.nElements();
+	avgElementToBasis /= nElements;
+	avgSquareElementToBasis /= nElements;
 	
 	cout << "Some statistics: " << endl;
 	cout << "-------------------------------------------------------------" << endl;
-	cout << "Number of basisfunctions: " << lr.nBasisFunctions()  << endl;
-	cout << "Number of elements      : " << lr.nElements()        << endl;
-	cout << "Number of meshlines     : " << lr.nMeshlines()       << endl;
+	cout << "Number of basisfunctions: " << nBasis           << endl;
+	cout << "Number of elements      : " << nElements        << endl;
+	cout << "Number of meshlines     : " << nMeshlines       << endl;
 	cout << "-------------------------------------------------------------" << endl;
 	cout << "Min number of Basisfuntion -> Element: " << minBasisToElement << endl;
 	cout << "Max number of Basisfuntion -> Element: " << maxBasisToElement << endl;
@@ -211,27 +264,33 @@ int main(int argc, char **argv) {
 	cout << "Number of overloaded Basisfunctions : " << nOverloadedBasis  << endl;
 	cout << "Number of overloaded Elements       : " << nOverloadedElms   << endl;
 	cout << endl;
-	cout << "Number of unique hashcodes          : " << lr.getAllBasisfunctions().uniqueHashCodes() ;
+	cout << "Number of unique hashcodes          : " << basis.uniqueHashCodes() ;
 	cout <<                                      " (" << hashCodePercentage*100 << " %)"  << endl;
 	cout << "-------------------------------------------------------------" << endl;
-	if(lr.nBasisFunctions() < 1300) {
-	cout << "Is linearly independent : " << ((lr.isLinearIndepByMappingMatrix(false) )? "True":"False") << endl;
+	if(nBasis < 1300 && !vol) {
+	cout << "Is linearly independent : " << ((lrs->isLinearIndepByMappingMatrix(false) )? "True":"False") << endl;
 	cout << "-------------------------------------------------------------" << endl;
 	}
 
 
 	if(dumpfile) {
-		ofstream out;
-	
-		out.open("overloaded_elements.eps");
-		lr.writePostscriptMesh(out, false, &overloadedElements);
-		lr.setElementColor(0.9, 0.3, 0.15);
-		lr.writePostscriptMesh(out, true,  &multipleOverloadedElements);
-		out.close();
-	
-		out.open("overloaded_functions.eps");
-		lr.writePostscriptFunctionSpace(out, &overloadedBasis);
-		out.close();
+		cout << endl;
+		cout << "Written";
+		if(!vol) {
+			ofstream meshfile;
+			meshfile.open("mesh.eps");
+			lrs->writePostscriptMesh(meshfile);
+			meshfile.close();
+			cout << " mesh to mesh.eps and";
+		}
+		
+		ofstream lrfile;
+		lrfile.open("diagonal.lr");
+		if(vol) lrfile << *lrv << endl;
+		else    lrfile << *lrs << endl;
+		lrfile.close();
+		
+		cout << " diagonal.lr\n";
 	}
 }
 
