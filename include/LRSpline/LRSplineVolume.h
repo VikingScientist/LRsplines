@@ -1,12 +1,12 @@
 #ifndef LRSPLINEVOLUME_H
 #define LRSPLINEVOLUME_H
 
-#include <vector>
 #include <GoTools/utils/Point.h>
-#include <boost/rational.hpp>
 #include <GoTools/trivariate/SplineVolume.h>
+#include <boost/rational.hpp>
 #include "LRSpline.h"
 #include "HashSet.h"
+#include "Basisfunction.h"
 
 namespace Go {
 	class SplineVolume;
@@ -14,9 +14,7 @@ namespace Go {
 
 namespace LR {
 
-class Basisfunction;
 class MeshRectangle;
-class Element;
 
 class LRSplineVolume : public LRSpline {
 
@@ -89,15 +87,7 @@ public:
 	// more get-methods
 	std::vector<MeshRectangle*>::iterator  meshrectBegin()          { return meshrect_.begin(); };
 	std::vector<MeshRectangle*>::iterator  meshrectEnd()            { return meshrect_.end(); };
-	std::vector<Element*>::iterator        elementBegin()           { return element_.begin(); };
-	std::vector<Element*>::iterator        elementEnd()             { return element_.end(); };
-	HashSet_iterator<Basisfunction*>       basisBegin()             { return basis_.begin(); };
-	HashSet_iterator<Basisfunction*>       basisEnd()               { return basis_.end(); };
-	HashSet_const_iterator<Basisfunction*> basisBegin()       const { return basis_.begin(); };
-	HashSet_const_iterator<Basisfunction*> basisEnd()         const { return basis_.end(); };
-	const HashSet<Basisfunction*>& getAllBasisfunctions()     const { return basis_ ;};
 	const std::vector<MeshRectangle*>& getAllMeshRectangles() const { return meshrect_ ;};
-	const std::vector<Element*>&           getAllElements()   const { return element_ ;};
 	Element* getElement(int i)                                      { return element_[i]; };
 	MeshRectangle* getMeshRectangle(int i)                          { return meshrect_[i]; };
 	Basisfunction* getBasisfunction(int iBasis) {

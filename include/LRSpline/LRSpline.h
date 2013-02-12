@@ -1,9 +1,9 @@
 #ifndef LRSPLINE_H
 #define LRSPLINE_H
 
-#include "Basisfunction.h"
 #include "HashSet.h"
 #include <GoTools/geometry/Streamable.h>
+#include <vector>
 
 enum refinementStrategy {
 	LR_SAFE = 0,
@@ -36,6 +36,16 @@ public:
 	// more funky get methods
 	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;
 	void getEdgeElements( std::vector<Element*>       &edgeElements,  parameterEdge edge             ) const;
+
+	// get container iterators
+	std::vector<Element*>::iterator        elementBegin()         { return element_.begin(); };
+	std::vector<Element*>::iterator        elementEnd()           { return element_.end();   };
+	HashSet_iterator<Basisfunction*>       basisBegin()           { return basis_.begin();   };
+	HashSet_iterator<Basisfunction*>       basisEnd()             { return basis_.end();     };
+	HashSet_const_iterator<Basisfunction*> basisBegin()     const { return basis_.begin();   };
+	HashSet_const_iterator<Basisfunction*> basisEnd()       const { return basis_.end();     };
+	const HashSet<Basisfunction*>& getAllBasisfunctions()   const { return basis_ ;          };
+	const std::vector<Element*>&           getAllElements() const { return element_ ;        };
 
 	// set refinement state parameters
 	void setRefStrat(enum refinementStrategy strat) { refStrat_        = strat;    };

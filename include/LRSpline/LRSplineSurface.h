@@ -2,21 +2,17 @@
 #define LRSPLINESURFACE_H
 
 #include <vector>
-#include <set>
 #include <GoTools/utils/Point.h>
 #include <GoTools/geometry/Streamable.h>
-#include <boost/rational.hpp>
 #include <GoTools/geometry/SplineSurface.h>
-#include "Basisfunction.h"
+#include <boost/rational.hpp>
 #include "LRSpline.h"
+#include "Basisfunction.h"
 #include "HashSet.h"
 
 
 namespace LR {
 
-class Basisfunction;
-class Meshline;
-class Element;
 
 class LRSplineSurface : public LRSpline {
 
@@ -81,14 +77,6 @@ public:
 	// more get-methods
 	std::vector<Meshline*>::iterator       meshlineBegin()         { return meshline_.begin(); };
 	std::vector<Meshline*>::iterator       meshlineEnd()           { return meshline_.end(); };
-	std::vector<Element*>::iterator        elementBegin()          { return element_.begin(); };
-	std::vector<Element*>::iterator        elementEnd()            { return element_.end(); };
-	HashSet_iterator<Basisfunction*>       basisBegin()            { return basis_.begin(); };
-	HashSet_iterator<Basisfunction*>       basisEnd()              { return basis_.end(); };
-	HashSet_const_iterator<Basisfunction*> basisBegin()   const    { return basis_.begin(); };
-	HashSet_const_iterator<Basisfunction*> basisEnd()     const    { return basis_.end(); };
-	const HashSet<Basisfunction*>& getAllBasisfunctions() const    { return basis_ ;};
-	const std::vector<Element*>&   getAllElements()       const    { return element_ ;};
 	Meshline* getMeshline(int i)                                   { return meshline_[i]; };
 	Element* getElement(int i)                                     { return element_[i]; };
 	Basisfunction* getBasisfunction(int iBasis) {

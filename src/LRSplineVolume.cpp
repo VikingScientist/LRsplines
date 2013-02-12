@@ -26,7 +26,6 @@ typedef std::pair<double,int> IndexDouble;
 namespace LR {
 
 #define DOUBLE_TOL 1e-14
-#define MY_STUPID_FABS(x) (((x)>0)?(x):-(x))
 
 
 LRSplineVolume::LRSplineVolume() {
@@ -603,12 +602,12 @@ void LRSplineVolume::getStructMeshLines(int iBasis, std::vector<MeshRectangle*>&
 	double max_dv = 0;
 	for(int j=0; j<order_[0]; j++) {
 		double du = b->knot_u_[j+1]-b->knot_u_[j];
-		bool isZeroSpan =  MY_STUPID_FABS(du) < DOUBLE_TOL ;
+		bool isZeroSpan =  fabs(du) < DOUBLE_TOL ;
 		max_du = (isZeroSpan || max_du>du) ? max_du : du;
 	}
 	for(int j=0; j<order_[1]; j++) {
 		double dv = b->knot_v_[j+1]-b->knot_v_[j];
-		bool isZeroSpan =  MY_STUPID_FABS(dv) < DOUBLE_TOL ;
+		bool isZeroSpan =  fabs(dv) < DOUBLE_TOL ;
 		max_dv = (isZeroSpan || max_dv>dv) ? max_dv : dv;
 	}
 
@@ -616,12 +615,12 @@ void LRSplineVolume::getStructMeshLines(int iBasis, std::vector<MeshRectangle*>&
 	// into the largest knot spans
 	for(int j=0; j<order_[0]; j++) {
 		double du = b->knot_u_[j+1]-b->knot_u_[j];
-		if( MY_STUPID_FABS(du-max_du) < DOUBLE_TOL )
+		if( fabs(du-max_du) < DOUBLE_TOL )
 			lines.push_back(new MeshRectangle(false, (b->knot_u_[j] + b->knot_u_[j+1])/2.0, vmin, vmax,1));
 	}
 	for(int j=0; j<order_[1]; j++) {
 		double dv = b->knot_v_[j+1]-b->knot_v_[j];
-		if( MY_STUPID_FABS(dv-max_dv) < DOUBLE_TOL )
+		if( fabs(dv-max_dv) < DOUBLE_TOL )
 			lines.push_back(new MeshRectangle(true, (b->knot_v_[j] + b->knot_v_[j+1])/2.0, umin, umax,1));
 	}
 }
@@ -844,8 +843,8 @@ void LRSplineVolume::enforceMaxTjoints(std::vector<MeshRectangle*> *newLines) {
 			int bi      = -1;
 			if(left.size() > (uint) maxTjoints_) {
 				for(uint j=0; j<left.size(); j++) {
-					if(MY_STUPID_FABS(left[j] - (vmin+vmax)/2) < best) {
-						best = MY_STUPID_FABS(left[j] - (vmin+vmax)/2);
+					if(fabs(left[j] - (vmin+vmax)/2) < best) {
+						best = fabs(left[j] - (vmin+vmax)/2);
 						bi = j;
 					}
 				}
@@ -857,8 +856,8 @@ void LRSplineVolume::enforceMaxTjoints(std::vector<MeshRectangle*> *newLines) {
 			}
 			if(right.size() > (uint) maxTjoints_) {
 				for(uint j=0; j<right.size(); j++) {
-					if(MY_STUPID_FABS(right[j] - (vmin+vmax)/2) < best) {
-						best = MY_STUPID_FABS(right[j] - (vmin+vmax)/2);
+					if(fabs(right[j] - (vmin+vmax)/2) < best) {
+						best = fabs(right[j] - (vmin+vmax)/2);
 						bi = j;
 					}
 				}
@@ -870,8 +869,8 @@ void LRSplineVolume::enforceMaxTjoints(std::vector<MeshRectangle*> *newLines) {
 			}
 			if(top.size() > (uint) maxTjoints_) {
 				for(uint j=0; j<top.size(); j++) {
-					if(MY_STUPID_FABS(top[j] - (umin+umax)/2) < best) {
-						best = MY_STUPID_FABS(top[j] - (umin+umax)/2);
+					if(fabs(top[j] - (umin+umax)/2) < best) {
+						best = fabs(top[j] - (umin+umax)/2);
 						bi = j;
 					}
 				}
@@ -883,8 +882,8 @@ void LRSplineVolume::enforceMaxTjoints(std::vector<MeshRectangle*> *newLines) {
 			}
 			if(bottom.size() > (uint) maxTjoints_) {
 				for(uint j=0; j<bottom.size(); j++) {
-					if(MY_STUPID_FABS(bottom[j] - (umin+umax)/2) < best) {
-						best = MY_STUPID_FABS(bottom[j] - (umin+umax)/2);
+					if(fabs(bottom[j] - (umin+umax)/2) < best) {
+						best = fabs(bottom[j] - (umin+umax)/2);
 						bi = j;
 					}
 				}
@@ -1841,8 +1840,8 @@ bool LRSplineVolume::isLinearIndepByFloatingPointMappingMatrix(bool verbose) con
 		double maxPivot = 0;
 		int maxI = -1;
 		for(uint j=i; j<C.size(); j++) {
-			if(MY_STUPID_FABS(C[j][i+zeroColumns]) > maxPivot) {
-				maxPivot = MY_STUPID_FABS(C[j][i+zeroColumns]);
+			if(fabs(C[j][i+zeroColumns]) > maxPivot) {
+				maxPivot = fabs(C[j][i+zeroColumns]);
 				maxI = j;
 			}
 		}
@@ -2087,7 +2086,6 @@ void LRSplineVolume::printElements(std::ostream &out) const {
 	}
 }
 
-#undef MY_STUPID_FABS
 #undef DOUBLE_TOL
 
 } // end namespace LR

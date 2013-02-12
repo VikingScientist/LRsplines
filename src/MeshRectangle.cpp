@@ -7,7 +7,6 @@
 namespace LR {
 
 #define DOUBLE_TOL 1e-14
-#define MY_STUPID_FABS(x) (((x)>0)?(x):-(x))
 
 MeshRectangle::MeshRectangle() {
 	start_.resize(3);
@@ -74,7 +73,7 @@ int MeshRectangle::nKnotsIn(Basisfunction *basis) const {
 	int hits = 0;
 	int d    = constDir_;
 	for(int i=0; i<=basis->getOrder(d); i++)
-		if( MY_STUPID_FABS((*basis)[d][i] - start_[d]) < DOUBLE_TOL )
+		if( fabs((*basis)[d][i] - start_[d]) < DOUBLE_TOL )
 			hits++;
 	return hits;
 }
@@ -360,7 +359,6 @@ void MeshRectangle::write(std::ostream &os) const {
 	os << "(" << multiplicity_ << ")";
 }
 
-#undef MY_STUPID_FABS
 #undef DOUBLE_TOL
 
 } // end namespace LR

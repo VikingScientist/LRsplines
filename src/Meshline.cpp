@@ -2,11 +2,11 @@
 #include "LRSpline/Meshline.h"
 #include "LRSpline/Element.h"
 #include "LRSpline/Basisfunction.h"
+#include <cmath>
 
 namespace LR {
 
 #define DOUBLE_TOL 1e-14
-#define MY_STUPID_FABS(x) (((x)>0)?(x):-(x))
 
 Meshline::Meshline() {
 	span_u_line_  = false;
@@ -46,11 +46,11 @@ int Meshline::nKnotsIn(Basisfunction *basis) const {
 	int hits = 0;
 	if(span_u_line_) {
 		for(int i=0; i<=basis->getOrder(1); i++)
-			if( MY_STUPID_FABS((*basis)[1][i] - const_par_) < DOUBLE_TOL )
+			if( fabs((*basis)[1][i] - const_par_) < DOUBLE_TOL )
 				hits++;
 	} else { // span-v_line
 		for(int i=0; i<=basis->getOrder(0); i++)
-			if( MY_STUPID_FABS((*basis)[0][i] - const_par_) < DOUBLE_TOL)
+			if( fabs((*basis)[0][i] - const_par_) < DOUBLE_TOL)
 				hits++;
 	}
 	return hits;
@@ -177,7 +177,6 @@ void Meshline::writeMore(std::ostream &os) const {
 		os << " ELONGATION";
 }
 
-#undef MY_STUPID_FABS
 #undef DOUBLE_TOL
 
 } // end namespace LR

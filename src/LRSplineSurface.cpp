@@ -4,6 +4,7 @@
 #include "LRSpline/Element.h"
 #include "LRSpline/Profiler.h"
 
+#include <set>
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -24,7 +25,6 @@ typedef std::pair<double,int> IndexDouble;
 namespace LR {
 
 #define DOUBLE_TOL 1e-14
-#define MY_STUPID_FABS(x) (((x)>0)?(x):-(x))
 
 
 /************************************************************************************************************************//**
@@ -633,12 +633,12 @@ void LRSplineSurface::getStructMeshLines(int iBasis, std::vector<Meshline*>& lin
 	double max_dv = 0;
 	for(int j=0; j<order_[0]; j++) {
 		double du = (*b)[0][j+1]-(*b)[0][j];
-		bool isZeroSpan =  MY_STUPID_FABS(du) < DOUBLE_TOL ;
+		bool isZeroSpan =  fabs(du) < DOUBLE_TOL ;
 		max_du = (isZeroSpan || max_du>du) ? max_du : du;
 	}
 	for(int j=0; j<order_[1]; j++) {
 		double dv = (*b)[1][j+1]-(*b)[1][j];
-		bool isZeroSpan =  MY_STUPID_FABS(dv) < DOUBLE_TOL ;
+		bool isZeroSpan =  fabs(dv) < DOUBLE_TOL ;
 		max_dv = (isZeroSpan || max_dv>dv) ? max_dv : dv;
 	}
 
@@ -646,12 +646,12 @@ void LRSplineSurface::getStructMeshLines(int iBasis, std::vector<Meshline*>& lin
 	// into the largest knot spans
 	for(int j=0; j<order_[0]; j++) {
 		double du = (*b)[0][j+1]-(*b)[0][j];
-		if( MY_STUPID_FABS(du-max_du) < DOUBLE_TOL )
+		if( fabs(du-max_du) < DOUBLE_TOL )
 			lines.push_back(new Meshline(false, ((*b)[0][j] + (*b)[0][j+1])/2.0, vmin, vmax,1));
 	}
 	for(int j=0; j<order_[1]; j++) {
 		double dv = (*b)[1][j+1]-(*b)[1][j];
-		if( MY_STUPID_FABS(dv-max_dv) < DOUBLE_TOL )
+		if( fabs(dv-max_dv) < DOUBLE_TOL )
 			lines.push_back(new Meshline(true, ((*b)[1][j] + (*b)[1][j+1])/2.0, umin, umax,1));
 	}
 }
@@ -900,8 +900,8 @@ void LRSplineSurface::enforceMaxTjoints(std::vector<Meshline*> *newLines) {
 			int bi      = -1;
 			if(left.size() > (uint) maxTjoints_) {
 				for(uint j=0; j<left.size(); j++) {
-					if(MY_STUPID_FABS(left[j] - (vmin+vmax)/2) < best) {
-						best = MY_STUPID_FABS(left[j] - (vmin+vmax)/2);
+					if(fabs(left[j] - (vmin+vmax)/2) < best) {
+						best = fabs(left[j] - (vmin+vmax)/2);
 						bi = j;
 					}
 				}
@@ -913,8 +913,8 @@ void LRSplineSurface::enforceMaxTjoints(std::vector<Meshline*> *newLines) {
 			}
 			if(right.size() > (uint) maxTjoints_) {
 				for(uint j=0; j<right.size(); j++) {
-					if(MY_STUPID_FABS(right[j] - (vmin+vmax)/2) < best) {
-						best = MY_STUPID_FABS(right[j] - (vmin+vmax)/2);
+					if(fabs(right[j] - (vmin+vmax)/2) < best) {
+						best = fabs(right[j] - (vmin+vmax)/2);
 						bi = j;
 					}
 				}
@@ -926,8 +926,8 @@ void LRSplineSurface::enforceMaxTjoints(std::vector<Meshline*> *newLines) {
 			}
 			if(top.size() > (uint) maxTjoints_) {
 				for(uint j=0; j<top.size(); j++) {
-					if(MY_STUPID_FABS(top[j] - (umin+umax)/2) < best) {
-						best = MY_STUPID_FABS(top[j] - (umin+umax)/2);
+					if(fabs(top[j] - (umin+umax)/2) < best) {
+						best = fabs(top[j] - (umin+umax)/2);
 						bi = j;
 					}
 				}
@@ -939,8 +939,8 @@ void LRSplineSurface::enforceMaxTjoints(std::vector<Meshline*> *newLines) {
 			}
 			if(bottom.size() > (uint) maxTjoints_) {
 				for(uint j=0; j<bottom.size(); j++) {
-					if(MY_STUPID_FABS(bottom[j] - (umin+umax)/2) < best) {
-						best = MY_STUPID_FABS(bottom[j] - (umin+umax)/2);
+					if(fabs(bottom[j] - (umin+umax)/2) < best) {
+						best = fabs(bottom[j] - (umin+umax)/2);
 						bi = j;
 					}
 				}
@@ -1007,7 +1007,7 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 		// if newline overlaps any existing ones (may be multiple existing ones)
 		// let newline be the entire length of all merged and delete the unused ones
 
-		if(meshline_[i]->is_spanning_u() != const_u && MY_STUPID_FABS(meshline_[i]->const_par_-const_par)<DOUBLE_TOL && 
+		if(meshline_[i]->is_spanning_u() != const_u && fabs(meshline_[i]->const_par_-const_par)<DOUBLE_TOL && 
 		   meshline_[i]->start_ <= stop && meshline_[i]->stop_ >= start)  { // meshline_[i] overlaps with newline
 
 			if(meshline_[i]->start_ <= start && 
@@ -1815,8 +1815,8 @@ bool LRSplineSurface::isLinearIndepByFloatingPointMappingMatrix(bool verbose) co
 		double maxPivot = 0;
 		int maxI = -1;
 		for(uint j=i; j<C.size(); j++) {
-			if(MY_STUPID_FABS(C[j][i+zeroColumns]) > maxPivot) {
-				maxPivot = MY_STUPID_FABS(C[j][i+zeroColumns]);
+			if(fabs(C[j][i+zeroColumns]) > maxPivot) {
+				maxPivot = fabs(C[j][i+zeroColumns]);
 				maxI = j;
 			}
 		}
@@ -2602,7 +2602,6 @@ void LRSplineSurface::printElements(std::ostream &out) const {
 	}
 }
 
-#undef MY_STUPID_FABS
 #undef DOUBLE_TOL
 
 } // end namespace LR
