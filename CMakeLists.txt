@@ -97,6 +97,9 @@ TARGET_LINK_LIBRARIES(drawLRmesh LRSpline ${DEPLIBS})
 ADD_EXECUTABLE(TopologyRefinement ${PROJECT_SOURCE_DIR}/Apps/TopologyRefinement.cpp)
 TARGET_LINK_LIBRARIES(TopologyRefinement LRSpline ${DEPLIBS})
 
+ADD_EXECUTABLE(BezierExtract ${PROJECT_SOURCE_DIR}/Apps/BezierExtract.cpp)
+TARGET_LINK_LIBRARIES(BezierExtract LRSpline ${DEPLIBS})
+
 # # Regression tests
 FILE(GLOB_RECURSE REGRESESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/RefinementUnchanged/*.reg")
 FOREACH(TESTFILE ${REGRESESSION_TESTFILES})
