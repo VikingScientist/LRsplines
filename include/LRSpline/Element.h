@@ -16,17 +16,28 @@ public:
 	Element();
 	Element(int dim);
 	Element(double start_u, double start_v, double stop_u, double stop_v);
+	template <typename RandomIterator1,
+	          typename RandomIterator2>
+	Element(int dim, RandomIterator1 lowerLeft, RandomIterator2 upperRight) {
+		min.resize(dim);
+		max.resize(dim);
+		std::copy(lowerLeft,  lowerLeft  + dim, min.begin());
+		std::copy(upperRight, upperRight + dim, max.begin());
+	}
 	Element(std::vector<double> &lowerLeft, std::vector<double> &upperRight);
 	void removeSupportFunction(Basisfunction *f);
 	void addSupportFunction(Basisfunction *f);
 	Element *split(int splitDim, double par_value);
 	Element* copy();
 	// get/set methods
-	double umin() const         { return min[0]; };
-	double vmin() const         { return min[1]; };
-	double umax() const         { return max[0]; };
-	double vmax() const         { return max[1]; };
-	double area() const         { return (max[1]-min[1])*(max[0]-min[0]);  };
+	double getParmin(int i) const { return min[i]; };
+	double getParmax(int i) const { return max[i]; };
+	double umin()           const { return min[0]; };
+	double vmin()           const { return min[1]; };
+	double umax()           const { return max[0]; };
+	double vmax()           const { return max[1]; };
+	double area()           const { return (max[1]-min[1])*(max[0]-min[0]);                  };
+	double volume()         const { return (max[2]-min[2])*(max[1]-min[1])*(max[0]-min[0]);  };
 	HashSet_iterator<Basisfunction*> supportBegin()                 { return support_.begin(); };
 	HashSet_iterator<Basisfunction*> supportEnd()                   { return support_.end();   };
 	HashSet_const_iterator<Basisfunction*> constSupportBegin()const { return support_.begin(); };

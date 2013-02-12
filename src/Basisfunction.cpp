@@ -265,6 +265,30 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 	evaluate(results, parPt, derivs, fromRight);
 }
 
+/************************************************************************************************************************//**
+ * \brief evaluates a trivariate B-spline
+ * \param results [out] Vector of all results. Upon function return contains (derivs+1)*(derivs+2)*(2*derivs+6)/12 evaluations of the B-spline
+ *                      itself and all possible cross-derivatives up to order derivs. These are ordered as 1,dx,dy,d2x,dxdy,dxdz,d2y,...
+ * \param u Parametric evaluation point 
+ * \param v Parametric evaluation point 
+ * \param w Parametric evaluation point 
+ * \param derivs Number of derivatives requested
+ * \param u_from_right Evaluate first parametric coordinate in the limit from the right
+ * \param v_from_right Evaluate second parametric coordinate in the limit from the right
+ * \param w_from_right Evaluate third parametric coordinate in the limit from the right
+ ***************************************************************************************************************************/
+void Basisfunction::evaluate(std::vector<double> &results, double u, double v, double w, int derivs, bool u_from_right, bool v_from_right, bool w_from_right) const {
+	std::vector<double> parPt(3);
+	std::vector<bool>   fromRight(3);
+	parPt[0] = u;
+	parPt[1] = v;
+	parPt[2] = w;
+	fromRight[0] = u_from_right;
+	fromRight[1] = v_from_right;
+	fromRight[2] = w_from_right;
+	evaluate(results, parPt, derivs, fromRight);
+}
+
 // funky recursive algorithm for collecting derivative results. Best illustrated by examples:
 // ordering for bivariate second derivatives:  1, dx,dy, d2x,dxdy,d2y
 // ordering for trivariate second derivatives: 1, dx,dy,dz, d2x,dxdy,dxdz,d2y,dydz,d2z

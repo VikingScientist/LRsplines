@@ -29,13 +29,6 @@ Element::Element(double start_u, double start_v, double stop_u, double stop_v) {
 	overloadCount = 0;
 }
 
-Element::Element(std::vector<double> &lowerLeft, std::vector<double> &upperRight) {
-	min.resize(lowerLeft.size());
-	max.resize(upperRight.size());
-	std::copy(lowerLeft.begin(),  lowerLeft.end(),  min.begin());
-	std::copy(upperRight.begin(), upperRight.end(), max.begin());
-}
-
 void Element::removeSupportFunction(Basisfunction *f) {
 	support_.erase(f);
 }
