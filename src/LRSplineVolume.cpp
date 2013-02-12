@@ -633,15 +633,16 @@ void LRSplineVolume::refineBasisFunction(int index) {
 	refineBasisFunction(tmp);
 }
 
-void LRSplineVolume::refineBasisFunction(std::vector<int> &indices) {
-	std::sort(indices.begin(), indices.end());
+void LRSplineVolume::refineBasisFunction(const std::vector<int> &indices) {
+	std::vector<int> sortedInd(indices);
+	std::sort(sortedInd.begin(), sortedInd.end());
 	std::vector<MeshRectangle*> newRects;
 
 	/* first retrieve all meshrects needed */
 	int ib = 0;
 	HashSet_iterator<Basisfunction*> it = basis_.begin();
-	for(uint i=0; i<indices.size(); i++) {
-		while(ib < indices[i]) {
+	for(uint i=0; i<sortedInd.size(); i++) {
+		while(ib < sortedInd[i]) {
 			++ib;
 			++it;
 		}

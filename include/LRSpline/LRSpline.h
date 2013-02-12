@@ -70,7 +70,7 @@ public:
 
 	// refinement functions
 	virtual void refineBasisFunction(int index) = 0;
-	virtual void refineBasisFunction(std::vector<int> &indices) = 0;
+	virtual void refineBasisFunction(const std::vector<int> &indices) = 0;
 	virtual void refineElement(int index) = 0;
 	virtual void refineElement(const std::vector<int> &indices) = 0;
 	virtual void refineByDimensionIncrease(const std::vector<double> &error, double beta) = 0;
@@ -85,6 +85,10 @@ public:
 		maxAspectRatio_ = r;
 		doAspectRatioFix_ = aposterioriFix;
 	}
+
+	// linear independence methods
+	virtual bool isLinearIndepByOverloading(  bool verbose) = 0;
+	virtual bool isLinearIndepByMappingMatrix(bool verbose) const = 0;
 
 	// input output methods
 	virtual void read(std::istream &is)         { };

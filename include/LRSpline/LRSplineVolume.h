@@ -46,7 +46,7 @@ public:
 	void refineElement(int index);
 	void refineElement(const std::vector<int> &indices);
 	void refineBasisFunction(int index);
-	void refineBasisFunction(std::vector<int> &indices);
+	void refineBasisFunction(const std::vector<int> &indices);
 	void refineByDimensionIncrease(const std::vector<double> &error, double beta);
 
 	// (private) refinement functions
@@ -64,7 +64,7 @@ public:
 
 	// linear independence methods
 	bool isLinearIndepByOverloading(bool verbose) ;
-	bool isLinearIndepByMappingMatrix(bool verbose) const ;
+	bool isLinearIndepByMappingMatrix(bool verbose) const { return true; };
 	bool isLinearIndepByFloatingPointMappingMatrix(bool verbose) const ;
 	void getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const ;
 
