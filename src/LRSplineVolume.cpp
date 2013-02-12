@@ -2085,7 +2085,7 @@ void LRSplineVolume::read(std::istream &is) {
 void LRSplineVolume::write(std::ostream &os) const {
 	generateIDs();
 	os << std::setprecision(16);
-	os << "# LRSPLINE\n";
+	os << "# LRSPLINE VOLUME\n";
 	os << "#\tp1\tp2\tp3\tNbasis\tNline\tNel\tdim\trat\n\t";
 	os << order_u_ << "\t";
 	os << order_v_ << "\t";

@@ -1977,7 +1977,7 @@ void LRSplineSurface::read(std::istream &is) {
 void LRSplineSurface::write(std::ostream &os) const {
 	generateIDs();
 	os << std::setprecision(16);
-	os << "# LRSPLINE\n";
+	os << "# LRSPLINE SURFACE\n";
 	os << "#\tp1\tp2\tNbasis\tNline\tNel\tdim\trat\n\t";
 	os << order_u_ << "\t";
 	os << order_v_ << "\t";
