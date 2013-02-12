@@ -22,8 +22,6 @@ int main(int argc, char **argv) {
 #endif
 
 	// set default parameter values
-	const double TOL = 1e-6;
-	const double max_n_linear_depence_testing = 1000;
 	int p1 = 3;
 	int p2 = 2;
 	int p3 = 4;
@@ -189,7 +187,7 @@ int main(int argc, char **argv) {
 	// ---------------- Do actual refinement   -----------------------
 	if(atOnce) {
 		vector<int> elIndex;
-		for(int i=0; i<parPt.size(); i++) {
+		for(uint i=0; i<parPt.size(); i++) {
 			if(vol)
 				elIndex.push_back(lrv->getElementContaining(parPt[i][0], parPt[i][1], parPt[i][2]) );
 			else 
@@ -198,7 +196,7 @@ int main(int argc, char **argv) {
 		if(vol) lrv->refineElement(elIndex);
 		else    lrs->refineElement(elIndex);
 	} else {
-		for(int i=0; i<parPt.size(); i++) {
+		for(uint i=0; i<parPt.size(); i++) {
 			if(vol) lrv->refineElement(lrv->getElementContaining(parPt[i][0], parPt[i][1], parPt[i][2]) );
 			else    lrs->refineElement(lrs->getElementContaining(parPt[i][0], parPt[i][1]) );
 		}

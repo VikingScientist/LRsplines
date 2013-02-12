@@ -1310,15 +1310,14 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 		double min = el->umin();
 		double max = el->umax();
 		while(knotU[++startU] < min);
-		// if(knotU[startU+order_u_-1] == min) startU++;
 		while(true) {
 			int p    = order_u_-1;
 			int newI = -1;
 			double z;
-			if(       knotU.size() < startU+order_u_   || knotU[startU+  order_u_-1] != min) {
+			if(       knotU.size() < (uint) startU+order_u_   || knotU[startU+  order_u_-1] != min) {
 				z    = min;
 				newI = startU;
-			} else if(knotU.size() < startU+2*order_u_ || knotU[startU+2*order_u_-1] != max ) {
+			} else if(knotU.size() < (uint) startU+2*order_u_ || knotU[startU+2*order_u_-1] != max ) {
 				z    = max;
 				newI = startU + order_u_;
 			} else {
@@ -1345,15 +1344,14 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 		min = el->vmin();
 		max = el->vmax();
 		while(knotV[++startV] < min);
-		// if(knotV[startV+order_v_-1] == min) startV++;
 		while(true) {
 			int p    = order_v_-1;
 			int newI = -1;
 			double z;
-			if(       knotV.size() < startV+order_v_   || knotV[startV+  order_v_-1] != min) {
+			if(       knotV.size() < (uint) startV+order_v_   || knotV[startV+  order_v_-1] != min) {
 				z    = min;
 				newI = startV;
-			} else if(knotV.size() < startV+2*order_v_ || knotV[startV+2*order_v_-1] != max ) {
+			} else if(knotV.size() < (uint) startV+2*order_v_ || knotV[startV+2*order_v_-1] != max ) {
 				z = max;
 				newI = startV + order_v_;
 			} else {
@@ -1380,15 +1378,14 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 		min = el->getParmin(2);
 		max = el->getParmax(2);
 		while(knotW[++startW] < min);
-		// if(knotW[startW+order_w_-1] == min) startW++;
 		while(true) {
 			int p    = order_w_-1;
 			int newI = -1;
 			double z;
-			if(       knotW.size() < startW+order_w_   || knotW[startW+  order_w_-1] != min) {
+			if(       knotW.size() < (uint) startW+order_w_   || knotW[startW+  order_w_-1] != min) {
 				z    = min;
 				newI = startW;
-			} else if(knotW.size() < startW+2*order_w_ || knotW[startW+2*order_w_-1] != max ) {
+			} else if(knotW.size() < (uint) startW+2*order_w_ || knotW[startW+2*order_w_-1] != max ) {
 				z = max;
 				newI = startW + order_w_;
 			} else {
@@ -2103,7 +2100,6 @@ void LRSplineVolume::write(std::ostream &os) const {
 	for(Basisfunction* b : basis_) 
 		os << *b << std::endl;
 	os << "# Mesh rectangles:\n";
-	int i=0;
 	for(MeshRectangle* m : meshrect_)
 		os << *m << std::endl;
 	os << "# Elements:\n";
