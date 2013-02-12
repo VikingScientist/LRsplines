@@ -450,13 +450,13 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 		int stopI=0;
 		int startJ=0;
 		int stopJ=0;
-		while((**it).knot_u_[startI] <= e->umin())
+		while((**it)[0][startI] <= e->umin())
 			startI++;
-		while((**it).knot_u_[stopI]  <  e->umax())
+		while((**it)[0][stopI]  <  e->umax())
 			stopI++;
-		while((**it).knot_v_[startJ] <= e->vmin())
+		while((**it)[1][startJ] <= e->vmin())
 			startJ++;
-		while((**it).knot_v_[stopJ]  <  e->vmax())
+		while((**it)[1][stopJ]  <  e->vmax())
 			stopJ++;
 
 		// min_du is defined as the minimum TOTAL knot span (of an entire basis function)
@@ -532,12 +532,12 @@ void LRSplineSurface::getStructMeshLines(int iBasis, std::vector<Meshline*>& lin
 	double max_du = 0;
 	double max_dv = 0;
 	for(int j=0; j<order_u_; j++) {
-		double du = b->knot_u_[j+1]-b->knot_u_[j];
+		double du = (*b)[0][j+1]-(*b)[0][j];
 		bool isZeroSpan =  MY_STUPID_FABS(du) < DOUBLE_TOL ;
 		max_du = (isZeroSpan || max_du>du) ? max_du : du;
 	}
 	for(int j=0; j<order_v_; j++) {
-		double dv = b->knot_v_[j+1]-b->knot_v_[j];
+		double dv = (*b)[1][j+1]-(*b)[1][j];
 		bool isZeroSpan =  MY_STUPID_FABS(dv) < DOUBLE_TOL ;
 		max_dv = (isZeroSpan || max_dv>dv) ? max_dv : dv;
 	}
@@ -545,14 +545,14 @@ void LRSplineSurface::getStructMeshLines(int iBasis, std::vector<Meshline*>& lin
 	// to keep as "square" basis function as possible, only insert
 	// into the largest knot spans
 	for(int j=0; j<order_u_; j++) {
-		double du = b->knot_u_[j+1]-b->knot_u_[j];
+		double du = (*b)[0][j+1]-(*b)[0][j];
 		if( MY_STUPID_FABS(du-max_du) < DOUBLE_TOL )
-			lines.push_back(new Meshline(false, (b->knot_u_[j] + b->knot_u_[j+1])/2.0, vmin, vmax,1));
+			lines.push_back(new Meshline(false, ((*b)[0][j] + (*b)[0][j+1])/2.0, vmin, vmax,1));
 	}
 	for(int j=0; j<order_v_; j++) {
-		double dv = b->knot_v_[j+1]-b->knot_v_[j];
+		double dv = (*b)[1][j+1]-(*b)[1][j];
 		if( MY_STUPID_FABS(dv-max_dv) < DOUBLE_TOL )
-			lines.push_back(new Meshline(true, (b->knot_v_[j] + b->knot_v_[j+1])/2.0, umin, umax,1));
+			lines.push_back(new Meshline(true, ((*b)[1][j] + (*b)[1][j+1])/2.0, umin, umax,1));
 	}
 }
 
@@ -622,7 +622,7 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 			b = basis_[i];
 			errors.push_back(IndexDouble(0.0, i));
 			for(int j=0; j<b->nSupportedElements(); j++) {
-				e = b->support_[j];
+				e = *(b->supportedElementBegin() + j);
 				errors[i].first += errPerElement[e->getId()];
 			}
 		}
@@ -1008,8 +1008,8 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 	// create the new functions b1 and b2
 	Basisfunction *b = basis_[function_index];
 	Basisfunction *b1, *b2;
-	double *knot = (insert_in_u) ? b->knot_u_  : b->knot_v_;
-	int     p    = (insert_in_u) ? b->order_u_ : b->order_v_;
+	std::vector<double> knot = (insert_in_u) ? (*b)[0]  : (*b)[1];
+	int     p                = (insert_in_u) ? order_u_ : order_v_;
 	int     insert_index = 0;
 	if(new_knot < knot[0] || knot[p] < new_knot)
 		return 0;
@@ -1018,15 +1018,15 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 	double alpha1 = (insert_index == p)  ? 1.0 : (new_knot-knot[0])/(knot[p-1]-knot[0]);
 	double alpha2 = (insert_index == 1 ) ? 1.0 : (knot[p]-new_knot)/(knot[p]-knot[1]);
 	double newKnot[p+2];
-	std::copy(knot, knot+p+1, newKnot+1);
+	std::copy(knot.begin(), knot.end(), newKnot+1);
 	newKnot[0] = new_knot;
 	std::sort(newKnot, newKnot + p+2);
 	if(insert_in_u) {
-		b1 = new Basisfunction(newKnot  , b->knot_v_, b->controlpoint_, b->dim_, b->order_u_, b->order_v_, b->weight_*alpha1);
-		b2 = new Basisfunction(newKnot+1, b->knot_v_, b->controlpoint_, b->dim_, b->order_u_, b->order_v_, b->weight_*alpha2);
+		b1 = new Basisfunction(newKnot  , (*b)[1].begin(), b->cp(), b->dim(), order_u_, order_v_, b->w()*alpha1);
+		b2 = new Basisfunction(newKnot+1, (*b)[1].begin(), b->cp(), b->dim(), order_u_, order_v_, b->w()*alpha2);
 	} else { // insert in v
-		b1 = new Basisfunction(b->knot_u_, newKnot  , b->controlpoint_, b->dim_, b->order_u_, b->order_v_, b->weight_*alpha1);
-		b2 = new Basisfunction(b->knot_u_, newKnot+1, b->controlpoint_, b->dim_, b->order_u_, b->order_v_, b->weight_*alpha2);
+		b1 = new Basisfunction((*b)[0].begin(), newKnot  , b->cp(), b->dim(), order_u_, order_v_, b->w()*alpha1);
+		b2 = new Basisfunction((*b)[0].begin(), newKnot+1, b->cp(), b->dim(), order_u_, order_v_, b->w()*alpha2);
 	}
 
 	// search for existing function (to make search local b1 and b2 is contained in the *el element)
@@ -1069,9 +1069,8 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 	if(b1) {
 		basis_.push_back(b1);
 		updateSupport(b1, b->supportedElementBegin(), b->supportedElementEnd());
-		b1->inheritPartialLine(b);
-		bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && b1->knot_u_[order_u_]!=new_knot) ||
-		                                               (!insert_in_u && b1->knot_v_[order_v_]!=new_knot)  );
+		bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && (*b1)[0][order_u_]!=new_knot) ||
+		                                               (!insert_in_u && (*b1)[1][order_v_]!=new_knot)  );
 		if(recursive_split)
 			newFunctions += split( insert_in_u, basis_.size()-1, new_knot, multiplicity-1);
 		else
@@ -1080,9 +1079,8 @@ int LRSplineSurface::split(bool insert_in_u, int function_index, double new_knot
 	if(b2) {
 		basis_.push_back(b2);
 		updateSupport(b2, b->supportedElementBegin(), b->supportedElementEnd());
-		b2->inheritPartialLine(b);
-		bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && b2->knot_u_[0]!=new_knot) ||
-		                                               (!insert_in_u && b2->knot_v_[0]!=new_knot)  );
+		bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && (*b2)[0][0]!=new_knot) ||
+		                                               (!insert_in_u && (*b2)[1][0]!=new_knot)  );
 		if(recursive_split)
 			newFunctions += split( insert_in_u, basis_.size()-1, new_knot, multiplicity-1);
 		else
@@ -1097,39 +1095,39 @@ void LRSplineSurface::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunction
 	for(uint i=0; i<basis_.size(); i++) {
 		switch(edge) {
 		case WEST       :
-			if(basis_[i]->knot_u_[order_u_-depth] == start_u_)
+			if((*basis_[i])[0][order_u_-depth] == start_u_)
 				edgeFunctions.push_back(basis_[i]);
 			break;
 		case EAST       :
-			if(basis_[i]->knot_u_[depth] == end_u_)
+			if((*basis_[i])[0][depth] == end_u_)
 				edgeFunctions.push_back(basis_[i]);
 			break;
 		case SOUTH      :
-			if(basis_[i]->knot_v_[order_v_-depth] == start_v_)
+			if((*basis_[i])[1][order_v_-depth] == start_v_)
 				edgeFunctions.push_back(basis_[i]);
 			break;
 		case NORTH      :
-			if(basis_[i]->knot_v_[depth] == end_v_)
+			if((*basis_[i])[1][depth] == end_v_)
 				edgeFunctions.push_back(basis_[i]);
 			break;
 		case SOUTH_WEST :
-			if(basis_[i]->knot_u_[order_u_-depth] == start_u_ &&
-			   basis_[i]->knot_v_[order_v_-depth] == start_v_)
+			if((*basis_[i])[0][order_u_-depth] == start_u_ &&
+			   (*basis_[i])[1][order_v_-depth] == start_v_)
 				edgeFunctions.push_back(basis_[i]);
 			break;
 		case SOUTH_EAST :
-			if(basis_[i]->knot_u_[depth]          == end_u_ &&
-			   basis_[i]->knot_v_[order_v_-depth] == start_v_)
+			if((*basis_[i])[0][depth]          == end_u_ &&
+			   (*basis_[i])[1][order_v_-depth] == start_v_)
 				edgeFunctions.push_back(basis_[i]);
 			break;
 		case NORTH_WEST :
-			if(basis_[i]->knot_u_[order_u_-depth] == start_u_ &&
-			   basis_[i]->knot_v_[depth]          == end_v_)
+			if((*basis_[i])[0][order_u_-depth] == start_u_ &&
+			   (*basis_[i])[1][depth]          == end_v_)
 				edgeFunctions.push_back(basis_[i]);
 			break;
 		case NORTH_EAST :
-			if(basis_[i]->knot_u_[depth] == end_u_ &&
-			   basis_[i]->knot_v_[depth] == end_v_)
+			if((*basis_[i])[0][depth] == end_u_ &&
+			   (*basis_[i])[1][depth] == end_v_)
 				edgeFunctions.push_back(basis_[i]);
 			break;
 		default:
@@ -1259,7 +1257,6 @@ bool LRSplineSurface::isLinearIndepByOverloading(bool verbose) {
 				i--;
 			}
 		}
-		int nOverloadedBasis = overloaded.size();
 		int nOverloadedElms  = singleElms.size() + multipleElms.size();
 		if(verbose) {
 			std::cout << "Iteration #"<< iterationCount << "\n";
@@ -1327,20 +1324,20 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 
 	for (int i = 0; i < nmb_bas; ++i) {
 		int startU, startV;
-		std::vector<double> locKnotU(basis_[i]->knot_u_, basis_[i]->knot_u_ + basis_[i]->order_u_+1);
-		std::vector<double> locKnotV(basis_[i]->knot_v_, basis_[i]->knot_v_ + basis_[i]->order_v_+1);
+		std::vector<double> locKnotU((*(basis_[i]))[0].begin(), (*(basis_[i]))[0].end());
+		std::vector<double> locKnotV((*(basis_[i]))[1].begin(), (*(basis_[i]))[1].end());
 		
 		for(startU=knots_u.size(); startU-->0; )
-			if(knots_u[startU] == basis_[i]->knot_u_[0]) break;
-		for(int j=0; j<basis_[i]->order_u_; j++) {
-			if(knots_u[startU] == basis_[i]->knot_u_[j]) startU--;
+			if(knots_u[startU] == (*basis_[i])[0][0]) break;
+		for(int j=0; j<order_u_; j++) {
+			if(knots_u[startU] == (*basis_[i])[0][j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
-			if(knots_v[startV] == basis_[i]->knot_v_[0]) break;
-		for(int j=0; j<basis_[i]->order_v_; j++) {
-			if(knots_v[startV] == basis_[i]->knot_v_[j]) startV--;
+			if(knots_v[startV] == (*basis_[i])[1][0]) break;
+		for(int j=0; j<order_v_; j++) {
+			if(knots_v[startV] == (*basis_[i])[1][j]) startV--;
 			else break;
 		}
 		startV++;
@@ -1508,20 +1505,20 @@ void LRSplineSurface::getNullSpace(std::vector<std::vector<boost::rational<long 
 
 	for (int i = 0; i < nmb_bas; ++i) {
 		int startU, startV;
-		std::vector<double> locKnotU(basis_[i]->knot_u_, basis_[i]->knot_u_ + basis_[i]->order_u_+1);
-		std::vector<double> locKnotV(basis_[i]->knot_v_, basis_[i]->knot_v_ + basis_[i]->order_v_+1);
+		std::vector<double> locKnotU((*(basis_[i]))[0].begin(), (*(basis_[i]))[0].end());
+		std::vector<double> locKnotV((*(basis_[i]))[1].begin(), (*(basis_[i]))[1].end());
 		
 		for(startU=knots_u.size(); startU-->0; )
-			if(knots_u[startU] == basis_[i]->knot_u_[0]) break;
-		for(int j=0; j<basis_[i]->order_u_; j++) {
-			if(knots_u[startU] == basis_[i]->knot_u_[j]) startU--;
+			if(knots_u[startU] == (*(basis_[i]))[0][0]) break;
+		for(int j=0; j<order_u_; j++) {
+			if(knots_u[startU] == (*(basis_[i]))[0][j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
-			if(knots_v[startV] == basis_[i]->knot_v_[0]) break;
-		for(int j=0; j<basis_[i]->order_v_; j++) {
-			if(knots_v[startV] == basis_[i]->knot_v_[j]) startV--;
+			if(knots_v[startV] == (*(basis_[i]))[1][0]) break;
+		for(int j=0; j<order_v_; j++) {
+			if(knots_v[startV] == (*(basis_[i]))[1][j]) startV--;
 			else break;
 		}
 		startV++;
@@ -1652,20 +1649,20 @@ bool LRSplineSurface::isLinearIndepByFloatingPointMappingMatrix(bool verbose) co
 
 	for (int i = 0; i < nmb_bas; ++i) {
 		int startU, startV;
-		std::vector<double> locKnotU(basis_[i]->knot_u_, basis_[i]->knot_u_ + basis_[i]->order_u_+1);
-		std::vector<double> locKnotV(basis_[i]->knot_v_, basis_[i]->knot_v_ + basis_[i]->order_v_+1);
+		std::vector<double> locKnotU((*(basis_[i]))[0].begin(), (*(basis_[i]))[0].end());
+		std::vector<double> locKnotV((*(basis_[i]))[1].begin(), (*(basis_[i]))[1].end());
 		
 		for(startU=knots_u.size(); startU-->0; )
-			if(knots_u[startU] == basis_[i]->knot_u_[0]) break;
-		for(int j=0; j<basis_[i]->order_u_; j++) {
-			if(knots_u[startU] == basis_[i]->knot_u_[j]) startU--;
+			if(knots_u[startU] == (*basis_[i])[0][0]) break;
+		for(int j=0; j<order_u_; j++) {
+			if(knots_u[startU] == (*basis_[i])[0][j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
-			if(knots_v[startV] == basis_[i]->knot_v_[0]) break;
-		for(int j=0; j<basis_[i]->order_v_; j++) {
-			if(knots_v[startV] == basis_[i]->knot_v_[j]) startV--;
+			if(knots_v[startV] == (*basis_[i])[1][0]) break;
+		for(int j=0; j<order_v_; j++) {
+			if(knots_v[startV] == (*basis_[i])[1][j]) startV--;
 			else break;
 		}
 		startV++;
@@ -1842,9 +1839,9 @@ double LRSplineSurface::makeIntegerKnots() {
 	for(uint i=0; i<basis_.size(); i++) {
 		b = basis_[i];
 		for(int j=0; j<order_u_+1; j++)
-			b->knot_u_[j] = floor(b->knot_u_[j]/scale + 0.5);
+			(*b)[0][j] = floor((*b)[0][j]/scale + 0.5);
 		for(int j=0; j<order_v_+1; j++)
-			b->knot_v_[j] = floor(b->knot_v_[j]/scale + 0.5);
+			(*b)[1][j] = floor((*b)[1][j]/scale + 0.5);
 	}
 	
 	// scale all LRSplineSurface values
@@ -1860,7 +1857,7 @@ void LRSplineSurface::getSupportElements(std::vector<int> &result, const std::ve
 	result.clear();
 	std::set<int> tmp;
 	std::vector<Element*>::iterator it;
-	for(int i=0; i<basisfunctions.size(); i++) {
+	for(uint i=0; i<basisfunctions.size(); i++) {
 		Basisfunction *b = basis_[basisfunctions[i]];
 		for(it=b->supportedElementBegin(); it != b->supportedElementEnd(); it++)
 			tmp.insert((**it).getId());
@@ -1881,7 +1878,7 @@ void LRSplineSurface::getDiagonalBasisfunctions(std::vector<int> &result) const 
 	for(uint i=0; i<basis_.size(); i++)  {
 		bool isDiag = true;
 		for(int j=0; j<order_u_+1; j++)
-			if(basis_[i]->knot_u_[j] != basis_[i]->knot_v_[j])
+			if((*basis_[i])[0][j] != (*basis_[i])[1][j])
 				isDiag = false;
 		if(isDiag)
 			result.push_back(i);
@@ -2115,7 +2112,7 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 	y[0] = 1e7;
 	y[1] = -1e7;
 	for(uint i=0; i<basis_.size(); i++) {
-		double *cp = basis_[i]->controlpoint_;
+		std::vector<double>::const_iterator cp = basis_[i]->cp();
 		x[0] = (cp[0] < x[0]) ? cp[0] : x[0];
 		x[1] = (cp[0] > x[1]) ? cp[0] : x[1];
 		y[0] = (cp[1] < y[0]) ? cp[1] : y[0];
@@ -2271,7 +2268,7 @@ void LRSplineSurface::writePostscriptMeshWithControlPoints(std::ostream &out, in
 	y[0] = 1e7;
 	y[1] = -1e7;
 	for(uint i=0; i<basis_.size(); i++) {
-		double *cp = basis_[i]->controlpoint_;
+		std::vector<double>::const_iterator cp = basis_[i]->cp();
 		x[0] = (cp[0] < x[0]) ? cp[0] : x[0];
 		x[1] = (cp[0] > x[1]) ? cp[0] : x[1];
 		y[0] = (cp[1] < y[0]) ? cp[1] : y[0];
@@ -2305,19 +2302,19 @@ void LRSplineSurface::writePostscriptMeshWithControlPoints(std::ostream &out, in
 	out << "setfont\n";
 
 	for(uint i=0; i<basis_.size(); i++) {
-		double cp_x = basis_[i]->controlpoint_[0];
-		double cp_y = basis_[i]->controlpoint_[1];
+		double cp_x = basis_[i]->cp(0);
+		double cp_y = basis_[i]->cp(1);
 		// move C^{-1} text on internal functions
-		int textX   = (basis_[i]->knot_u_[1] == basis_[i]->knot_u_[order_u_]) ? -2 : 1;
-		int textY   = (basis_[i]->knot_v_[1] == basis_[i]->knot_v_[order_v_]) ? -2 : 1;
+		int textX   = ((*basis_[i])[0][1] == (*basis_[i])[0][order_u_]) ? -2 : 1;
+		int textY   = ((*basis_[i])[1][1] == (*basis_[i])[1][order_v_]) ? -2 : 1;
 		// move text on edge functions
-		if(basis_[i]->knot_u_[1] == end_u_)
+		if((*basis_[i])[0][1] == end_u_)
 			textX = 1;
-		else if(basis_[i]->knot_u_[order_u_-1] == start_u_)
+		else if((*basis_[i])[0][order_u_-1] == start_u_)
 			textX = -2;
-		if(basis_[i]->knot_v_[1] == end_v_)
+		if((*basis_[i])[1][1] == end_v_)
 			textY = 1;
-		else if(basis_[i]->knot_v_[order_v_-1] == start_v_)
+		else if((*basis_[i])[1][order_v_-1] == start_v_)
 			textY = -2;
 
 		out << "newpath\n";
@@ -2347,8 +2344,8 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 	double max_du = 0;
 	double max_dv = 0;
 	for(uint i=0; i<basis_.size(); i++) {
-		double du    = basis_[i]->knot_u_[order_u_] - basis_[i]->knot_u_[0];
-		double dv    = basis_[i]->knot_v_[order_v_] - basis_[i]->knot_v_[0];
+		double du    = (*basis_[i])[0][order_u_] - (*basis_[i])[0][0];
+		double dv    = (*basis_[i])[1][order_v_] - (*basis_[i])[1][0];
 		max_du       = (max_du > du) ? max_du : du;
 		max_dv       = (max_dv > dv) ? max_dv : dv;
 	}
@@ -2379,27 +2376,27 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 	for(uint i=0; i<basis_.size(); i++) {
 		double avg_u = 0;
 		double avg_v = 0;
-		double du    = basis_[i]->knot_u_[order_u_] - basis_[i]->knot_u_[0];
-		double dv    = basis_[i]->knot_v_[order_v_] - basis_[i]->knot_v_[0];
+		double du    = (*basis_[i])[0][order_u_] - (*basis_[i])[0][0];
+		double dv    = (*basis_[i])[1][order_v_] - (*basis_[i])[1][0];
 
 		// move C^{-1} text on internal functions
 		double textOffset = 15.0;
-		int textX   = (basis_[i]->knot_u_[1] == basis_[i]->knot_u_[order_u_]) ? -2 : 1;
-		int textY   = (basis_[i]->knot_v_[1] == basis_[i]->knot_v_[order_v_]) ? -2 : 1;
+		int textX   = ((*basis_[i])[0][1] == (*basis_[i])[0][order_u_]) ? -2 : 1;
+		int textY   = ((*basis_[i])[1][1] == (*basis_[i])[1][order_v_]) ? -2 : 1;
 		// move text on edge functions
-		if(basis_[i]->knot_u_[1] == end_u_)
+		if((*basis_[i])[0][1] == end_u_)
 			textX = 1;
-		else if(basis_[i]->knot_u_[order_u_-1] == start_u_)
+		else if((*basis_[i])[0][order_u_-1] == start_u_)
 			textX = -2;
-		if(basis_[i]->knot_v_[1] == end_v_)
+		if((*basis_[i])[1][1] == end_v_)
 			textY = 1;
-		else if(basis_[i]->knot_v_[order_v_-1] == start_v_)
+		else if((*basis_[i])[1][order_v_-1] == start_v_)
 			textY = -2;
 
 		for(int j=1; j<order_u_; j++)
-			avg_u += basis_[i]->knot_u_[j];
+			avg_u += (*basis_[i])[0][j];
 		for(int j=1; j<order_v_; j++)
-			avg_v += basis_[i]->knot_v_[j];
+			avg_v += (*basis_[i])[1][j];
 		avg_u /= (order_u_-1);
 		avg_v /= (order_v_-1);
 

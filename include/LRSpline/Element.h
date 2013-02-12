@@ -43,8 +43,6 @@ public:
 	int incrementOverloadCount() { return overloadCount++; }
 	int getOverloadCount() const { return overloadCount;   }
 
-
-	void addPartialLine(Meshline *line);
 	void updateBasisPointers(std::vector<Basisfunction*> &basis) ;
 
 	virtual void read(std::istream &is);

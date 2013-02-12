@@ -28,7 +28,21 @@ class Basisfunction : public Go::Streamable {
 public:
 	// constructors
 	Basisfunction(int dim, int order_u, int order_v);
-	Basisfunction(const double *knot_u, const double *knot_v, double *controlpoint, int dim, int order_u, int order_v, double weight=1.0);
+	template <typename RandomIterator1,
+	          typename RandomIterator2,
+	          typename RandomIterator3>
+	Basisfunction(RandomIterator1 knot_u, RandomIterator2 knot_v, RandomIterator3 controlpoint, int dim, int order_u, int order_v, double weight=1.0) {
+		weight_       = weight ;
+		id_           = -1;
+		knots_.resize(2);
+		knots_[0].resize(order_u+1);
+		knots_[1].resize(order_v+1);
+		controlpoint_.resize(dim);
+
+		std::copy(knot_u,       knot_u       + order_u+1,   knots_[0].begin());
+		std::copy(knot_v,       knot_v       + order_v+1,   knots_[1].begin());
+		std::copy(controlpoint, controlpoint + dim,         controlpoint_.begin());
+	}
 	~Basisfunction();
 	Basisfunction* copy();
 
@@ -37,20 +51,16 @@ public:
 
 	bool operator==(const Basisfunction &other) const;
 	void operator+=(const Basisfunction &other) ;
+	std::vector<double>& operator[](int i) { return knots_[i]; } ;
 
 	bool overlaps(Element *el) const;
 	bool addSupport(Element *el) ;
 	bool removeSupport(Element *el) ;
 	std::vector<Element*>::iterator supportedElementBegin() ;
 	std::vector<Element*>::iterator supportedElementEnd() ;
-	std::vector<Meshline*>::iterator partialLineBegin() ;
-	std::vector<Meshline*>::iterator partialLineEnd() ;
 
 	std::vector<Element*> getExtendedSupport() ;
 	std::vector<Element*> getMinimalExtendedSupport();
-
-	void inheritPartialLine(Basisfunction *f);
-	void removePartialLine(Meshline *m);
 
 	bool isOverloaded() const;
 	int getOverloadCount() const;
@@ -62,36 +72,37 @@ public:
 	void setDimension(int dim)  ;
 	int getId() const   { return id_; };
 	int nSupportedElements() { return support_.size(); };
-	int nPartialLines() { return partial_line_.size(); };
-	double umin() const { return knot_u_[0];        };
-	double umax() const { return knot_u_[order_u_]; };
-	double vmin() const { return knot_v_[0];        };
-	double vmax() const { return knot_v_[order_v_]; };
-	int order_u() const { return order_u_; };
-	double *getknots_u() const {return knot_u_; };
-	int order_v() const { return order_v_; };
-	double *getknots_v() const {return knot_v_; };
+	double dim()  const { return controlpoint_.size(); };
+	double umin() const { return knots_[0][0];         };
+	double umax() const { return knots_[0].back();     };
+	double vmin() const { return knots_[1][0];         };
+	double vmax() const { return knots_[1].back();     };
+	int order_u() const { return knots_[0].size()-1;   };
+	int order_v() const { return knots_[1].size()-1;   };
+	std::vector<double>& getknots_u()              {return knots_[0]; };
+	std::vector<double>& getknots_v()              {return knots_[1]; };
+	std::vector<double>::iterator cp()             {return controlpoint_.begin(); };
+	std::vector<double>::const_iterator cp() const {return controlpoint_.begin(); };
+	double cp(int i)                         const {return controlpoint_[i]; };
+	double w()                               const {return weight_; };
 	Go::Point getGrevilleParameter() const;
-        double grevilleParameter(int index, int order, std::vector<double> knot) const;
-        void test(int index, int order, std::vector<double> knot){std::cout << "test" <<std::endl;};
+
+	double grevilleParameter(int index, int order, std::vector<double> knot) const;
+	void test(int index, int order, std::vector<double> knot){std::cout << "test" <<std::endl;};
+
 	// IO-functions
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
 
-// private:
+private:
 
-	double *knot_u_;
-	double *knot_v_;
-	double *controlpoint_;
+	std::vector<std::vector<double> > knots_;
+	std::vector<double> controlpoint_;
 	int dim_;
-	int order_u_;
-	int order_v_;
 	double weight_;
 	std::vector<Element*> support_;
-	std::vector<Meshline*> partial_line_;
 	int id_;
 	int order_;
-	std::vector<double> knots_;
 
 };
 

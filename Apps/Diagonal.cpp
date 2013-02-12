@@ -155,19 +155,13 @@ int main(int argc, char **argv) {
 	double avgBasisToLine    = 0;
 	int maxBasisToElement    = -1;
 	int minBasisToElement    = 9999999;
-	int maxBasisToLine       = -1;
-	int minBasisToLine       = 9999999;
 	int nOverloadedElms      = 0;
 	int nOverloadedBasis     = 0;
 	for(bit=lr.basisBegin(); bit!=lr.basisEnd(); bit++) {
 		int nE = (*bit)->nSupportedElements();
-		int nL = (*bit)->nPartialLines();
 		maxBasisToElement = (maxBasisToElement > nE) ? maxBasisToElement : nE;
 		minBasisToElement = (minBasisToElement < nE) ? minBasisToElement : nE;
 		avgBasisToElement += nE;
-		maxBasisToLine = (maxBasisToLine > nL) ? maxBasisToLine : nL;
-		minBasisToLine = (minBasisToLine < nL) ? minBasisToLine : nL;
-		avgBasisToLine += nL;
 		if((*bit)->isOverloaded()) {
 			nOverloadedBasis++;
 			overloadedBasis.push_back((*bit)->getId());
@@ -207,10 +201,6 @@ int main(int argc, char **argv) {
 	cout << "Min number of Basisfuntion -> Element: " << minBasisToElement << endl;
 	cout << "Max number of Basisfuntion -> Element: " << maxBasisToElement << endl;
 	cout << "Avg number of Basisfuntion -> Element: " << avgBasisToElement << endl;
-	cout << endl;
-	cout << "Min number of Basisfuntion -> Meshline: " << minBasisToLine << endl;
-	cout << "Max number of Basisfuntion -> Meshline: " << maxBasisToLine << endl;
-	cout << "Avg number of Basisfuntion -> Meshline: " << avgBasisToLine << endl;
 	cout << endl;
 	cout << "Min number of        Element -> Basisfunction: " << minElementToBasis  << endl;
 	cout << "Max number of        Element -> Basisfunction: " << maxElementToBasis  << endl;

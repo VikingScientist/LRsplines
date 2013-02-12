@@ -66,12 +66,12 @@ void Meshline::removePartialTouch(Basisfunction *basis) {
 int Meshline::nKnotsIn(Basisfunction *basis) const {
 	int hits = 0;
 	if(span_u_line_) {
-		for(int i=0; i<=basis->order_v_; i++)
-			if( MY_STUPID_FABS(basis->knot_v_[i] - const_par_) < DOUBLE_TOL )
+		for(int i=0; i<=basis->order_v(); i++)
+			if( MY_STUPID_FABS((*basis)[1][i] - const_par_) < DOUBLE_TOL )
 				hits++;
 	} else { // span-v_line
-		for(int i=0; i<=basis->order_u_; i++)
-			if( MY_STUPID_FABS(basis->knot_u_[i] - const_par_) < DOUBLE_TOL)
+		for(int i=0; i<=basis->order_u(); i++)
+			if( MY_STUPID_FABS((*basis)[0][i] - const_par_) < DOUBLE_TOL)
 				hits++;
 	}
 	return hits;
@@ -105,12 +105,12 @@ bool Meshline::splits(Element *el) const {
 
 bool Meshline::touches(Basisfunction *basis) const {
 	if(span_u_line_) {
-		if( basis->knot_v_[0] < const_par_ && const_par_ < basis->knot_v_[basis->order_v_] &&
-		   (start_ < basis->knot_u_[basis->order_u_]  || basis->knot_u_[0] < stop_))
+		if( (*basis)[1][0] < const_par_ && const_par_ < (*basis)[1][basis->order_v()] &&
+		   (start_ < (*basis)[0][basis->order_u()]  || (*basis)[0][0] < stop_))
 			return true;
 	} else { // span-v line
-		if( basis->knot_u_[0] < const_par_ && const_par_ < basis->knot_u_[basis->order_u_] &&
-		   (start_ < basis->knot_v_[basis->order_v_]  || basis->knot_v_[0] < stop_))
+		if( (*basis)[0][0] < const_par_ && const_par_ < (*basis)[0][basis->order_u()] &&
+		   (start_ < (*basis)[1][basis->order_v()]  || (*basis)[1][0] < stop_))
 			return true;
 	}
 	return false;
@@ -118,12 +118,12 @@ bool Meshline::touches(Basisfunction *basis) const {
 
 bool Meshline::splits(Basisfunction *basis) const {
 	if(span_u_line_) {
-		if( basis->knot_v_[0] < const_par_ && const_par_ < basis->knot_v_[basis->order_v_] &&
-		    start_ <= basis->knot_u_[0]  && basis->knot_u_[basis->order_u_] <= stop_)
+		if( (*basis)[1][0] < const_par_ && const_par_ < (*basis)[1][basis->order_v()] &&
+		    start_ <= (*basis)[0][0]  && (*basis)[0][basis->order_u()] <= stop_)
 			return  true;
 	} else { // span-v line
-		if( basis->knot_u_[0] < const_par_ && const_par_ < basis->knot_u_[basis->order_u_] &&
-		    start_ <= basis->knot_v_[0]  && basis->knot_v_[basis->order_v_] <= stop_)
+		if( (*basis)[0][0] < const_par_ && const_par_ < (*basis)[0][basis->order_u()] &&
+		    start_ <= (*basis)[1][0]  && (*basis)[1][basis->order_v()] <= stop_)
 			return  true;
 	}
 	return false;

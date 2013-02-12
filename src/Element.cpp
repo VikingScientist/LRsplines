@@ -100,13 +100,6 @@ Element* Element::split(bool split_u, double par_value) {
 	return newElement;
 }
 
-void Element::addPartialLine(Meshline *line) {
-	for(uint i=0; i<support_.size(); i++) {
-		if(line->touches(support_[i]))
-			support_[i]->addPartialLine(line);
-	}
-}
-
 void Element::updateBasisPointers(std::vector<Basisfunction*> &basis) {
 	for(uint i=0; i<support_ids_.size(); i++) {
 		// add pointer from Element to Basisfunction
