@@ -32,13 +32,13 @@ ENDIF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
 ENABLE_TESTING()
 
 # Required packages
-FIND_PACKAGE(GoTools REQUIRED)
 FIND_PACKAGE(GoTrivariate REQUIRED)
+FIND_PACKAGE(GoTools REQUIRED)
 FIND_PACKAGE(Boost REQUIRED)
 
 # Required libraries
-SET(DEPLIBS ${GoTools_LIBRARIES}
-            ${GoTrivariate_LIBRARIES}
+SET(DEPLIBS ${GoTrivariate_LIBRARIES}
+            ${GoTools_LIBRARIES}
             ${BOOST_LIBRARIES})
 
 # Required include directories
@@ -84,6 +84,9 @@ TARGET_LINK_LIBRARIES(TestReadWrite LRSpline ${DEPLIBS})
 
 ADD_EXECUTABLE(Diagonal ${PROJECT_SOURCE_DIR}/Apps/Diagonal.cpp)
 TARGET_LINK_LIBRARIES(Diagonal LRSpline ${DEPLIBS})
+
+ADD_EXECUTABLE(MakeWaterfall ${PROJECT_SOURCE_DIR}/Apps/MakeWaterfall.cpp)
+TARGET_LINK_LIBRARIES(MakeWaterfall LRSpline ${DEPLIBS})
 
 ADD_EXECUTABLE(LinearIndep ${PROJECT_SOURCE_DIR}/Apps/LinearIndep.cpp)
 TARGET_LINK_LIBRARIES(LinearIndep LRSpline ${DEPLIBS})

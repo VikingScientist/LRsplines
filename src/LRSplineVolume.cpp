@@ -9,7 +9,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <boost/rational.hpp>
 #include <cfloat>
 #include <cmath>
 
@@ -972,6 +971,7 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 			} else {
 				std::cerr << "Haven't fixed overlapping, nonequal meshrectangles yet\n";
 				std::cerr << "Just works with brand new shiny rectangles\n";
+				return NULL;
 				exit(54023993);
 			}
 		}

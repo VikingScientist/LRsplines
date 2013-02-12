@@ -3,13 +3,14 @@
 
 #include <vector>
 #include <GoTools/utils/Point.h>
-#include <GoTools/geometry/Streamable.h>
-#include <GoTools/trivariate/SplineVolume.h>
 #include <boost/rational.hpp>
+#include <GoTools/trivariate/SplineVolume.h>
 #include "LRSpline.h"
 #include "HashSet.h"
-#include "Basisfunction.h"
-#include "LRSplineSurface.h"
+
+namespace Go {
+	class SplineVolume;
+}
 
 namespace LR {
 
