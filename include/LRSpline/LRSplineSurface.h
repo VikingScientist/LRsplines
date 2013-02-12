@@ -94,6 +94,7 @@ public:
 	// common get methods
 	void getGlobalKnotVector      (std::vector<double> &knot_u, std::vector<double> &knot_v) const;
 	void getGlobalUniqueKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const;
+        void getBezierElement         (int iEl, std::vector<double> &controlPoints)              const;
 	//void change_coefs(std::vector<double> coefs);
 	virtual double startparam_u() const                { return start_u_; };
 	virtual double startparam_v() const                { return start_v_; };

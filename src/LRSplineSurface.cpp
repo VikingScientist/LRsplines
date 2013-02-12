@@ -27,6 +27,9 @@ namespace LR {
 #define MY_STUPID_FABS(x) (((x)>0)?(x):-(x))
 
 
+/************************************************************************************************************************//**
+ * \brief Default constructor. Creates an empty LRSplineSurface object
+ ***************************************************************************************************************************/
 LRSplineSurface::LRSplineSurface() {
 	rational_ = false;
 	dim_      = 0;
@@ -56,6 +59,10 @@ LRSplineSurface::LRSplineSurface() {
 	selected_basis_blue   = 0.05;
 }
 
+/************************************************************************************************************************//**
+ * \brief Copy constructor. Creates an LRSplineSurface representation from a Go::SplineSurface one
+ * \param surf The SplineSurface to copy
+ ***************************************************************************************************************************/
 LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
@@ -128,6 +135,18 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 }
 
 
+/************************************************************************************************************************//**
+ * \brief Constructor. Creates a tensor product LRSplineSurface. Same signature as Go::SplineSurface constructor
+ * \param n1 The number of basisfunctions in the first parametric direction
+ * \param n2 The number of basisfunctions in the second parametric direction
+ * \param order_u The order (polynomial degree + 1) in the first parametric direction
+ * \param order_v The order (polynomial degree + 1) in the second parametric direction
+ * \param knot_u The first knot vector consisting of n1+order_u elements
+ * \param knot_v The second knot vector consisting of n2+order_v elements
+ * \param coef Pointer to a list of n1*n2 control points describing the surface
+ * \param dim The number of components of the control points, 2 for plane geometries, 3 for surfaces in 3D space 
+ * \param rational True if this is a NURBS surface. If so, the last component of the control points is treated as the weight
+ ***************************************************************************************************************************/
 LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v, double *coef, int dim, bool rational) {
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
@@ -194,6 +213,11 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 		updateSupport(b);
 }
 
+/************************************************************************************************************************//**
+ * \brief Destructor. Frees up all memory consumed by this LRSplineSurface
+ * \details This deletes all Basisfunction, Element and Meshline used by this class. All pointers to these objects are 
+ *          rendered invalid
+ ***************************************************************************************************************************/
 LRSplineSurface::~LRSplineSurface() {
 	for(Basisfunction* b : basis_)
 		delete b;
@@ -204,6 +228,10 @@ LRSplineSurface::~LRSplineSurface() {
 }
 
 
+/************************************************************************************************************************//**
+ * \brief Takes a deep copy of the LRSplineSurface
+ * \returns A deep copy, where all Basisfunction, Element and Meshline are also copied
+ ***************************************************************************************************************************/
 LRSplineSurface* LRSplineSurface::copy() const {
 	generateIDs();
 
@@ -243,6 +271,15 @@ LRSplineSurface* LRSplineSurface::copy() const {
 	return returnvalue;
 }
 
+/************************************************************************************************************************//**
+ * \brief Evaluate the surface at a point (u,v)
+ * \param[out] pt The result, i.e. the parametric surface mapped to physical space
+ * \param u The u-coordinate on which to evaluate the surface
+ * \param v The v-coordinate on which to evaluate the surface
+ * \param iEl The element index which this point is contained in. If used will speed up computational efficiency
+ * \param u_from_right True if first coordinate should be evaluated in the limit from the right 
+ * \param v_from_right True if second coordinate should be evaluated in the limit from the right 
+ ***************************************************************************************************************************/
 void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl, bool u_from_right, bool v_from_right) const {
 	Go::Point cp;
 	double basis_ev;
@@ -259,6 +296,13 @@ void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl, bool u_f
 	
 }
 
+/************************************************************************************************************************//**
+ * \brief Evaluate the surface at a point (u,v)
+ * \param[out] pt The result, i.e. the parametric surface mapped to physical space
+ * \param u The u-coordinate on which to evaluate the surface
+ * \param v The v-coordinate on which to evaluate the surface
+ * \param iEl The element index which this point is contained in. If used will speed up computational efficiency
+ ***************************************************************************************************************************/
 void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl) const {
 	Go::Point cp;
 	double basis_ev;
@@ -277,6 +321,16 @@ void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl) const {
 	
 }
 
+/************************************************************************************************************************//**
+ * \brief Evaluate the surface and its derivatives at a point (u,v)
+ * \param[out] pts The result, i.e. the parametric surface as well as all parametric derivatives
+ * \param u The u-coordinate on which to evaluate the surface
+ * \param v The v-coordinate on which to evaluate the surface
+ * \param derivs The number of derivatives requested
+ * \param iEl The element index which this point is contained in. If used it will speed up computational efficiency
+ * \details Pts is a vector where the first element is the values themselves, the next two is the first derivatives du and dv.
+ *          The next three is the second derivatives in order d2u, dudv and d2v. The next four are in order d3u, d2udv, dvd2u and d3v.
+ ***************************************************************************************************************************/
 void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int derivs, int iEl) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("Point()");
@@ -301,6 +355,16 @@ void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int
 	}
 }
 
+/************************************************************************************************************************//**
+ * \brief Compute all basis functions at a parametric point (u,v)
+ * \param param_u The u-coordinate on which to evaluate the surface
+ * \param param_v The v-coordinate on which to evaluate the surface
+ * \param[out] result All basis functions as well as parametric derivatives up to second order
+ * \param iEl The element index which this point is contained in. If used it will speed up computational efficiency
+ * \details If iEl is used, the result will contain the values of all Basisfunction active on that element (with nonzero values).
+ *          If iEl is not used, then result will contain all Basisfunction in the entire LRSplineSurface object, with easier
+ *          access through indexing, but will contain a lot of zeros.
+ ***************************************************************************************************************************/
 void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDerivsSf2 & result, int iEl ) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("computeBasis()");
@@ -327,6 +391,16 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 	}
 }
 
+/************************************************************************************************************************//**
+ * \brief Compute all basis functions at a parametric point (u,v)
+ * \param param_u The u-coordinate on which to evaluate the surface
+ * \param param_v The v-coordinate on which to evaluate the surface
+ * \param[out] result All basis functions as well as parametric derivatives up to first order
+ * \param iEl The element index which this point is contained in. If used it will speed up computational efficiency
+ * \details If iEl is used, the result will contain the values of all Basisfunction active on that element (with nonzero values).
+ *          If iEl is not used, then result will contain all Basisfunction in the entire LRSplineSurface object, with easier
+ *          access through indexing, but will contain a lot of zeros.
+ ***************************************************************************************************************************/
 void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDerivsSf & result, int iEl ) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("computeBasis()");
@@ -348,7 +422,16 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 	}
 }
 
-
+/************************************************************************************************************************//**
+ * \brief Compute all basis functions at a parametric point (u,v)
+ * \param param_u The u-coordinate on which to evaluate the surface
+ * \param param_v The v-coordinate on which to evaluate the surface
+ * \param[out] result All basis functions evaluated at this particular parametric point
+ * \param iEl The element index which this point is contained in. If used it will speed up computational efficiency
+ * \details If iEl is used, the result will contain the values of all Basisfunction active on that element (with nonzero values).
+ *          If iEl is not used, then result will contain all Basisfunction in the entire LRSplineSurface object, with easier
+ *          access through indexing, but will contain a lot of zeros.
+ ***************************************************************************************************************************/
 void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsSf & result, int iEl ) const {
 	HashSet_const_iterator<Basisfunction*> it, itStop, itStart;
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->constSupportBegin();
@@ -361,6 +444,18 @@ void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsS
 		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_u!=end_u_, param_v!=end_v_);
 }
 
+/************************************************************************************************************************//**
+ * \brief Compute all basis functions as well as an arbitrary number of derivatives at the parametric point (u,v)
+ * \param param_u The u-coordinate on which to evaluate the surface
+ * \param param_v The v-coordinate on which to evaluate the surface
+ * \param[out] result All basis functions and derivatives of all Basisfunction
+ * \param derivs The number of derivatives requested
+ * \param iEl The element index which this point is contained in. If used it will speed up computational efficiency
+ * \details If iEl is used, the result will contain the values of all Basisfunction active on that element (with nonzero values).
+ *          If iEl is not used, then result will contain all Basisfunction in the entire LRSplineSurface object, with easier
+ *          access through indexing, but will contain a lot of zeros. The derivatives are sorted in the following 1, du, dv,
+ *          d2u, dudv, d2v, d3u, d2udv, dud2v, d3v, ...
+ ***************************************************************************************************************************/
 void LRSplineSurface::computeBasis (double param_u,
                                     double param_v,
                                     std::vector<std::vector<double> >& result,
@@ -380,6 +475,13 @@ void LRSplineSurface::computeBasis (double param_u,
 
 }
 
+/************************************************************************************************************************//**
+ * \brief Get the element index of the element containing the parametric point (u,v)
+ * \param u The u-coordinate 
+ * \param v The v-coordinate
+ * \return The index of the element which contains (u,v)
+ * \details This is done by a linear search and with the number of elements equal to n, the complexity is O(n)
+ ***************************************************************************************************************************/
 int LRSplineSurface::getElementContaining(double u, double v) const {
 	for(uint i=0; i<element_.size(); i++)
 		if(element_[i]->umin() <= u && element_[i]->vmin() <= v) 
@@ -390,6 +492,14 @@ int LRSplineSurface::getElementContaining(double u, double v) const {
 	return -1;
 }
 
+/************************************************************************************************************************//**
+ * \brief Used in refinement, get the minimum span meshlines that will split at least one Basisfunction on this element
+ * \param iEl The element to refine
+ * \param[out] lines If the width/height ratio of the element is large, one Meshline is added to the list, if not then two 
+ *                   lines will be added to the list
+ * \details The minimum span picks the Basisfunction with the smallest parametric support and uses this as a length measure.
+ *          If several Basisfunction have equally small support, it will pick the one centered the most around the given element
+ ***************************************************************************************************************************/
 void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 	Element *e = element_[iEl];
 	double umin = e->umin();
@@ -464,6 +574,14 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 
 }
 
+/************************************************************************************************************************//**
+ * \brief Used in refinement, get the full span meshlines that will split all Basisfunction on this element
+ * \param iEl The element to refine
+ * \param[out] lines If the width/height ratio of the element is large, one Meshline is added to the list, if not then two 
+ *                   lines will be added to the list
+ * \details The fullspan will iterate over all Basisfunction with support on this element, and use the union of their support
+ *          when deciding the Meshline length.
+ ***************************************************************************************************************************/
 void LRSplineSurface::getFullspanLines(int iEl, std::vector<Meshline*>& lines) {
 	Element *e = element_[iEl];
 	double umin = e->umin();
@@ -486,6 +604,14 @@ void LRSplineSurface::getFullspanLines(int iEl, std::vector<Meshline*>& lines) {
 		lines.push_back(new Meshline(false, (e->umin() + e->umax())/2.0, vmin, vmax, 1));
 }
 
+/************************************************************************************************************************//**
+ * \brief Used in refinement, get the structured mesh meshlines that will split all Element of one Basisfunction
+ * \param iBasis The Basisfunction to refine
+ * \param[out] lines An unknown number of lines will be added to the list.
+ * \details The structured mesh will find the largest knot span (say W) given in the local knot vector, and use W/2 as the
+ *          new element sizes. It will insert new lines such that no element is larger than W/2. If any elements or local knot
+ *          spans are smaller than W/2, these remain untouched.
+ ***************************************************************************************************************************/
 void LRSplineSurface::getStructMeshLines(int iBasis, std::vector<Meshline*>& lines) {
 	Basisfunction *b = getBasisfunction(iBasis);
 	double umin = b->getParmin(0);
@@ -521,11 +647,23 @@ void LRSplineSurface::getStructMeshLines(int iBasis, std::vector<Meshline*>& lin
 	}
 }
 
+/************************************************************************************************************************//**
+ * \brief Refine one Basisfunction 
+ * \param index The Basisfunction to refine
+ * \details This will refine a basisfunction in accordance with the structured mesh rules
+ ***************************************************************************************************************************/
 void LRSplineSurface::refineBasisFunction(int index) {
 	std::vector<int> tmp = std::vector<int>(1, index);
 	refineBasisFunction(tmp);
 }
 
+/************************************************************************************************************************//**
+ * \brief Refine several Basisfunction 
+ * \param indices The Basisfunction to refine
+ * \details This will refine a basisfunction in accordance with the structured mesh rules. Note that the length of all lines
+ *          will be precomputed before any of them are inserted. This means that you will get a different result from calling 
+ *          this function, rather than calling refineBasisFunction(int) several times.
+ ***************************************************************************************************************************/
 void LRSplineSurface::refineBasisFunction(const std::vector<int> &indices) {
 	std::vector<Meshline*> newLines;
 
@@ -547,11 +685,24 @@ void LRSplineSurface::refineBasisFunction(const std::vector<int> &indices) {
 		delete newLines[i];
 }
 
+/************************************************************************************************************************//**
+ * \brief Refine one Element
+ * \param index The Element to refine
+ * \details This will refine an Element in accordance with the strategy set by setRefStrat() (i.e. either fullspan or minspan)
+ ***************************************************************************************************************************/
 void LRSplineSurface::refineElement(int index) {
 	std::vector<int> tmp = std::vector<int>(1, index);
 	refineElement(tmp);
 }
 
+/************************************************************************************************************************//**
+ * \brief Refine several Elements
+ * \param indices The Basisfunction to refine
+ * \details This will refine a basisfunction in accordance with the structured mesh rules. Note that the length of all lines
+ * \details This will refine some Elements in accordance with the strategy set by setRefStrat() (i.e. either fullspan or minspan)
+ *          Note that the length of all lines will be precomputed before any of them are inserted. This means that you will get
+ *          a different result from calling this function, rather than calling refineElement(int) several times.
+ ***************************************************************************************************************************/
 void LRSplineSurface::refineElement(const std::vector<int> &indices) {
 	std::vector<Meshline*> newLines;
 
@@ -1844,6 +1995,95 @@ void LRSplineSurface::getDiagonalBasisfunctions(std::vector<int> &result) const 
 		if(isDiag)
 			result.push_back(i);
 		i++;
+	}
+}
+
+void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoints) const {
+	controlPoints.clear();
+	controlPoints.resize(order_u_*order_v_*dim_, 0);
+	Element *el = element_[iEl];
+	for(Basisfunction* b : el->support()) {
+		std::vector<double> knotU((*b)[0].begin(), (*b)[0].end() );
+		std::vector<double> knotV((*b)[1].begin(), (*b)[1].end() );
+		int startU=-1;
+		int startV=-1;
+
+		std::vector<double> rowU(1,1), rowV(1,1);
+
+		double min = el->umin();
+		double max = el->umax();
+		while(knotU[++startU] < min);
+		while(true) {
+			int p    = order_u_-1;
+			int newI = -1;
+			double z;
+			if(       knotU.size() < (uint) startU+order_u_   || knotU[startU+  order_u_-1] != min) {
+				z    = min;
+				newI = startU;
+			} else if(knotU.size() < (uint) startU+2*order_u_ || knotU[startU+2*order_u_-1] != max ) {
+				z    = max;
+				newI = startU + order_u_;
+			} else {
+				break;
+			}
+		      
+			std::vector<double> newRowU(rowU.size()+1, 0);
+			for(uint k=0; k<rowU.size(); k++) {
+				#define U(x) ( knotU[x+k] )
+				if(z < U(0) || z > U(p+1)) {
+					newRowU[k] = rowU[k];
+					continue;
+				}
+				double alpha1 = (U(p) <=  z  ) ? 1 : double(   z    - U(0)) / (  U(p)  - U(0));
+				double alpha2 = (z    <= U(1)) ? 1 : double( U(p+1) - z   ) / ( U(p+1) - U(1));
+				newRowU[k]   += rowU[k]*alpha1;
+				newRowU[k+1] += rowU[k]*alpha2;
+				#undef U
+			}
+			knotU.insert(knotU.begin()+newI, z);
+			rowU = newRowU;
+		}
+	
+		min = el->vmin();
+		max = el->vmax();
+		while(knotV[++startV] < min);
+		while(true) {
+			int p    = order_v_-1;
+			int newI = -1;
+			double z;
+			if(       knotV.size() < (uint) startV+order_v_   || knotV[startV+  order_v_-1] != min) {
+				z    = min;
+				newI = startV;
+			} else if(knotV.size() < (uint) startV+2*order_v_ || knotV[startV+2*order_v_-1] != max ) {
+				z = max;
+				newI = startV + order_v_;
+			} else {
+				break;
+			}
+		      
+			std::vector<double> newRowV(rowV.size()+1, 0);
+			for(uint k=0; k<rowV.size(); k++) {
+				#define V(x) ( knotV[x+k] )
+				if(z < V(0) || z > V(p+1)) {
+					newRowV[k] = rowV[k];
+					continue;
+				}
+				double alpha1 = (V(p) <=  z  ) ? 1 : double(   z    - V(0)) / (  V(p)  - V(0));
+				double alpha2 = (z    <= V(1)) ? 1 : double( V(p+1) - z   ) / ( V(p+1) - V(1));
+				newRowV[k]   += rowV[k]*alpha1;
+				newRowV[k+1] += rowV[k]*alpha2;
+				#undef V
+			}
+			knotV.insert(knotV.begin()+newI, z);
+			rowV = newRowV;
+		}
+		
+		int ip = 0;
+		for(int v=startV; v<startV+order_v_; v++)
+			for(int u=startU; u<startU+order_u_; u++)
+				for(int d=0; d<dim_; d++)
+					controlPoints[ip++] += b->cp()[d]*rowU[u]*rowV[v]*b->w();
+
 	}
 }
 
