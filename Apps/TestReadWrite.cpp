@@ -5,6 +5,7 @@
 #include "LRSpline/LRSplineSurface.h"
 #include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/MeshRectangle.h"
+#include "LRSpline/Meshline.h"
 #include "LRSpline/Profiler.h"
 #include "LRSpline/Element.h"
 
@@ -154,5 +155,29 @@ int main(int argc, char **argv) {
 	if(vol) lrfile2 << inputSplineVol  << endl;
 	else    lrfile2 << inputSplineSurf << endl;
 	lrfile2.close();
+
+	// take a (deep) copy, screw up the original and write the copied LR spline
+	// should remain unchanged if it is a proper deep copy
+	ofstream lrfile3;
+	ofstream lrfile4;
+	lrfile3.open("TestReadWrite3.lr");
+	lrfile4.open("TestReadWrite4.lr"); // this SHOULD be different from 1-3. Reg test shouldn't check against this one
+	if(vol) {
+		LRSplineVolume *copyVol = lrv->copy();
+		lrv->getBasisfunction(0)->getknots(0)[0] = -99999;
+		lrv->getElement(0)->setUmin(               -99999);
+		lrv->getMeshRectangle(0)->start_[0]      = -99999;
+		lrfile3 << *copyVol << endl;
+		lrfile4 << *lrv << endl;
+	} else {
+		LRSplineSurface *copySurf = lrs->copy();
+		lrs->getBasisfunction(0)->getknots(0)[0] = -99999;
+		lrs->getElement(0)->setUmin(               -99999);
+		(*lrs->meshlineBegin())->start_          = -99999;
+		lrfile3 << *copySurf << endl;
+		lrfile4 << *lrs << endl;
+	}
+	lrfile3.close();
+
 }
 
