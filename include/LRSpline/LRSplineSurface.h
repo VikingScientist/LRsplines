@@ -96,8 +96,6 @@ public:
 		for(int i=0; i<iBasis; ++i) ++it;
 		return *it;
 	}
-	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;
-	
 
 	// assorted specialized functions
 	void set_dim(int dimvalue)                         {dim_ = dimvalue;};

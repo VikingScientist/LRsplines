@@ -1113,33 +1113,6 @@ void LRSplineVolume::split(int constDir, Basisfunction *b, double new_knot, int 
 	}
 }
 
-void LRSplineVolume::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth) const {
-	edgeFunctions.clear();
-	for(Basisfunction *b : basis_) {
-		bool ok = true;
-		if( edge & WEST )
-			if((*b)[0][order_[0]-depth] != start_[0]) 
-				ok = false;
-		if( edge & EAST )
-			if((*b)[0][depth] != end_[0]) 
-				ok = false;
-		if( edge & SOUTH )
-			if((*b)[1][order_[1]-depth] != start_[1]) 
-				ok = false;
-		if( edge & NORTH )
-			if((*b)[1][depth] != end_[1]) 
-				ok = false;
-		if( edge & BOTTOM )
-			if((*b)[2][order_[2]-depth] != start_[2]) 
-				ok = false;
-		if( edge & TOP )
-			if((*b)[2][depth] != end_[0]) 
-				ok = false;
-
-		if(ok)
-			edgeFunctions.push_back(b);
-	}
-}
 
 void LRSplineVolume::rebuildDimension(int dimvalue) {
 	for(Basisfunction* b : basis_)

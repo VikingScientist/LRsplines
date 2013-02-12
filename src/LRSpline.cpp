@@ -17,4 +17,62 @@ void LRSpline::generateIDs() const {
 		element_[i]->setId(i);
 }
 
+void LRSpline::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth) const {
+	edgeFunctions.clear();
+	bool trivariate = (**basis_.begin()).nVariate() == 3;
+	for(Basisfunction *b : basis_) {
+		bool ok = true;
+		if( edge & WEST )
+			if((*b)[0][order_[0]-depth] != start_[0]) 
+				ok = false;
+		if( edge & EAST )
+			if((*b)[0][depth] != end_[0]) 
+				ok = false;
+		if( edge & SOUTH )
+			if((*b)[1][order_[1]-depth] != start_[1]) 
+				ok = false;
+		if( edge & NORTH )
+			if((*b)[1][depth] != end_[1]) 
+				ok = false;
+		if( trivariate && (edge & BOTTOM) )
+			if((*b)[2][order_[2]-depth] != start_[2]) 
+				ok = false;
+		if( trivariate && (edge & TOP ) )
+			if((*b)[2][depth] != end_[2]) 
+				ok = false;
+
+		if(ok)
+			edgeFunctions.push_back(b);
+	}
+}
+
+void LRSpline::getEdgeElements( std::vector<Element*> &edgeElements, parameterEdge edge ) const {
+	edgeElements.clear();
+	bool trivariate = (**basis_.begin()).nVariate() == 3;
+	for(Element * el : element_) {
+		bool ok = true;
+		if( edge & WEST )
+			if(el->getParmin(0) != start_[0]) 
+				ok = false;
+		if( edge & EAST )
+			if(el->getParmax(0) != end_[0]) 
+				ok = false;
+		if( edge & SOUTH )
+			if(el->getParmin(1) != start_[1]) 
+				ok = false;
+		if( edge & NORTH )
+			if(el->getParmax(1) != end_[1]) 
+				ok = false;
+		if( trivariate && (edge & BOTTOM) )
+			if(el->getParmin(2) != start_[2]) 
+				ok = false;
+		if( trivariate && (edge & TOP ) )
+			if(el->getParmax(2) != end_[2]) 
+				ok = false;
+
+		if(ok)
+			edgeElements.push_back(el);
+	}
+}
+
 } // end namespace LR

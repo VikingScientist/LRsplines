@@ -1204,52 +1204,6 @@ void LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot,
 
 }
 
-void LRSplineSurface::getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth) const {
-	edgeFunctions.clear();
-	for(Basisfunction *b : basis_) {
-		switch(edge) {
-		case WEST       :
-			if((*b)[0][order_[0]-depth] == start_[0])
-				edgeFunctions.push_back(b);
-			break;
-		case EAST       :
-			if((*b)[0][depth] == end_[0])
-				edgeFunctions.push_back(b);
-			break;
-		case SOUTH      :
-			if((*b)[1][order_[1]-depth] == start_[1])
-				edgeFunctions.push_back(b);
-			break;
-		case NORTH      :
-			if((*b)[1][depth] == end_[1])
-				edgeFunctions.push_back(b);
-			break;
-		case SOUTH_WEST :
-			if((*b)[0][order_[0]-depth] == start_[0] &&
-			   (*b)[1][order_[1]-depth] == start_[1])
-				edgeFunctions.push_back(b);
-			break;
-		case SOUTH_EAST :
-			if((*b)[0][depth]          == end_[0] &&
-			   (*b)[1][order_[1]-depth] == start_[1])
-				edgeFunctions.push_back(b);
-			break;
-		case NORTH_WEST :
-			if((*b)[0][order_[0]-depth] == start_[0] &&
-			   (*b)[1][depth]          == end_[1])
-				edgeFunctions.push_back(b);
-			break;
-		case NORTH_EAST :
-			if((*b)[0][depth] == end_[0] &&
-			   (*b)[1][depth] == end_[1])
-				edgeFunctions.push_back(b);
-			break;
-		default:
-			break;
-		}
-	}
-}
-
 void LRSplineSurface::rebuildDimension(int dimvalue) {
 	for(Basisfunction *b : basis_)
 		b->setDimension(dimvalue);

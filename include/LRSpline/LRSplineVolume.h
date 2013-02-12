@@ -105,7 +105,6 @@ public:
 		for(int i=0; i<iBasis; ++i) ++it;
 		return *it;
 	}
-	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;
 	void getBezierElement(int iEl, std::vector<double> &controlPoints) const;
 
 	// assorted specialized functions

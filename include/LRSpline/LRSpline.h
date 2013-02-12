@@ -32,7 +32,10 @@ public:
 	double startparam(int i) const { return start_[i]      ; };
 	double endparam  (int i) const { return end_[i]        ; };
 	bool rational()          const { return rational_      ; };
-
+	
+	// more funky get methods
+	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;
+	void getEdgeElements( std::vector<Element*>       &edgeElements,  parameterEdge edge             ) const;
 
 	// set refinement state parameters
 	void setRefStrat(enum refinementStrategy strat) { refStrat_        = strat;    };
