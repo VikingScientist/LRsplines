@@ -316,11 +316,16 @@ long Basisfunction::hashCode() const {
 	int offset       = 0;
 	for(std::vector<double> knot : knots_) {
 		for(uint i=0; i<knot.size()-1; i++) {
-			// int randInt = log(fabs(knot[i])+1);
-			int randInt = knot[i];
-			for(int k=0; k<bitsFromEach + (bitsLeft>0); k++) {
-				hashCode_ |= (randInt & (1 << k)) << offset;
-			}
+			long randInt = log2(fabs(knot[i]))*120000;
+			// int randInt = log2(fabs(knot[i]+1))*343;
+			// int randInt = (i%2==0) ? knot[i] : log2(fabs(knot[i]));
+			if(knot[i]==0) randInt = 0;
+			// int randInt = log2(fabs(knot[i]));
+			// int randInt = knot[i];
+			long mask    = 0;
+			for(int k=0; k<bitsFromEach + (bitsLeft>0); k++)
+				mask |= (1<<k);
+			hashCode_ |= ((long) (randInt & mask)) << offset;
 			offset += bitsFromEach + (bitsLeft>0);
 			bitsLeft--;
 		}

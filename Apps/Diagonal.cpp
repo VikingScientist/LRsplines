@@ -172,6 +172,7 @@ int main(int argc, char **argv) {
 	vector<Element*>::iterator eit;
 	double avgElementToBasis       = 0;
 	double avgSquareElementToBasis = 0;
+	double hashCodePercentage      = ((double)lr.getAllBasisfunctions().uniqueHashCodes())/lr.nBasisFunctions();
 	int maxElementToBasis          = -1;
 	int minElementToBasis          = 9999999;
 	for(eit=lr.elementBegin(); eit!=lr.elementEnd(); eit++) {
@@ -209,6 +210,9 @@ int main(int argc, char **argv) {
 	cout << endl;
 	cout << "Number of overloaded Basisfunctions : " << nOverloadedBasis  << endl;
 	cout << "Number of overloaded Elements       : " << nOverloadedElms   << endl;
+	cout << endl;
+	cout << "Number of unique hashcodes          : " << lr.getAllBasisfunctions().uniqueHashCodes() ;
+	cout <<                                      " (" << hashCodePercentage*100 << " %)"  << endl;
 	cout << "-------------------------------------------------------------" << endl;
 	if(lr.nBasisFunctions() < 1300) {
 	cout << "Is linearly independent : " << ((lr.isLinearIndepByMappingMatrix(false) )? "True":"False") << endl;
