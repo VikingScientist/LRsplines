@@ -1,0 +1,32 @@
+//==============================================================================
+//!
+//! \file LR-splines.dox
+//!
+//! \date January 2013
+//!
+//! \author Kjetil A. Johannessen / NTNU
+//!
+//! \brief File containing the Main Page of the LR-spline documentation.
+//!
+//==============================================================================
+
+/*! 
+
+\mainpage LR-splines
+
+\author Kjetil A. Johannessen, NTNU, Trondheim
+
+\section intro Introduction
+This is the LR-splines. Currently supports bivariate (2D) splines, but soon to be trivariate as well.
+
+
+\section overview Overview
+This is the overivew section. It views over.
+
+
+\section requirements Library requirements
+
+The class depends on the presence of GoTools (more specific the core and trivariate modules) as well as boost.
+
+
+*/
