@@ -588,7 +588,7 @@ void LRSplineVolume::getFullspanRects(int iEl, std::vector<MeshRectangle*>& line
 		lines.push_back(new MeshRectangle(umin, vmin, midW,  umax, vmax, midW));
 }
 
-void LRSplineVolume::getStructMeshLines(Basisfunction *b, std::vector<MeshRectangle*>& rects) {
+void LRSplineVolume::getStructMeshRects(Basisfunction *b, std::vector<MeshRectangle*>& rects) {
 	double umin = b->getParmin(0);
 	double umax = b->getParmax(0);
 	double vmin = b->getParmin(1);
@@ -645,7 +645,7 @@ void LRSplineVolume::refineBasisFunction(std::vector<int> &indices) {
 			++ib;
 			++it;
 		}
-		getStructMeshLines(*it,newRects);
+		getStructMeshRects(*it,newRects);
 	}
 
 	/* Do the actual refinement */
@@ -681,22 +681,22 @@ void LRSplineVolume::refineElement(const std::vector<int> &indices) {
 	// aPosterioriFixes();
 
 }
-#if 0
 
 void LRSplineVolume::refineByDimensionIncrease(const std::vector<double> &errPerElement, double beta) {
-	Basisfunction *b;
 	Element       *e;
+
 	/* accumulate the error & index - vector */
 	std::vector<IndexDouble> errors;
 	if(refStrat_ == LR_ISOTROPIC_FUNC) { // error per-function
-		for(uint i=0; i<basis_.size(); i++) {
-			b = basis_[i];
+		int i=0;
+		for(Basisfunction *b : basis_) {
 			errors.push_back(IndexDouble(0.0, i));
 			for(int j=0; j<b->nSupportedElements(); j++) {
-				e = b->support_[j];
+				e = *(b->supportedElementBegin() + j);
 				errors[i].first += errPerElement[e->getId()];
 			}
 		}
+		i++;
 	} else {
 		for(uint i=0; i<element_.size(); i++) 
 			errors.push_back(IndexDouble(errPerElement[i], i));
@@ -706,38 +706,35 @@ void LRSplineVolume::refineByDimensionIncrease(const std::vector<double> &errPer
 	std::sort(errors.begin(), errors.end(), std::greater<IndexDouble>());
 
 	/* first retrieve all possible meshrects needed */
-	std::vector<std::vector<MeshRectangle*> > newLines(errors.size(), std::vector<MeshRectangle*>(0));
+	std::vector<std::vector<MeshRectangle*> > newRects(errors.size(), std::vector<MeshRectangle*>(0));
 	for(uint i=0; i<errors.size(); i++) {
 		if(refStrat_ == LR_MINSPAN)
-			getMinspanLines(errors[i].second, newLines[i]);
+			getMinspanRects(errors[i].second, newRects[i]);
 		else if(refStrat_ == LR_SAFE) 
-			getFullspanLines(errors[i].second, newLines[i]);
-		else if(refStrat_ == LR_ISOTROPIC_FUNC) 
-			getStructMeshLines(errors[i].second, newLines[i]);
+			getFullspanRects(errors[i].second, newRects[i]);
+		else if(refStrat_ == LR_ISOTROPIC_FUNC)  {
+			Basisfunction *b = getBasisfunction(errors[i].second);
+			getStructMeshRects(b, newRects[i]);
+		}
 		// note that this is an excessive loop as it computes the meshrects for ALL elements,
 		// but we're only going to use a small part of this.
 	}
 
 	/* Do the actual refinement */
-	uint target_n_functions = ceil(basis_.size()*(1+beta));
+	int target_n_functions = ceil(basis_.size()*(1+beta));
 	int i=0;
 	while( basis_.size() < target_n_functions ) {
-		for(uint j=0; j<newLines[i].size(); j++) {
-			MeshRectangle *m = newLines[i][j];
-			insert_line(!m->is_spanning_u(), m->const_par_, m->start_, m->stop_, refKnotlineMult_);
+		for(uint j=0; j<newRects[i].size(); j++) {
+			insert_line(newRects[i][j]);
 		}
 		i++;
 	}
 
 	/* do a posteriori fixes to ensure a proper mesh */
-	aPosterioriFixes();
-
-	/* exit cleanly be deleting all temporary new lines */
-	for(uint i=0; i<newLines.size(); i++) 
-		for(uint j=0; j<newLines[i].size(); j++) 
-			delete newLines[i][j];
+	// aPosterioriFixes();
 }
 
+#if 0
 void LRSplineVolume::aPosterioriFixes()  {
 	std::vector<MeshRectangle*> *newLines = NULL;
 	uint nFunc;
@@ -914,7 +911,7 @@ void LRSplineVolume::enforceMaxAspectRatio(std::vector<MeshRectangle*>* newLines
 			if( insert_const_u || insert_const_v ) {
 				std::vector<MeshRectangle*> splitLines; // should always contain exactly one meshrect on function return
 				if(refStrat_ == LR_MINSPAN) 
-					getMinspanLines(i, splitLines);
+					getMinspanRects(i, splitLines);
 				else
 					getFullspanLines(i, splitLines);
 

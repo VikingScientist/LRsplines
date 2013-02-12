@@ -68,6 +68,13 @@ public:
 	const HashSet<Basisfunction*>& getAllBasisfunctions()   const { return basis_ ;          };
 	const std::vector<Element*>&           getAllElements() const { return element_ ;        };
 
+	// refinement functions
+	virtual void refineBasisFunction(int index) = 0;
+	virtual void refineBasisFunction(std::vector<int> &indices) = 0;
+	virtual void refineElement(int index) = 0;
+	virtual void refineElement(const std::vector<int> &indices) = 0;
+	virtual void refineByDimensionIncrease(const std::vector<double> &error, double beta) = 0;
+
 	// set refinement state parameters
 	void setRefStrat(enum refinementStrategy strat) { refStrat_        = strat;    };
 	void setRefSymmetry(int symmetry)               { this->symmetry_  = symmetry; };

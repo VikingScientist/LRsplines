@@ -47,14 +47,12 @@ public:
 	void refineElement(const std::vector<int> &indices);
 	void refineBasisFunction(int index);
 	void refineBasisFunction(std::vector<int> &indices);
-	/*
 	void refineByDimensionIncrease(const std::vector<double> &error, double beta);
-	*/
 
 	// (private) refinement functions
 	void getFullspanRects(  int iEl,    std::vector<MeshRectangle*>& rects);
 	void getMinspanRects(   int iEl,    std::vector<MeshRectangle*>& rects);
-	void getStructMeshLines(Basisfunction *b, std::vector<MeshRectangle*>& rects);
+	void getStructMeshRects(Basisfunction *b, std::vector<MeshRectangle*>& rects);
 	/*
 	MeshRectangle* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	MeshRectangle* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);

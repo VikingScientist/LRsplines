@@ -621,8 +621,7 @@ void LRSplineSurface::getFullspanLines(int iEl, std::vector<Meshline*>& lines) {
  *          new element sizes. It will insert new lines such that no element is larger than W/2. If any elements or local knot
  *          spans are smaller than W/2, these remain untouched.
  ***************************************************************************************************************************/
-void LRSplineSurface::getStructMeshLines(int iBasis, std::vector<Meshline*>& lines) {
-	Basisfunction *b = getBasisfunction(iBasis);
+void LRSplineSurface::getStructMeshLines(Basisfunction *b, std::vector<Meshline*>& lines) {
 	double umin = b->getParmin(0);
 	double umax = b->getParmax(0);
 	double vmin = b->getParmin(1);
@@ -673,12 +672,20 @@ void LRSplineSurface::refineBasisFunction(int index) {
  *          will be precomputed before any of them are inserted. This means that you will get a different result from calling 
  *          this function, rather than calling refineBasisFunction(int) several times.
  ***************************************************************************************************************************/
-void LRSplineSurface::refineBasisFunction(const std::vector<int> &indices) {
+void LRSplineSurface::refineBasisFunction(std::vector<int> &indices) {
+	std::sort(indices.begin(), indices.end());
 	std::vector<Meshline*> newLines;
 
 	/* first retrieve all meshlines needed */
-	for(uint i=0; i<indices.size(); i++)
-		getStructMeshLines(indices[i],newLines);
+	int ib = 0;
+	HashSet_iterator<Basisfunction*> it = basis_.begin();
+	for(uint i=0; i<indices.size(); i++) {
+		while(ib < indices[i]) {
+			++ib;
+			++it;
+		}
+		getStructMeshLines(*it,newLines);
+	}
 
 	/* Do the actual refinement */
 	for(uint i=0; i<newLines.size(); i++) {
@@ -766,8 +773,10 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 			getMinspanLines(errors[i].second, newLines[i]);
 		else if(refStrat_ == LR_SAFE) 
 			getFullspanLines(errors[i].second, newLines[i]);
-		else if(refStrat_ == LR_ISOTROPIC_FUNC) 
-			getStructMeshLines(errors[i].second, newLines[i]);
+		else if(refStrat_ == LR_ISOTROPIC_FUNC) {
+			Basisfunction *b = getBasisfunction(errors[i].second);
+			getStructMeshLines(b, newLines[i]);
+		}
 		// note that this is an excessive loop as it computes the meshlines for ALL elements,
 		// but we're only going to use a small part of this.
 	}

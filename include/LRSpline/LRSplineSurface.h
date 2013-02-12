@@ -41,7 +41,7 @@ public:
 
 	// refinement functions
 	void refineBasisFunction(int index);
-	void refineBasisFunction(const std::vector<int> &indices);
+	void refineBasisFunction(std::vector<int> &indices);
 	void refineElement(int index);
 	void refineElement(const std::vector<int> &indices);
 	void refineByDimensionIncrease(const std::vector<double> &error, double beta);
@@ -49,9 +49,9 @@ public:
 	// (private) refinement functions
 	Meshline* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
 	Meshline* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
-	void getFullspanLines(  int iEl,    std::vector<Meshline*>& lines);
-	void getMinspanLines(   int iEl,    std::vector<Meshline*>& lines);
-	void getStructMeshLines(int iBasis, std::vector<Meshline*>& lines);
+	void getFullspanLines(  int iEl,          std::vector<Meshline*>& lines);
+	void getMinspanLines(   int iEl,          std::vector<Meshline*>& lines);
+	void getStructMeshLines(Basisfunction *b, std::vector<Meshline*>& lines);
 	void aPosterioriFixes() ;
 	void closeGaps(            std::vector<Meshline*>* newLines=NULL);
 	void enforceMaxTjoints(    std::vector<Meshline*>* newLines=NULL);
