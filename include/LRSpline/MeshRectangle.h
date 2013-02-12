@@ -44,7 +44,7 @@ public:
 	bool contains(const MeshRectangle *rect) const;
 	bool splits(Basisfunction *basis) const;
 	bool splits(Element *el) const;
-	int makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, int meshIndex) ;
+	int makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, int meshIndex, bool allowSplits) ;
 
 	int    constDirection() const;
 	double constParameter() const;

@@ -120,7 +120,7 @@ bool MeshRectangle::contains(const MeshRectangle *rect) const {
 	return false;
 }
 
-int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, int meshIndex) {
+int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, int meshIndex, bool allowSplits) {
 	int c1  = constDir_; // constant index
 	int v1  = (c1+1)%3;  // first variable index
 	int v2  = (c1+2)%3;  // second variable index
@@ -279,23 +279,33 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 		start[v2] = y1;
 		stop[v2]  = y2;
 		MeshRectangle *m1 = new MeshRectangle(start, stop);
+
+/*
 		bool doesExist = false;
 		for(MeshRectangle *m : newGuys)
 			if(m->equals(m1))
 				doesExist = true;
 		if(!doesExist)
 			newGuys.push_back(m1);
+*/
 
 		start[v1] = x1;
 		stop[v1]  = x2;
 		start[v2] = y0;
 		stop[v2]  = y3;
 		MeshRectangle *m2 = new MeshRectangle(start, stop);
+
+		if(allowSplits) {
+			newGuys.push_back(m1);
+			newGuys.push_back(m2);
+		}
+/*
 		for(MeshRectangle *m : newGuys)
 			if(m->equals(m2))
 				doesExist = true;
 		if(!doesExist)
 			newGuys.push_back(m2);
+*/
 
 		// std::cout << "Added: " << *m1 << std::endl;
 		// std::cout << "Added: " << *m2 << std::endl;

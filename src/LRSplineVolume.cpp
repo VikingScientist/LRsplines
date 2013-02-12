@@ -961,7 +961,7 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 #endif
 	for(uint i=0; i<meshrect_.size(); i++) {
 		for(uint j=0; j<newGuys.size(); j++) {
-			int status = meshrect_[i]->makeOverlappingRects(newGuys, j);
+			int status = meshrect_[i]->makeOverlappingRects(newGuys, j, true);
 			if(status == 1) { // deleted j, i kept unchanged
 				j--;
 				continue;
@@ -985,12 +985,12 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 	bool change = true;
 	while(change) {
 		change = false;
-		for(uint i=0; i<newGuys.size() ; i++) {
+		for(uint i=0; i<newGuys.size() && !change ; i++) {
 			for(uint j=i+1; j<newGuys.size() && j>i; j++) {
-				int status = newGuys[i]->makeOverlappingRects(newGuys, j);
+				int status = newGuys[i]->makeOverlappingRects(newGuys, j, false);
 				if(status == 1) { //deleted j, i kept unchanged
 					j--;
-				} else if(status == 2) { // j kept unchanged, delete i
+				} else if(status == 2) { // j kept unchanged, deleted i
 					delete newGuys[i];
 					newGuys.erase(newGuys.begin() + i);
 					i--;
@@ -1003,6 +1003,7 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 				}
 				if(status > 0) {
 					change = true;
+					break;
 				}
 			}
 		}
@@ -1023,6 +1024,7 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 				if( ((nKnots=m->nKnotsIn(b)) != m->multiplicity_) ) {
 					removeFunc.insert(b);
 					split( m->constDirection(), b, m->constParameter(), m->multiplicity_-nKnots, newFuncStp1 ); 
+					break; // can only be split once by single meshrectangle insertion
 				}
 			}
 		}
