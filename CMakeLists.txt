@@ -130,7 +130,10 @@ ELSE(WIN32)
                              include/LRSpline/Element.h
                              include/LRSpline/Meshline.h
                              include/LRSpline/LRSpline_version.h
-                             include/LRSpline/LRSplineSurface.h)
+                             include/LRSpline/LRSplineSurface.h
+                             include/LRSpline/HashSet.h
+                             include/LRSpline/MeshRectangle.h
+                             include/LRSpline/LRSplineVolume.h)
   INSTALL(FILES ${LRSPLINE_HEADERS}
                 DESTINATION ${CMAKE_INSTALL_PREFIX}/include/LRSpline
                 COMPONENT liblrspline-dev)
