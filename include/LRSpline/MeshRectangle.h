@@ -54,6 +54,8 @@ public:
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
 
+	static bool addUniqueRect(std::vector<MeshRectangle*> &rects, MeshRectangle* newRect);
+
 // private:
 	std::vector<double> start_;
 	std::vector<double> stop_;

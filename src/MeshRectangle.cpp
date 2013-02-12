@@ -8,6 +8,16 @@ namespace LR {
 
 #define DOUBLE_TOL 1e-14
 
+bool MeshRectangle::addUniqueRect(std::vector<MeshRectangle*> &rects, MeshRectangle* newRect) {
+	for(MeshRectangle *m : rects) {
+		if(m->equals(newRect) ) {
+			return false;
+		}
+	}
+	rects.push_back(newRect);
+	return true;
+};
+
 MeshRectangle::MeshRectangle() {
 	start_.resize(3);
 	stop_.resize(3);
@@ -169,22 +179,42 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 				delete rect;
 				start_[v[i]] = min;
 				stop_[v[i]]  = max;
-				newGuys.push_back(this);
-				return 4;
+				if(addUniqueRect(newGuys, this))
+					return 4;
+				else
+					return 5;
 			/*
-		 	*    DO NOTHING
-		 	*  +-------+
-		 	*  |       +------+
-		 	*  |       |      |
-		 	*  +-------+      |
-		 	*          |      |
-		 	*          +------+ they're just kissing... leave them alone
+		 	*    ADD ELONGATED RECT
+		 	* y3 +-------+                
+		 	* y2 |       +------+         +-------+------+
+		 	*    |       |      |   =>    |              | 
+		 	* y1 +-------+      |         +-------+------+
+		 	*            |      |                new one
+		 	* y0         +------+               
+			*   x0      x1     x3
 		 	*/
+
 			} else if((start_[v[j]] < rect->start_[v[j]]   && 
-			           stop_[v[j]]  < rect->stop_[v[j]]  ) ||
+			           stop_[v[j]]  < rect->stop_[v[j]] ) ||
 			          (start_[v[j]] > rect->start_[v[j]]   && 
-			           stop_[v[j]]  > rect->stop_[v[j]]  )) {
-				return 0;
+			          stop_[v[j]]  > rect->stop_[v[j]]  )) {
+				double x0 = std::min(rect->start_[v[i]], start_[v[i]]);
+				double x3 = std::max(rect->stop_[v[i]],  stop_[v[i]] );
+				double y1 = std::max(rect->start_[v[j]], start_[v[j]]);
+				double y2 = std::min(rect->stop_[v[j]],  stop_[v[j]] );
+				double start[3];
+				double stop[3];
+				start[c1]   = start_[c1];
+				stop[c1]    = stop_[c1];
+				start[v[i]] = x0;
+				stop[v[i]]  = x3;
+				start[v[j]] = y1;
+				stop[v[j]]  = y2;
+				if(allowSplits) {
+					MeshRectangle *m1 = new MeshRectangle(start, stop);
+					if(!addUniqueRect(newGuys, m1))
+						delete m1;
+				}
 			}
 		}
 		/*
@@ -251,15 +281,15 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 		;
 	/*
 	 *         MAKE TWO NEW ONES
-	 *  y3  +-------+                      +--+
-	 *      |       |                      |  |
-	 *  y2  |    +--+----+            +----+--+----+
-	 *      |    |  |    |      =>    |    |  |    | 
-	 *  y1  +----+--+    |            +----+--+----+
-	 *           |       |                 |  |
-	 *  y0       +-------+                 +--+
-	 *     x0   x1 x2   x3
-	 *                                  these are the two new ones
+	 *  y3  +-------+                        +--+
+	 *      |       |                        |  |
+	 *  y2  |    +--+----+           y2 +----+--+----+
+	 *      |    |  |    |      =>      |    |  |    | 
+	 *  y1  +----+--+    |           y1 +----+--+----+
+	 *           |       |                   |  |
+	 *  y0       +-------+                   +--+
+	 *     x0   x1 x2   x3                  x1  x2
+	 *                                    these are the two new ones
 	 */
 	} else {
 		double x0 = std::min(rect->start_[v1], start_[v1]);
@@ -274,48 +304,38 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 		double stop[3];
 		start[c1] = start_[c1];
 		stop[c1]  = stop_[c1];
-		start[v1] = x0;
-		stop[v1]  = x3;
-		start[v2] = y1;
-		stop[v2]  = y2;
-		MeshRectangle *m1 = new MeshRectangle(start, stop);
-
-/*
-		bool doesExist = false;
-		for(MeshRectangle *m : newGuys)
-			if(m->equals(m1))
-				doesExist = true;
-		if(!doesExist)
-			newGuys.push_back(m1);
-*/
-
-		start[v1] = x1;
-		stop[v1]  = x2;
-		start[v2] = y0;
-		stop[v2]  = y3;
-		MeshRectangle *m2 = new MeshRectangle(start, stop);
 
 		if(allowSplits) {
-			newGuys.push_back(m1);
-			newGuys.push_back(m2);
-		}
-/*
-		for(MeshRectangle *m : newGuys)
-			if(m->equals(m2))
-				doesExist = true;
-		if(!doesExist)
-			newGuys.push_back(m2);
-*/
+			start[v1] = x0;
+			stop[v1]  = x3;
+			start[v2] = y1;
+			stop[v2]  = y2;
+			MeshRectangle *m1 = new MeshRectangle(start, stop);
 
-		// std::cout << "Added: " << *m1 << std::endl;
-		// std::cout << "Added: " << *m2 << std::endl;
-		// std::cout << "  overlaps from  : " << *rect << std::endl;
-		// std::cout << "  overlaps from  : " << *this << std::endl;
+			start[v1] = x1;
+			stop[v1]  = x2;
+			start[v2] = y0;
+			stop[v2]  = y3;
+			MeshRectangle *m2 = new MeshRectangle(start, stop);
+
+			// std::cout << "Added: " << *m1 << std::endl;
+			// std::cout << "Added: " << *m2 << std::endl;
+			// std::cout << "  overlaps from  : " << *rect << std::endl;
+			// std::cout << "  overlaps from  : " << *this << std::endl;
+
+			if(!addUniqueRect(newGuys, m1))
+				delete m1;
+			if(!addUniqueRect(newGuys, m2))
+				delete m2;
+		}
+
 	}
 	if(addThisToNewGuys) {
-		newGuys.push_back(this);
 		// std::cout << "Moved: " << *this << std::endl;
-		return 3;
+		if(addUniqueRect(newGuys, this)) 
+			return 3;
+		else
+			return 6;
 	}
 	return 0;
 }

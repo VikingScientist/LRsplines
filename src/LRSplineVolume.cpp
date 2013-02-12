@@ -616,21 +616,30 @@ void LRSplineVolume::getStructMeshRects(Basisfunction *b, std::vector<MeshRectan
 	// into the largest knot spans
 	for(int j=0; j<order_[0]; j++) {
 		double du = (*b)[0][j+1]-(*b)[0][j];
-		if( fabs(du-max[0]) < DOUBLE_TOL )
-			rects.push_back(new MeshRectangle(((*b)[0][j] + (*b)[0][j+1])/2.0, vmin, wmin,
-			                                  ((*b)[0][j] + (*b)[0][j+1])/2.0, vmax, wmax));
+		if( fabs(du-max[0]) < DOUBLE_TOL ) {
+			MeshRectangle *m = new MeshRectangle(((*b)[0][j] + (*b)[0][j+1])/2.0, vmin, wmin,
+			                                     ((*b)[0][j] + (*b)[0][j+1])/2.0, vmax, wmax);
+			if(!MeshRectangle::addUniqueRect(rects, m))
+				delete m;
+		}
 	}
 	for(int j=0; j<order_[1]; j++) {
 		double dv = (*b)[1][j+1]-(*b)[1][j];
-		if( fabs(dv-max[1]) < DOUBLE_TOL )
-			rects.push_back(new MeshRectangle(umin, ((*b)[1][j] + (*b)[1][j+1])/2.0, wmin,
-			                                  umax, ((*b)[1][j] + (*b)[1][j+1])/2.0, wmax));
+		if( fabs(dv-max[1]) < DOUBLE_TOL ) {
+			MeshRectangle *m = new MeshRectangle(umin, ((*b)[1][j] + (*b)[1][j+1])/2.0, wmin,
+			                                     umax, ((*b)[1][j] + (*b)[1][j+1])/2.0, wmax);
+			if(!MeshRectangle::addUniqueRect(rects, m))
+				delete m;
+		}
 	}
 	for(int j=0; j<order_[2]; j++) {
 		double dw = (*b)[2][j+1]-(*b)[2][j];
-		if( fabs(dw-max[2]) < DOUBLE_TOL )
-			rects.push_back(new MeshRectangle(umin, vmin, ((*b)[2][j] + (*b)[2][j+1])/2.0,
-			                                  umax, vmax, ((*b)[2][j] + (*b)[2][j+1])/2.0));
+		if( fabs(dw-max[2]) < DOUBLE_TOL ) {
+			MeshRectangle *m = new MeshRectangle(umin, vmin, ((*b)[2][j] + (*b)[2][j+1])/2.0,
+			                                     umax, vmax, ((*b)[2][j] + (*b)[2][j+1])/2.0);
+			if(!MeshRectangle::addUniqueRect(rects, m))
+				delete m;
+		}
 	}
 }
 
@@ -979,6 +988,17 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 				i--;
 				j--;
 				break;
+			} else if(status == 5) { // deleted j, i duplicate in newGuys
+				delete meshrect_[i];
+				meshrect_.erase(meshrect_.begin() + i);
+				i--;
+				j--;
+				break;
+			} else if(status == 6) { // j kept unchanged, i duplicate in newGuys
+				delete meshrect_[i];
+				meshrect_.erase(meshrect_.begin() + i);
+				i--;
+				break;
 			}
 		}
 	}
@@ -989,17 +1009,22 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 			for(uint j=i+1; j<newGuys.size() && j>i; j++) {
 				int status = newGuys[i]->makeOverlappingRects(newGuys, j, false);
 				if(status == 1) { //deleted j, i kept unchanged
-					j--;
+					;
 				} else if(status == 2) { // j kept unchanged, deleted i
 					delete newGuys[i];
 					newGuys.erase(newGuys.begin() + i);
-					i--;
 				} else if(status == 3) { // j kept unchanged, i added to newGuys
 					newGuys.erase(newGuys.begin() + i);
-					i--;
 				} else if(status == 4) { // deleted j, i added to newGuys
 					newGuys.erase(newGuys.begin() + i);
-					i--;
+				} else if(status == 5) { // deleted j, i duplicate in newGuys
+					delete meshrect_[i];
+					meshrect_.erase(meshrect_.begin() + i);
+					break;
+				} else if(status == 6) { // j kept unchanged, i duplicate in newGuys
+					delete meshrect_[i];
+					meshrect_.erase(meshrect_.begin() + i);
+					break;
 				}
 				if(status > 0) {
 					change = true;
@@ -1342,12 +1367,12 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 
 void LRSplineVolume::getBezierExtraction(int iEl, std::vector<double> &extractMatrix) const {
 	Element *el = element_[iEl];
-	int width  = el->nBasisFunctions();
-	int height = order_[0]*order_[1]*order_[2];
+	int width  = order_[0]*order_[1]*order_[2];
+	int height = el->nBasisFunctions();
 	extractMatrix.clear();
 	extractMatrix.resize(width*height);
 
-	int colI = 0;
+	int rowI = 0;
 	for(Basisfunction* b : el->support()) {
 		int start[] = {-1,-1,-1};
 		std::vector<std::vector<double> > row(3);
@@ -1397,12 +1422,12 @@ void LRSplineVolume::getBezierExtraction(int iEl, std::vector<double> &extractMa
 	
 		}
 		
-		int rowI = 0;
+		int colI = 0;
 		for(int w=start[2]; w<start[2]+order_[2]; w++)
 			for(int v=start[1]; v<start[1]+order_[1]; v++)
-				for(int u=start[0]; u<start[0]+order_[0]; u++, rowI++)
+				for(int u=start[0]; u<start[0]+order_[0]; u++, colI++)
 					extractMatrix[colI*height + rowI] += row[0][u]*row[1][v]*row[2][w]*b->w();
-		colI++;
+		rowI++;
 	}
 }
 
