@@ -1,5 +1,5 @@
-#ifndef LR_SPLINE_H
-#define LR_SPLINE_H
+#ifndef LRSPLINEVOLUME_H
+#define LRSPLINEVOLUME_H
 
 #include <vector>
 #include <GoTools/utils/Point.h>
@@ -9,13 +9,6 @@
 #include "HashSet.h"
 #include "Basisfunction.h"
 #include "LRSplineSurface.h"
-
-enum refinementStrategy {
-	LR_SAFE = 0,
-	LR_MINSPAN = 1,
-	LR_ISOTROPIC_EL = 2,
-	LR_ISOTROPIC_FUNC = 3,
-};
 
 namespace LR {
 
@@ -159,7 +152,7 @@ public:
 	MeshRectangle* insert_line(MeshRectangle *newRect) ;
 
 private:
-	int split(int constDir, Basisfunction *b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
+	void split(int constDir, Basisfunction *b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
 	
 	bool rational_;
 	HashSet<Basisfunction*> basis_;

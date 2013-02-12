@@ -33,13 +33,18 @@ ENABLE_TESTING()
 
 # Required packages
 FIND_PACKAGE(GoTools REQUIRED)
+FIND_PACKAGE(GoTrivariate REQUIRED)
 FIND_PACKAGE(Boost REQUIRED)
 
 # Required libraries
-SET(DEPLIBS ${GoTools_LIBRARIES} ${BOOST_LIBRARIES})
+SET(DEPLIBS ${GoTools_LIBRARIES}
+            ${GoTrivariate_LIBRARIES}
+            ${BOOST_LIBRARIES})
 
 # Required include directories
-SET(INCLUDES ${PROJECT_SOURCE_DIR}/include ${GoTools_INCLUDE_DIRS} 
+SET(INCLUDES ${PROJECT_SOURCE_DIR}/include
+             ${GoTools_INCLUDE_DIRS} 
+             ${GoTrivariate_INCLUDE_DIRS} 
              ${BOOST_INCLUDES})
 
 INCLUDE_DIRECTORIES(${INCLUDES})

@@ -435,13 +435,15 @@ void LRSplineVolume::computeBasis (double param_u,
 }
 
 int LRSplineVolume::getElementContaining(double u, double v, double w) const {
-	for(uint i=0; i<element_.size(); i++)
-		if(element_[i]->getParmin(0) <= u && element_[i]->getParmin(1) <= v && element_[i]->getParmin(2) <= w) 
-			if((u < element_[i]->getParmax(0) || (u == end_u_ && u <= element_[i]->getParmax(0))) && 
-			   (v < element_[i]->getParmax(1) || (v == end_v_ && v <= element_[i]->getParmax(1))) && 
-			   (w < element_[i]->getParmax(1) || (w == end_w_ && w <= element_[i]->getParmax(2))))
-				return i;
-		
+	int ans = 0;
+	for(Element *el : element_) {
+		if(el->getParmin(0) <= u && el->getParmin(1) <= v && el->getParmin(2) <= w) 
+			if((u < el->getParmax(0) || (u == end_u_ && u <= el->getParmax(0))) && 
+			   (v < el->getParmax(1) || (v == end_v_ && v <= el->getParmax(1))) && 
+			   (w < el->getParmax(2) || (w == end_w_ && w <= el->getParmax(2))))
+				return ans;
+		ans++;
+	}
 	return -1;
 }
 
@@ -994,7 +996,7 @@ MeshRectangle* LRSplineVolume::insert_const_v_edge(double v, double start_u, dou
 #endif
  
 
-int LRSplineVolume::split(int constDir, Basisfunction *b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions) {
+void LRSplineVolume::split(int constDir, Basisfunction *b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions) {
 #ifdef TIME_LRSPLINE
 	PROFILE("split()");
 #endif
@@ -1005,7 +1007,7 @@ int LRSplineVolume::split(int constDir, Basisfunction *b, double new_knot, int m
 	int     p                = b->getOrder(constDir);
 	int     insert_index     = 0;
 	if(new_knot < knot[0] || knot[p] < new_knot)
-		return 0;
+		return;
 	while(knot[insert_index] < new_knot)
 		insert_index++;
 	double alpha1 = (insert_index == p)  ? 1.0 : (new_knot-knot[0])/(knot[p-1]-knot[0]);

@@ -1,5 +1,5 @@
-#ifndef LR_SPLINE_H
-#define LR_SPLINE_H
+#ifndef LRSPLINESURFACE_H
+#define LRSPLINESURFACE_H
 
 #include <vector>
 #include <set>
