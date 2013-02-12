@@ -1283,123 +1283,60 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 	controlPoints.resize(order_[0]*order_[1]*order_[2]*dim_, 0);
 	Element *el = element_[iEl];
 	for(Basisfunction* b : el->support()) {
-		std::vector<double> knotU((*b)[0].begin(), (*b)[0].end() );
-		std::vector<double> knotV((*b)[1].begin(), (*b)[1].end() );
-		std::vector<double> knotW((*b)[2].begin(), (*b)[2].end() );
-		int startU=-1;
-		int startV=-1;
-		int startW=-1;
-
-		std::vector<double> rowU(1,1), rowV(1,1), rowW(1,1);
-
-		double min = el->umin();
-		double max = el->umax();
-		while(knotU[++startU] < min);
-		while(true) {
-			int p    = order_[0]-1;
-			int newI = -1;
-			double z;
-			if(       knotU.size() < (uint) startU+order_[0]   || knotU[startU+  order_[0]-1] != min) {
-				z    = min;
-				newI = startU;
-			} else if(knotU.size() < (uint) startU+2*order_[0] || knotU[startU+2*order_[0]-1] != max ) {
-				z    = max;
-				newI = startU + order_[0];
-			} else {
-				break;
-			}
-		      
-			std::vector<double> newRowU(rowU.size()+1, 0);
-			for(uint k=0; k<rowU.size(); k++) {
-				#define U(x) ( knotU[x+k] )
-				if(z < U(0) || z > U(p+1)) {
-					newRowU[k] = rowU[k];
-					continue;
-				}
-				double alpha1 = (U(p) <=  z  ) ? 1 : double(   z    - U(0)) / (  U(p)  - U(0));
-				double alpha2 = (z    <= U(1)) ? 1 : double( U(p+1) - z   ) / ( U(p+1) - U(1));
-				newRowU[k]   += rowU[k]*alpha1;
-				newRowU[k+1] += rowU[k]*alpha2;
-				#undef U
-			}
-			knotU.insert(knotU.begin()+newI, z);
-			rowU = newRowU;
+		int start[] = {-1,-1,-1};
+		std::vector<std::vector<double> > row(3);
+		std::vector<std::vector<double> > knot(3);
+		for(int d=0; d<3; d++) {
+			for(int i=0; i<order_[d]+1; i++)
+				knot[d].push_back( (*b)[d][i] );
+			row[d].push_back(1);
 		}
-	
-		min = el->vmin();
-		max = el->vmax();
-		while(knotV[++startV] < min);
-		while(true) {
-			int p    = order_[1]-1;
-			int newI = -1;
-			double z;
-			if(       knotV.size() < (uint) startV+order_[1]   || knotV[startV+  order_[1]-1] != min) {
-				z    = min;
-				newI = startV;
-			} else if(knotV.size() < (uint) startV+2*order_[1] || knotV[startV+2*order_[1]-1] != max ) {
-				z = max;
-				newI = startV + order_[1];
-			} else {
-				break;
-			}
-		      
-			std::vector<double> newRowV(rowV.size()+1, 0);
-			for(uint k=0; k<rowV.size(); k++) {
-				#define V(x) ( knotV[x+k] )
-				if(z < V(0) || z > V(p+1)) {
-					newRowV[k] = rowV[k];
-					continue;
+
+		
+		for(int d=0; d<3; d++) {
+
+			double min = el->getParmin(d);
+			double max = el->getParmax(d);
+			while(knot[d][++start[d]] < min);
+			while(true) {
+				int p    = order_[d]-1;
+				int newI = -1;
+				double z;
+				if(       knot[d].size() < (uint) start[d]+order_[d]   || knot[d][start[d]+  order_[d]-1] != min) {
+					z    = min;
+					newI = start[d];
+				} else if(knot[d].size() < (uint) start[d]+2*order_[d] || knot[d][start[d]+2*order_[d]-1] != max ) {
+					z    = max;
+					newI = start[d] + order_[d];
+				} else {
+					break;
 				}
-				double alpha1 = (V(p) <=  z  ) ? 1 : double(   z    - V(0)) / (  V(p)  - V(0));
-				double alpha2 = (z    <= V(1)) ? 1 : double( V(p+1) - z   ) / ( V(p+1) - V(1));
-				newRowV[k]   += rowV[k]*alpha1;
-				newRowV[k+1] += rowV[k]*alpha2;
-				#undef V
-			}
-			knotV.insert(knotV.begin()+newI, z);
-			rowV = newRowV;
-		}
-	
-		min = el->getParmin(2);
-		max = el->getParmax(2);
-		while(knotW[++startW] < min);
-		while(true) {
-			int p    = order_[2]-1;
-			int newI = -1;
-			double z;
-			if(       knotW.size() < (uint) startW+order_[2]   || knotW[startW+  order_[2]-1] != min) {
-				z    = min;
-				newI = startW;
-			} else if(knotW.size() < (uint) startW+2*order_[2] || knotW[startW+2*order_[2]-1] != max ) {
-				z = max;
-				newI = startW + order_[2];
-			} else {
-				break;
-			}
-		      
-			std::vector<double> newRowW(rowW.size()+1, 0);
-			for(uint k=0; k<rowW.size(); k++) {
-				#define W(x) ( knotW[x+k] )
-				if(z < W(0) || z > W(p+1)) {
-					newRowW[k] = rowW[k];
-					continue;
+				  
+				std::vector<double> newRow(row[d].size()+1, 0);
+				for(uint k=0; k<row[d].size(); k++) {
+					#define U(x) ( knot[d][x+k] )
+					if(z < U(0) || z > U(p+1)) {
+						newRow[k] = row[d][k];
+						continue;
+					}
+					double alpha1 = (U(p) <=  z  ) ? 1 : double(   z    - U(0)) / (  U(p)  - U(0));
+					double alpha2 = (z    <= U(1)) ? 1 : double( U(p+1) - z   ) / ( U(p+1) - U(1));
+					newRow[k]   += row[d][k]*alpha1;
+					newRow[k+1] += row[d][k]*alpha2;
+					#undef U
 				}
-				double alpha1 = (W(p) <=  z  ) ? 1 : double(   z    - W(0)) / (  W(p)  - W(0));
-				double alpha2 = (z    <= W(1)) ? 1 : double( W(p+1) - z   ) / ( W(p+1) - W(1));
-				newRowW[k]   += rowW[k]*alpha1;
-				newRowW[k+1] += rowW[k]*alpha2;
-				#undef W
+				knot[d].insert(knot[d].begin()+newI, z);
+				row[d] = newRow;
 			}
-			knotW.insert(knotW.begin()+newI, z);
-			rowW = newRowW;
+	
 		}
 		
 		int ip = 0;
-		for(int w=startW; w<startW+order_[2]; w++)
-			for(int v=startV; v<startV+order_[1]; v++)
-				for(int u=startU; u<startU+order_[0]; u++)
+		for(int w=start[2]; w<start[2]+order_[2]; w++)
+			for(int v=start[1]; v<start[1]+order_[1]; v++)
+				for(int u=start[0]; u<start[0]+order_[0]; u++)
 					for(int d=0; d<dim_; d++)
-						controlPoints[ip++] += b->cp()[d]*rowU[u]*rowV[v]*rowW[w]*b->w();
+						controlPoints[ip++] += b->cp()[d]*row[0][u]*row[1][v]*row[2][w]*b->w();
 
 	}
 }

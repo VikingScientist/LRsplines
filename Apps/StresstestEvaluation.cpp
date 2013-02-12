@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
 				lrs->computeBasis(u,v,   result, 0);
 			}
 			{
-			sprintf(string, "w/id %d derivs", maxDerivs);
+			sprintf(string, "wo/id %d derivs", maxDerivs);
 			PROFILE(string);
 			if(vol)
 				lrv->computeBasis(u,v,w, result, maxDerivs);
