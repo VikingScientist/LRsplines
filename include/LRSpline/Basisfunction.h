@@ -7,17 +7,22 @@
 
 namespace LR {
 
-// forms a 4bit binary mask where each bit corresponds to a side and corners have 2bits 'on'
+// forms a 6 bit binary mask where each bit corresponds to a side
+// corners lines have 2 bits 'on'
+// corners vertices have 3 bits 'on'
 enum parameterEdge {
 NONE       = 0,
-WEST       = 1,    // 0001
-EAST       = 2,    // 0010
-SOUTH      = 4,    // 0100
-NORTH      = 8,    // 1000
-SOUTH_WEST = 5,    // 0101
-SOUTH_EAST = 7,    // 0110
-NORTH_WEST = 9,    // 1001
-NORTH_EAST = 10};  // 1010
+WEST       = 1,    // 000001
+EAST       = 2,    // 000010
+SOUTH      = 4,    // 000100
+NORTH      = 8,    // 001000
+TOP        = 16,   // 010000
+BOTTOM     = 32,   // 100000
+// convienience variables for 2D case follows. In general use SOUTH|WEST, SOUTH|EAST, etc
+SOUTH_WEST = 5,    // 000101
+SOUTH_EAST = 7,    // 000110
+NORTH_WEST = 9,    // 001001
+NORTH_EAST = 10};  // 001010
 
 typedef enum parameterEdge parameterEdge;
 
@@ -26,8 +31,17 @@ class Meshline;
 
 class Basisfunction : public Go::Streamable {
 public:
-	// constructors
 	Basisfunction(int dim, int order_u, int order_v);
+	/************************************************************************************************************************//**
+	 * \brief Constructor for bivariate Basisfunctions
+	 * \param knot_u Knot vector in first parametric direction
+	 * \param knot_v Knot vector in second parametric direction
+	 * \param controlpoint The control point associated with the B-spline
+	 * \param dim Physical dimension, i.e. the number of components of the controlpoint
+	 * \param order_u Polynomial order (degree + 1) in first parametric direction
+	 * \param order_v Polynomial order (degree + 1) in second parametric direction
+	 * \param weight Scaling weight for partition of unity (note: not NURBS rational weight)
+	 ***************************************************************************************************************************/
 	template <typename RandomIterator1,
 	          typename RandomIterator2,
 	          typename RandomIterator3>
@@ -45,7 +59,7 @@ public:
 		std::copy(controlpoint, controlpoint + dim,         controlpoint_.begin());
 	}
 	~Basisfunction();
-	Basisfunction* copy();
+	Basisfunction* copy() const;
 
 	double evaluate(double u, double v, bool u_from_right=true, bool v_from_right=true) const;
 	void evaluate(std::vector<double> &results, double u, double v, int derivs, bool u_from_right=true, bool v_from_right=true) const;
@@ -94,7 +108,6 @@ public:
 	bool equals(const Basisfunction &other) const ;
 	// bool equals(Basisfunction *other) const ;
 
-	double grevilleParameter(int index, int order, std::vector<double> knot) const;
 	void test(int index, int order, std::vector<double> knot){std::cout << "test" <<std::endl;};
 
 	// IO-functions

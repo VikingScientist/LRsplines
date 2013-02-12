@@ -10,6 +10,12 @@
 
 namespace LR {
 
+/************************************************************************************************************************//**
+ * \brief Default bivariate constructor
+ * \param dim The dimension in the physical space, i.e. the number of components of the controlpoints
+ * \param order_u Polynomial order (degree + 1) in first parametric direction
+ * \param order_v Polynomial order (degree + 1) in second parametric direction
+ ***************************************************************************************************************************/
 Basisfunction::Basisfunction(int dim, int order_u, int order_v) {
 	weight_       = 1;
 	id_           = -1;
@@ -20,15 +26,19 @@ Basisfunction::Basisfunction(int dim, int order_u, int order_v) {
 	controlpoint_.resize(dim);
 }
 
-// Basisfunction::Basisfunction(RandomIterator1 knot_u, RandomIterator2 knot_v, RandomIterator3 controlpoint, int dim, int order_u, int order_v, double weight) {
-// }
-
+/************************************************************************************************************************//**
+ * \brief Destructor. Cleans up back-pointers from elements that point to this B-spline
+ ***************************************************************************************************************************/
 Basisfunction::~Basisfunction() {
 	PROFILE("Function destruction");
 	for(uint i=0; i<support_.size(); i++)
 		support_[i]->removeSupportFunction( (Basisfunction*) this);
 }
 
+/************************************************************************************************************************//**
+ * \brief Get parametric greville parameter for this B-spline
+ * \returns The internal knot average 
+ ***************************************************************************************************************************/
 Go::Point Basisfunction::getGrevilleParameter() const {
 	Go::Point ans(2);
 	ans *= 0;
@@ -41,16 +51,17 @@ Go::Point Basisfunction::getGrevilleParameter() const {
 	return ans;
 }
 
-double Basisfunction::grevilleParameter(int index, int order, std::vector<double> knot) const
-{
-   double greville = 0.0;
-   for (int i = 1; i < order; ++i)
-      greville += knot[index+i];
 
-   return greville/(order - 1);
-}
-
-
+/************************************************************************************************************************//**
+ * \brief evaluates the B-spline
+ * \param results [out] Vector of all results. Upon function return contains (derivs+1)*(derivs+2)/2 evaluations of the B-spline
+ *                      itself and all possible cross-derivatives up to order derivs. These are ordered as 1,dx,dy,d2x,dxdy,d2y,...
+ * \param u Parametric evaluation point 
+ * \param v Parametric evaluation point 
+ * \param derivs Number of derivatives requested
+ * \param u_from_right Evaluate first parametric coordinate in the limit from the right
+ * \param u_from_right Evaluate second parametric coordinate in the limit from the right
+ ***************************************************************************************************************************/
 void Basisfunction::evaluate(std::vector<double> &results, double u, double v, int derivs, bool u_from_right, bool v_from_right) const {
 	results.resize((derivs+1)*(derivs+2)/2);
 	fill(results.begin(), results.end(), 0);
@@ -160,6 +171,14 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 	
 }
 
+/************************************************************************************************************************//**
+ * \brief evaluates the B-spline
+ * \param u Parametric evaluation point 
+ * \param v Parametric evaluation point 
+ * \param u_from_right Evaluate first parametric coordinate in the limit from the right
+ * \param u_from_right Evaluate second parametric coordinate in the limit from the right
+ * \return The B-spline evaluated at the chosen parametric coordinate
+ ***************************************************************************************************************************/
 double Basisfunction::evaluate(double u, double v, bool u_from_right, bool v_from_right) const {
 	if(knots_[0][0] > u || u > knots_[0].back())
 		return 0;
@@ -196,23 +215,37 @@ double Basisfunction::evaluate(double u, double v, bool u_from_right, bool v_fro
 	return ans_u[0]*ans_v[0]*weight_;
 }
 
+/************************************************************************************************************************//**
+ * \brief Get the control point
+ * \param pt [out] The ascociated control point to this B-spline
+ ***************************************************************************************************************************/
 void Basisfunction::getControlPoint(Go::Point &pt) const {
 	pt.resize(controlpoint_.size());
 	for(uint d=0; d<controlpoint_.size(); d++)
 		pt[d] = controlpoint_[d];
 }
 
+/************************************************************************************************************************//**
+ * \brief Remove element from the list of supported elements
+ * \param el The element to remove
+ * \return True if the element was found and successfully removed
+ ***************************************************************************************************************************/
 bool Basisfunction::removeSupport(Element *el) {
 	for(uint i=0; i<support_.size(); i++) {
 		if(el == support_[i]) {
 			support_[i] = support_.back();
 			support_.pop_back();
-			break;
+			return true;
 		}
 	}
 	return false;
 }
 
+/************************************************************************************************************************//**
+ * \brief Add element from the list of supported elements if its support overlaps
+ * \param el The element to add
+ * \return True if the elements support overlaps with the support of this B-spline
+ ***************************************************************************************************************************/
 bool Basisfunction::addSupport(Element *el) {
 	if(overlaps(el)) {
 		support_.push_back(el);
@@ -221,6 +254,9 @@ bool Basisfunction::addSupport(Element *el) {
 	return false;
 }
 
+/************************************************************************************************************************//**
+ * \brief Returns true if this B-splines support overlaps with the elements size
+ ***************************************************************************************************************************/
 bool Basisfunction::overlaps(Element *el) const {
 	return knots_[0][0]     < el->umax() &&
 	       knots_[0].back() > el->umin() && 
@@ -228,6 +264,11 @@ bool Basisfunction::overlaps(Element *el) const {
 	       knots_[1].back() > el->vmin();
 }
 
+/************************************************************************************************************************//**
+ * \brief Get all B-splines which have overlapping support with this B-spline. The combined support of this set is denoted
+ *        the extended support of the B-spline
+ * \return A list of elements which describes the extended support
+ ***************************************************************************************************************************/
 std::vector<Element*> Basisfunction::getExtendedSupport() {
 	std::set<Element*> ans ;
 
@@ -240,6 +281,10 @@ std::vector<Element*> Basisfunction::getExtendedSupport() {
 	return ans_vector;
 }
 
+/************************************************************************************************************************//**
+ * \brief Get a larger support for the B-splines. Typically trying our best to just extend the support by one element in one direction
+ * \return A list of elements which describes the minimal extended support
+ ***************************************************************************************************************************/
 std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 	double min_du = DBL_MAX;
 	double min_dv = DBL_MAX;
@@ -297,12 +342,20 @@ std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 	return results;
 }
 
+/************************************************************************************************************************//**
+ * \brief Resize the B-spline dimension. All control point values set to 0.0
+ * \param dim New control point dimension
+ ***************************************************************************************************************************/
 void Basisfunction::setDimension(int dim) {
 	controlpoint_.resize(dim);
 	for(int i=0; i<dim; i++)
 		controlpoint_[i]  = 0.0;
 }
 
+/************************************************************************************************************************//**
+ * \brief Get the B-spline hash code for storage in the HashSet container
+ * \returns some "random" long based on the local knot vector
+ ***************************************************************************************************************************/
 long Basisfunction::hashCode() const {
 	if(hashCode_ != 0)
 		return hashCode_;
@@ -333,12 +386,11 @@ long Basisfunction::hashCode() const {
 	return hashCode_;
 }
 
-/*
-bool Basisfunction::equals(Basisfunction *other) const {
-	return equals(*other);
-}
-*/
-
+/************************************************************************************************************************//**
+ * \brief Test for B-spline equality
+ * \param other The other B-spline to check against
+ * \returns True if the knot vectors are identical (up to a tolerance of 1e-10)
+ ***************************************************************************************************************************/
 bool Basisfunction::equals(const Basisfunction &other) const {
 	if(knots_.size() != other.knots_.size())
 		return false;
@@ -352,10 +404,20 @@ bool Basisfunction::equals(const Basisfunction &other) const {
 	return true;
 }
 
+/************************************************************************************************************************//**
+ * \brief Test for B-spline equality
+ * \param other The other B-spline to check against
+ * \returns True if the knot vectors are identical (up to a tolerance of 1e-10)
+ ***************************************************************************************************************************/
 bool Basisfunction::operator==(const Basisfunction &other) const {
 	return equals(other);
 }
 
+/************************************************************************************************************************//**
+ * \brief Test for B-spline equality
+ * \param other The other B-spline to check against
+ * \returns True if the knot vectors are identical (up to a tolerance of 1e-10)
+ ***************************************************************************************************************************/
 void Basisfunction::operator+=(const Basisfunction &other) {
 	double newWeight = weight_ + other.weight_;
 	for(uint i=0; i<controlpoint_.size(); i++)
@@ -363,46 +425,26 @@ void Basisfunction::operator+=(const Basisfunction &other) {
 	weight_ = newWeight;
 }
 
-Basisfunction* Basisfunction::copy() {
-    // Basisfunction *returnvalue = new Basisfunction(this->knots_[0], this->knots_[1], this->controlpoint_, controlpoint_.size(), knots_[0].size()+1, knots_[1].size()+1, this->weight_);
-   
-    // returnvalue->id_    = this->id_;
-
-    /*
-    for(int i=0;i<support_.size(); i++)
-      {
-	returnvalue -> support_.push_back(this->support_[i]->copy());
-      }
-    */
-
-    //loop
-    //returnvalue->knots_ = this->knots_;
-
-    //loop
-    /*
-    returnvalue->dim_ = this->dim_;
-    returnvalue->knots_[0].size() = this->knots_[0].size();
-    returnvalue->knots_[1].size() = this->knots_[1].size();
-    returnvalue->weight_ = this->weight_;
-    returnvalue->knots_[0] = this->knots_[0];
-    returnvalue->knots_[1] = this->knots_[1];
-    returnvalue->controlpoint_ = this->controlpoint_;
-    */
-    //std::vector<double> knots_;
-    return NULL;
-    
+/************************************************************************************************************************//**
+ * \brief Returns a deep copy of the B-spline with all the same knot vectors, controlpoints and supported elements
+ ***************************************************************************************************************************/
+Basisfunction* Basisfunction::copy() const {
+    Basisfunction *returnValue = new Basisfunction(knots_[0].begin(), knots_[1].begin(), controlpoint_.begin(), controlpoint_.size(), knots_[0].size()+1, knots_[1].size()+1, weight_);
+	returnValue->setId(id_);
+	for(Element *el : support_)
+		returnValue->addSupport(el);
+	return returnValue;
 }
 
 
 
 
-
-
-
-
+/************************************************************************************************************************//**
+ * \brief Reads a B-spline from input stream
+ ***************************************************************************************************************************/
+void Basisfunction::read(std::istream &is) {
 // convenience macro for reading formated input
 #define ASSERT_NEXT_CHAR(c) {ws(is); nextChar = is.get(); if(nextChar!=c) { std::cerr << "Error parsing basis function\n"; exit(324); } ws(is); }
-void Basisfunction::read(std::istream &is) {
 	char nextChar;
 
 	// read id tag
@@ -429,9 +471,12 @@ void Basisfunction::read(std::istream &is) {
 	ASSERT_NEXT_CHAR('(');
 	is >> weight_;
 	ASSERT_NEXT_CHAR(')');
-}
 #undef ASSERT_NEXT_CHAR
+}
 
+/************************************************************************************************************************//**
+ * \brief Writes a B-spline to output stream
+ ***************************************************************************************************************************/
 void Basisfunction::write(std::ostream &os) const {
 	os << id_ << ":";
 	os << "[";
@@ -446,6 +491,9 @@ void Basisfunction::write(std::ostream &os) const {
 	os << "(" << weight_ << ")";
 }
 
+/************************************************************************************************************************//**
+ * \brief Returns true if all supported elements are considered overloaded (i.e. has more than (p+1)*(p+1) supported B-splines)
+ ***************************************************************************************************************************/
 bool Basisfunction::isOverloaded()  const {
 	for(uint i=0; i<support_.size(); i++) 
 		if(! support_[i]->isOverloaded() )
@@ -453,6 +501,9 @@ bool Basisfunction::isOverloaded()  const {
 	return true;
 }
 
+/************************************************************************************************************************//**
+ * \brief Returns the maximum overloaded count of the supported elements
+ ***************************************************************************************************************************/
 int Basisfunction::getOverloadCount() const {
 	int ans = INT_MAX;
 	for(uint i=0; i<support_.size(); i++) 
