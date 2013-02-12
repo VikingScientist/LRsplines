@@ -7,10 +7,9 @@
 #include <vector>
 
 enum refinementStrategy {
-	LR_SAFE = 0,
-	LR_MINSPAN = 1,
-	LR_ISOTROPIC_EL = 2,
-	LR_ISOTROPIC_FUNC = 3,
+	LR_MINSPAN         = 0,
+	LR_FULLSPAN        = 1,
+	LR_STRUCTURED_MESH = 2
 };
 
 
@@ -46,12 +45,21 @@ public:
 	virtual void generateIDs() const;
 
 	// common get methods
-	int nBasisFunctions()    const { return basis_.size()  ; };
+	//! \brief returns the number of B-splines (basisfunctions) in this LR-spline object
+	int nBasisFunctions()    const { return basis_.size()  ; }; 
+	//! \brief returns the number of elements
 	int nElements()          const { return element_.size(); };
+	//! \brief returns the number of components that the control points have (spatial dimension)
 	int dimension()          const { return dim_           ; };
+	//! \brief returns the number of local knot vectors for each B-spline (parametric dimension)
+	int nVariate()           const { return start_.size()  ; };
+	//! \brief returns the polynomial order (degree + 1) in the given parametric direction
 	int order        (int i) const { return order_[i]      ; };
+	//! \brief returns the start parameter of the given parametric direction
 	double startparam(int i) const { return start_[i]      ; };
+	//! \brief returns the end parameter of the given parametric direction
 	double endparam  (int i) const { return end_[i]        ; };
+	//! \brief should always return false as rational LR splines is not yet implemented
 	bool rational()          const { return rational_      ; };
 	
 	// more funky get methods

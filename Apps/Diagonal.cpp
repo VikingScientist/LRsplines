@@ -105,11 +105,11 @@ int main(int argc, char **argv) {
 	// setup refinement parameters
 	enum refinementStrategy strat;
 	if(scheme == 0)
-		strat = LR_SAFE;
+		strat = LR_FULLSPAN;
 	else if(scheme == 1)
 		strat = LR_MINSPAN;
 	else if(scheme == 2)
-		strat = LR_ISOTROPIC_FUNC;
+		strat = LR_STRUCTURED_MESH;
 	if(vol) {
 		lrv->setRefMultiplicity(m);
 		lrv->setRefStrat(strat);

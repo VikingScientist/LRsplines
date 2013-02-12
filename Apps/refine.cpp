@@ -115,11 +115,11 @@ int main(int argc, char **argv) {
 	// setup refinement parameters
 	lr->setRefMultiplicity(m);
 	if(scheme == 0)
-		lr->setRefStrat(LR_SAFE);
+		lr->setRefStrat(LR_FULLSPAN);
 	else if(scheme == 1)
 		lr->setRefStrat(LR_MINSPAN);
 	else if(scheme == 2)
-		lr->setRefStrat(LR_ISOTROPIC_FUNC);
+		lr->setRefStrat(LR_STRUCTURED_MESH);
 
 	// do actual refinement
 	if(scheme == 2)

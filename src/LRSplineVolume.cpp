@@ -49,7 +49,7 @@ LRSplineVolume::LRSplineVolume() {
 	doCloseGaps_      = true;
 	maxAspectRatio_   = 2.0;
 	doAspectRatioFix_ = false;
-	refStrat_         = LR_SAFE;
+	refStrat_         = LR_FULLSPAN;
 	refKnotlineMult_  = 1;
 	symmetry_         = 1;
 }
@@ -76,7 +76,7 @@ LRSplineVolume::LRSplineVolume(Go::SplineVolume *vol) {
 	doCloseGaps_      = true;
 	maxAspectRatio_   = 2.0;
 	doAspectRatioFix_ = false;
-	refStrat_         = LR_SAFE;
+	refStrat_         = LR_FULLSPAN;
 	refKnotlineMult_  = 1;
 	symmetry_         = 1;
 
@@ -170,7 +170,7 @@ LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v,
 	doCloseGaps_      = true;
 	maxAspectRatio_   = 2.0;
 	doAspectRatioFix_ = false;
-	refStrat_         = LR_SAFE;
+	refStrat_         = LR_FULLSPAN;
 	refKnotlineMult_  = 1;
 	symmetry_         = 1;
 
@@ -703,7 +703,7 @@ void LRSplineVolume::refineByDimensionIncrease(const std::vector<double> &errPer
 
 	/* accumulate the error & index - vector */
 	std::vector<IndexDouble> errors;
-	if(refStrat_ == LR_ISOTROPIC_FUNC) { // error per-function
+	if(refStrat_ == LR_STRUCTURED_MESH) { // error per-function
 		int i=0;
 		for(Basisfunction *b : basis_) {
 			errors.push_back(IndexDouble(0.0, i));
@@ -726,9 +726,9 @@ void LRSplineVolume::refineByDimensionIncrease(const std::vector<double> &errPer
 	for(uint i=0; i<errors.size(); i++) {
 		if(refStrat_ == LR_MINSPAN)
 			getMinspanRects(errors[i].second, newRects[i]);
-		else if(refStrat_ == LR_SAFE) 
+		else if(refStrat_ == LR_FULLSPAN) 
 			getFullspanRects(errors[i].second, newRects[i]);
-		else if(refStrat_ == LR_ISOTROPIC_FUNC)  {
+		else if(refStrat_ == LR_STRUCTURED_MESH)  {
 			Basisfunction *b = getBasisfunction(errors[i].second);
 			getStructMeshRects(b, newRects[i]);
 		}
