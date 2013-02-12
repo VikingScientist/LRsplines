@@ -426,7 +426,7 @@ void LRSplineVolume::computeBasis (double param_u,
 
 	int i=0;
 	for(it=itStart; it!=itStop; ++it, ++i)
-	    (*it)->evaluate(result[i], param_u, param_v, derivs, param_u!=end_[0], param_v!=end_[1], param_w!=end_[2]);
+	    (*it)->evaluate(result[i], param_u, param_v, param_w, derivs, param_u!=end_[0], param_v!=end_[1], param_w!=end_[2]);
 }
 
 int LRSplineVolume::getElementContaining(double u, double v, double w) const {
