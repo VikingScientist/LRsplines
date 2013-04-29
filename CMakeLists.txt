@@ -160,6 +160,14 @@ ELSE(WIN32)
   INSTALL(TARGETS LRSpline DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
           COMPONENT liblrspline)
 
+  # For generating the doxy
+  ADD_CUSTOM_TARGET(doc doxygen 
+                    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+                    COMMENT "Generating API documentation" VERBATIM)
+  INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${CMAKE_BUILD_TOOL} doc WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")" COMPONENT doc)
+
+  INSTALL(DIRECTORY doc/html/ DESTINATION share/doc/liblrsplines1/html)
+
   # headers
   FILE(GLOB LRSPLINE_HEADERS include/LRSpline/Basisfunction.h
                              include/LRSpline/Element.h
