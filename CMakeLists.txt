@@ -179,7 +179,7 @@ ELSE(WIN32)
                              include/LRSpline/HashSet.h
                              include/LRSpline/MeshRectangle.h)
   INSTALL(FILES ${LRSPLINE_HEADERS}
-                DESTINATION ${CMAKE_INSTALL_PREFIX}/include/LRSpline
+                DESTINATION include/LRSpline
                 COMPONENT liblrspline-dev)
   INSTALL(FILES cmake/Modules/FindLRSpline.cmake
           DESTINATION ${CMAKE_ROOT}/Modules COMPONENT liblrspline-dev)
