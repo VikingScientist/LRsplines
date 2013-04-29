@@ -13,6 +13,7 @@ CONFIGURE_FILE(include/LRSpline/LRSpline_version.h.in
 ENABLE_LANGUAGE(CXX)
 
 INCLUDE(CheckCXXCompilerFlag)
+INCLUDE(cmake/Modules/UseMultiArch.cmake)
 
 ADD_DEFINITIONS(-DTIME_LRSPLINE)
 
@@ -157,7 +158,7 @@ IF(WIN32)
   # TODO
 ELSE(WIN32)
   # lib
-  INSTALL(TARGETS LRSpline DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+  INSTALL(TARGETS LRSpline DESTINATION ${CMAKE_INSTALL_LIBDIR}
           COMPONENT liblrspline)
 
   # For generating the doxy
