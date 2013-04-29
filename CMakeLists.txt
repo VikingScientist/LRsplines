@@ -181,6 +181,6 @@ ELSE(WIN32)
   INSTALL(FILES ${LRSPLINE_HEADERS}
                 DESTINATION include/LRSpline
                 COMPONENT liblrspline-dev)
-  INSTALL(FILES cmake/Modules/FindLRSpline.cmake
-          DESTINATION ${CMAKE_ROOT}/Modules COMPONENT liblrspline-dev)
+  INSTALL(FILES cmake/Modules/LRSplineConfig.cmake
+    DESTINATION lib/LRSpline COMPONENT liblrspline-dev)
 ENDIF(WIN32)
