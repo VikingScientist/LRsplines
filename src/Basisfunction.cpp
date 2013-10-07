@@ -519,6 +519,10 @@ std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 		}
 	}
 
+	// Not all B-splines do have a proper minimal extended support as defined above
+	if(smallestGuy == NULL)
+		return std::vector<Element*>(0);
+
 	std::vector<Element*> results(smallestGuy->nSupportedElements());
 	std::copy(smallestGuy->supportedElementBegin(), smallestGuy->supportedElementEnd(), results.begin());
 	return results;
