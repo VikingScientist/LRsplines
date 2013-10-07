@@ -86,13 +86,8 @@ public:
 	std::vector<MeshRectangle*>::iterator  meshrectBegin()          { return meshrect_.begin(); };
 	std::vector<MeshRectangle*>::iterator  meshrectEnd()            { return meshrect_.end(); };
 	const std::vector<MeshRectangle*>& getAllMeshRectangles() const { return meshrect_ ;};
-	Element* getElement(int i)                                      { return element_[i]; };
 	MeshRectangle* getMeshRectangle(int i)                          { return meshrect_[i]; };
-	Basisfunction* getBasisfunction(int iBasis) {
-		HashSet_iterator<Basisfunction*> it = basis_.begin();
-		for(int i=0; i<iBasis; ++i) ++it;
-		return *it;
-	}
+	const MeshRectangle* getMeshRectangle(int i) const              { return meshrect_[i]; };
 	void getBezierElement(   int iEl, std::vector<double> &controlPoints) const;
 	void getBezierExtraction(int iEl, std::vector<double> &extractMatrix) const;
 

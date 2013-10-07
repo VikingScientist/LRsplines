@@ -61,10 +61,13 @@ public:
 	double endparam  (int i) const { return end_[i]        ; };
 	//! \brief should always return false as rational LR splines is not yet implemented
 	bool rational()          const { return rational_      ; };
+
 	
 	// more funky get methods
 	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;
 	void getEdgeElements( std::vector<Element*>       &edgeElements,  parameterEdge edge             ) const;
+	virtual void getBezierElement(   int iEl, std::vector<double> &controlPoints) const = 0;
+	virtual void getBezierExtraction(int iEl, std::vector<double> &extractMatrix) const = 0;
 
 	// get container iterators
 	std::vector<Element*>::iterator        elementBegin()         { return element_.begin(); };
@@ -75,6 +78,24 @@ public:
 	HashSet_const_iterator<Basisfunction*> basisEnd()       const { return basis_.end();     };
 	const HashSet<Basisfunction*>& getAllBasisfunctions()   const { return basis_ ;          };
 	const std::vector<Element*>&           getAllElements() const { return element_ ;        };
+
+	// traditional get methods
+	Element* getElement(int i)                                     { return element_[i]; };
+	const Element* getElement(int i) const                         { return element_[i]; };
+	Basisfunction* getBasisfunction(int iBasis) {
+		int i=0;
+		for(Basisfunction* b : getAllBasisfunctions())
+			if(i++ == iBasis)
+				return b;
+		return NULL;
+	}
+	const Basisfunction* getBasisfunction(int iBasis) const {
+		int i=0;
+		for(const Basisfunction* b : getAllBasisfunctions())
+			if(i++ == iBasis)
+				return b;
+		return NULL;
+	}
 
 	// refinement functions
 	virtual void refineBasisFunction(int index) = 0;

@@ -72,18 +72,14 @@ public:
 	void getGlobalKnotVector      (std::vector<double> &knot_u, std::vector<double> &knot_v) const;
 	void getGlobalUniqueKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const;
 	void getBezierElement         (int iEl, std::vector<double> &controlPoints)              const;
+	void getBezierExtraction      (int iEl, std::vector<double> &extractMatrix)              const;
 	int nMeshlines()              const                { return meshline_.size(); };
 
 	// more get-methods
 	std::vector<Meshline*>::iterator       meshlineBegin()         { return meshline_.begin(); };
 	std::vector<Meshline*>::iterator       meshlineEnd()           { return meshline_.end(); };
 	Meshline* getMeshline(int i)                                   { return meshline_[i]; };
-	Element* getElement(int i)                                     { return element_[i]; };
-	Basisfunction* getBasisfunction(int iBasis) {
-		HashSet_iterator<Basisfunction*> it = basis_.begin();
-		for(int i=0; i<iBasis; ++i) ++it;
-		return *it;
-	}
+	const Meshline* getMeshline(int i) const                       { return meshline_[i]; };
 
 	// assorted specialized functions
 	void set_dim(int dimvalue)                         {dim_ = dimvalue;};
