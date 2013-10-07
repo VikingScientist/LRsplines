@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
 		if(head.classType() == Class_SplineVolume) {
 			inputfile >> sv;
 			lr = lrv = new LRSplineVolume(&sv);
-		} else if(head.classType() == Class_SplineVolume) {
+		} else if(head.classType() == Class_SplineSurface) {
 			inputfile >> ss;
 			lr = lrs = new LRSplineSurface(&ss);
 		}  else {
