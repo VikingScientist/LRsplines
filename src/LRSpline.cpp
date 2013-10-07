@@ -7,6 +7,7 @@ namespace LR {
 LRSpline::LRSpline() {
 	dim_      = 0;
 	element_.resize(0);
+	lastElementEvaluation = -1;
 }
 
 void LRSpline::generateIDs() const {

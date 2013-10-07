@@ -123,6 +123,9 @@ protected:
 	bool                    doCloseGaps_;
 	bool                    doAspectRatioFix_;
 	double                  maxAspectRatio_;
+
+	// caching stuff
+	mutable int lastElementEvaluation;
 	
 };
 

@@ -436,12 +436,22 @@ void LRSplineVolume::computeBasis (double param_u,
 
 int LRSplineVolume::getElementContaining(double u, double v, double w) const {
 	int ans = 0;
+	if(lastElementEvaluation >= 0) {
+		Element *lastElm = element_[lastElementEvaluation];
+		if(lastElm->getParmin(0) <= u && lastElm->getParmin(1) <= v && lastElm->getParmin(2) <= w) 
+			if((u < lastElm->getParmax(0) || (u == end_[0] && u <= lastElm->getParmax(0))) && 
+			   (v < lastElm->getParmax(1) || (v == end_[1] && v <= lastElm->getParmax(1))) && 
+			   (w < lastElm->getParmax(2) || (w == end_[2] && w <= lastElm->getParmax(2))))
+				return lastElementEvaluation;
+	}
 	for(Element *el : element_) {
 		if(el->getParmin(0) <= u && el->getParmin(1) <= v && el->getParmin(2) <= w) 
 			if((u < el->getParmax(0) || (u == end_[0] && u <= el->getParmax(0))) && 
 			   (v < el->getParmax(1) || (v == end_[1] && v <= el->getParmax(1))) && 
-			   (w < el->getParmax(2) || (w == end_[2] && w <= el->getParmax(2))))
+			   (w < el->getParmax(2) || (w == end_[2] && w <= el->getParmax(2)))) {
+				lastElementEvaluation = ans;
 				return ans;
+			}
 		ans++;
 	}
 	return -1;

@@ -498,11 +498,18 @@ void LRSplineSurface::computeBasis (double param_u,
  * \details This is done by a linear search and with the number of elements equal to n, the complexity is O(n)
  ***************************************************************************************************************************/
 int LRSplineSurface::getElementContaining(double u, double v) const {
+	if(lastElementEvaluation >= 0) 
+		if(element_[lastElementEvaluation]->umin() <= u && element_[lastElementEvaluation]->vmin() <= v) 
+			if((u < element_[lastElementEvaluation]->umax() || (u == end_[0] && u <= element_[lastElementEvaluation]->umax())) && 
+		   	(v < element_[lastElementEvaluation]->vmax() || (v == end_[1] && v <= element_[lastElementEvaluation]->vmax())))
+				return lastElementEvaluation;
 	for(uint i=0; i<element_.size(); i++)
 		if(element_[i]->umin() <= u && element_[i]->vmin() <= v) 
 			if((u < element_[i]->umax() || (u == end_[0] && u <= element_[i]->umax())) && 
-			   (v < element_[i]->vmax() || (v == end_[1] && v <= element_[i]->vmax())))
+			   (v < element_[i]->vmax() || (v == end_[1] && v <= element_[i]->vmax()))) {
+				lastElementEvaluation = i;
 				return i;
+			}
 		
 	return -1;
 }
