@@ -83,6 +83,9 @@ SET_TARGET_PROPERTIES(LRSpline PROPERTIES  VERSION ${LRSpline_VERSION}
                       SOVERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR})
 
 # Make some Apps
+ADD_EXECUTABLE(reduceContinuity ${PROJECT_SOURCE_DIR}/Apps/reduceContinuity.cpp)
+TARGET_LINK_LIBRARIES(reduceContinuity LRSpline ${DEPLIBS})
+
 ADD_EXECUTABLE(TensorComparison ${PROJECT_SOURCE_DIR}/Apps/TensorComparison.cpp)
 TARGET_LINK_LIBRARIES(TensorComparison LRSpline ${DEPLIBS})
 

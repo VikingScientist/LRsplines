@@ -80,6 +80,8 @@ public:
 	std::vector<Meshline*>::iterator       meshlineEnd()           { return meshline_.end(); };
 	Meshline* getMeshline(int i)                                   { return meshline_[i]; };
 	const Meshline* getMeshline(int i) const                       { return meshline_[i]; };
+	std::vector<Meshline*> getAllMeshlines()                       { return meshline_;    };
+	const std::vector<Meshline*> getAllMeshlines() const           { return meshline_;    };
 
 	// assorted specialized functions
 	void set_dim(int dimvalue)                         {dim_ = dimvalue;};
