@@ -5,6 +5,7 @@ SET(LRSpline_VERSION_MAJOR 0)
 SET(LRSpline_VERSION_MINOR 5)
 SET(LRSpline_VERSION_PATCH 0)
 SET(LRSpline_VERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR}.${LRSpline_VERSION_PATCH})
+SET(HAS_GOTOOLS 1)
 
 # Generate header with version info
 CONFIGURE_FILE(include/LRSpline/LRSpline_version.h.in
@@ -28,6 +29,7 @@ IF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
   ENDIF(HAVE_0x)
 ENDIF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
+
 # Check that the required C++11 features are available
 CHECK_CXX_SOURCE_COMPILES("
                           #include <map>
@@ -48,20 +50,27 @@ ENDIF(NOT COMPILER_SATISFIES_CXX11)
 ENABLE_TESTING()
 
 # Required packages
-FIND_PACKAGE(GoTrivariate REQUIRED)
-FIND_PACKAGE(GoTools REQUIRED)
 FIND_PACKAGE(Boost REQUIRED)
 
 # Required libraries
-SET(DEPLIBS ${GoTrivariate_LIBRARIES}
-            ${GoTools_LIBRARIES}
-            ${BOOST_LIBRARIES})
+SET(DEPLIBS ${BOOST_LIBRARIES})
 
 # Required include directories
 SET(INCLUDES ${PROJECT_SOURCE_DIR}/include
-             ${GoTools_INCLUDE_DIRS} 
-             ${GoTrivariate_INCLUDE_DIRS} 
              ${BOOST_INCLUDES})
+
+# Optional packages
+IF(HAS_GOTOOLS)
+  FIND_PACKAGE(GoTrivariate REQUIRED)
+  FIND_PACKAGE(GoTools REQUIRED)
+  SET(INCLUDES ${INCLUDES}
+               ${GoTools_INCLUDE_DIRS} 
+               ${GoTrivariate_INCLUDE_DIRS})
+  SET(DEPLIBS ${DEPLIBS}
+              ${GoTrivariate_LIBRARIES}
+              ${GoTools_LIBRARIES})
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAS_GOTOOLS=1")
+ENDIF(HAS_GOTOOLS)
 
 INCLUDE_DIRECTORIES(${INCLUDES})
 
@@ -86,14 +95,8 @@ SET_TARGET_PROPERTIES(LRSpline PROPERTIES  VERSION ${LRSpline_VERSION}
 ADD_EXECUTABLE(reduceContinuity ${PROJECT_SOURCE_DIR}/Apps/reduceContinuity.cpp)
 TARGET_LINK_LIBRARIES(reduceContinuity LRSpline ${DEPLIBS})
 
-ADD_EXECUTABLE(TensorComparison ${PROJECT_SOURCE_DIR}/Apps/TensorComparison.cpp)
-TARGET_LINK_LIBRARIES(TensorComparison LRSpline ${DEPLIBS})
-
 ADD_EXECUTABLE(PartitionOfUnityTest ${PROJECT_SOURCE_DIR}/Apps/PartitionOfUnityTest.cpp)
 TARGET_LINK_LIBRARIES(PartitionOfUnityTest LRSpline ${DEPLIBS})
-
-ADD_EXECUTABLE(RefinementUnchanged ${PROJECT_SOURCE_DIR}/Apps/RefinementUnchanged.cpp)
-TARGET_LINK_LIBRARIES(RefinementUnchanged LRSpline ${DEPLIBS})
 
 ADD_EXECUTABLE(StresstestRefinement ${PROJECT_SOURCE_DIR}/Apps/StresstestRefinement.cpp)
 TARGET_LINK_LIBRARIES(StresstestRefinement LRSpline ${DEPLIBS})
@@ -110,14 +113,22 @@ TARGET_LINK_LIBRARIES(Diagonal LRSpline ${DEPLIBS})
 ADD_EXECUTABLE(MakeWaterfall ${PROJECT_SOURCE_DIR}/Apps/MakeWaterfall.cpp)
 TARGET_LINK_LIBRARIES(MakeWaterfall LRSpline ${DEPLIBS})
 
+ADD_EXECUTABLE(RefinementUnchanged ${PROJECT_SOURCE_DIR}/Apps/RefinementUnchanged.cpp)
+TARGET_LINK_LIBRARIES(RefinementUnchanged LRSpline ${DEPLIBS})
+
+IF(HAS_GOTOOLS)
+  ADD_EXECUTABLE(TensorComparison ${PROJECT_SOURCE_DIR}/Apps/TensorComparison.cpp)
+  TARGET_LINK_LIBRARIES(TensorComparison LRSpline ${DEPLIBS})
+ENDIF(HAS_GOTOOLS)
+
+ADD_EXECUTABLE(TopologyRefinement ${PROJECT_SOURCE_DIR}/Apps/TopologyRefinement.cpp)
+TARGET_LINK_LIBRARIES(TopologyRefinement LRSpline ${DEPLIBS})
+
 ADD_EXECUTABLE(LinearIndep ${PROJECT_SOURCE_DIR}/Apps/LinearIndep.cpp)
 TARGET_LINK_LIBRARIES(LinearIndep LRSpline ${DEPLIBS})
 
 ADD_EXECUTABLE(drawLRmesh ${PROJECT_SOURCE_DIR}/Apps/drawLRmesh.cpp)
 TARGET_LINK_LIBRARIES(drawLRmesh LRSpline ${DEPLIBS})
-
-ADD_EXECUTABLE(TopologyRefinement ${PROJECT_SOURCE_DIR}/Apps/TopologyRefinement.cpp)
-TARGET_LINK_LIBRARIES(TopologyRefinement LRSpline ${DEPLIBS})
 
 ADD_EXECUTABLE(BezierExtract ${PROJECT_SOURCE_DIR}/Apps/BezierExtract.cpp)
 TARGET_LINK_LIBRARIES(BezierExtract LRSpline ${DEPLIBS})
@@ -131,10 +142,12 @@ FOREACH(TESTFILE ${REGRESESSION_TESTFILES})
   ADD_TEST(${TESTFILE} ${PROJECT_SOURCE_DIR}/test/regtest.sh "${CMAKE_BINARY_DIR}/${EXECUTABLE_OUTPUT_PATH}/RefinementUnchanged" "${TESTFILE}")
 ENDFOREACH()
 
-FILE(GLOB_RECURSE REGRESESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/TensorComparison/*.reg")
-FOREACH(TESTFILE ${REGRESESSION_TESTFILES})
-  ADD_TEST(${TESTFILE} ${PROJECT_SOURCE_DIR}/test/regtest.sh "${CMAKE_BINARY_DIR}/${EXECUTABLE_OUTPUT_PATH}/TensorComparison" "${TESTFILE}")
-ENDFOREACH()
+IF(HAS_GOTOOLS)
+  FILE(GLOB_RECURSE REGRESESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/TensorComparison/*.reg")
+  FOREACH(TESTFILE ${REGRESESSION_TESTFILES})
+    ADD_TEST(${TESTFILE} ${PROJECT_SOURCE_DIR}/test/regtest.sh "${CMAKE_BINARY_DIR}/${EXECUTABLE_OUTPUT_PATH}/TensorComparison" "${TESTFILE}")
+  ENDFOREACH()
+ENDIF(HAS_GOTOOLS)
 
 FILE(GLOB_RECURSE REGRESESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/Diagonal/*.reg")
 FOREACH(TESTFILE ${REGRESESSION_TESTFILES})

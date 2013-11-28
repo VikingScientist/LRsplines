@@ -3,16 +3,17 @@
 #include <string.h>
 #include <fstream>
 #include <sstream>
-#include <GoTools/geometry/SplineSurface.h>
-#include <GoTools/trivariate/SplineVolume.h>
-#include <GoTools/geometry/ObjectHeader.h>
+#ifdef HAS_GOTOOLS
+	#include <GoTools/geometry/SplineSurface.h>
+	#include <GoTools/trivariate/SplineVolume.h>
+	#include <GoTools/geometry/ObjectHeader.h>
+#endif
 #include "LRSpline/LRSplineSurface.h"
 #include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/Profiler.h"
 #include "LRSpline/Element.h"
 #include "LRSpline/MeshRectangle.h"
 
-using namespace Go;
 using namespace LR;
 using namespace std;
 
@@ -99,8 +100,6 @@ int main(int argc, char **argv) {
 		exit(2);
 	}
 
-	SplineSurface   *ss;
-	SplineVolume    *sv;
 	LRSplineSurface *lrs;
 	LRSplineVolume  *lrv;
 	LRSpline        *lr;
@@ -127,41 +126,41 @@ int main(int argc, char **argv) {
 			
 		// make two spline objects
 		if(vol) {
-			sv  = new SplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
 			lrv = new LRSplineVolume(n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
 			lr  = lrv;
 		} else {
-			ss  = new SplineSurface  (n1, n2,    p1, p2,     knot_u, knot_v,         cp, dim, rat);
 			lrs = new LRSplineSurface(n1, n2,    p1, p2,     knot_u, knot_v,         cp, dim, rat);
 			lr  = lrs;
 		}
 	} else {
+#ifdef HAS_GOTOOLS
 		ifstream inputfile;
 		inputfile.open(lrInitMesh);
 		if(!inputfile.is_open()) {
 			cerr << "Error: could not open file " << lrInitMesh << endl;
 			exit(3);
 		}
-		ObjectHeader head;
-		ss = new SplineSurface();
-		sv = new SplineVolume();
+		Go::ObjectHeader head;
+		Go::SplineSurface *ss = new Go::SplineSurface();
+		Go::SplineVolume  *sv = new Go::SplineVolume();
 		inputfile >> head;
-		if(head.classType() == Class_SplineVolume) {
+		if(head.classType() == Go::Class_SplineVolume) {
 			vol = true;
 			inputfile >> *sv;
 			lr = lrv = new LRSplineVolume(sv);
-		} else if(head.classType() == Class_SplineSurface) {
+		} else if(head.classType() == Go::Class_SplineSurface) {
 			vol = false;
 			inputfile >> *ss;
 			lr = lrs = new LRSplineSurface(ss);
 		}
+#endif
 	}
 	lr->generateIDs();
 
 
 	// ---------------- Do evaluation on known elements  --------------
 	vector<vector<double> > result;
-	Point pt;
+	vector<double> pt;
 	int maxDerivs = max(p1,p2);
 	if(vol) maxDerivs = max(maxDerivs, p3);
 	maxDerivs -= 2;

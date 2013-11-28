@@ -1,7 +1,7 @@
 #ifndef MESHLINE_H
 #define MESHLINE_H
 
-#include <GoTools/geometry/Streamable.h>
+#include "Streamable.h"
 #include <vector>
 
 namespace LR {
@@ -16,7 +16,7 @@ enum meshlineExtension {
 class Basisfunction;
 class Element;
 
-class Meshline : public Go::Streamable {
+class Meshline : public Streamable {
 
 public:
 	Meshline();

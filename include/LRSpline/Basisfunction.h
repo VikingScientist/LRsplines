@@ -1,9 +1,11 @@
 #ifndef BASISFUNCTION_H
 #define BASISFUNCTION_H
 
-#include <GoTools/utils/Point.h>
-#include <GoTools/geometry/Streamable.h>
+#ifdef HAS_GOTOOLS
+	#include <GoTools/utils/Point.h>
+#endif
 #include <vector>
+#include "Streamable.h"
 #include "LRSpline.h"
 
 namespace LR {
@@ -17,7 +19,7 @@ class Meshline;
  *          trivariate volumes) as well as the control point and scaling weight. Used for evaluation of the B-splines and
  *          all their derivatives. The class does also have pointers back to the elements which they have support on
  ***************************************************************************************************************************/
-class Basisfunction : public Go::Streamable {
+class Basisfunction : public Streamable {
 public:
 	Basisfunction(int dim, int order_u, int order_v);
 	/************************************************************************************************************************//**
@@ -120,7 +122,13 @@ public:
 	// get/set methods
 	void setId(int id)  { this->id_ = id; };
 	void setDimension(int dim)  ;
-	void   getControlPoint(Go::Point &pt)    const;
+
+#ifdef HAS_GOTOOLS
+	void      getControlPoint(Go::Point &pt) const;
+	Go::Point getGrevilleParameter()         const;
+#endif
+	void   getControlPoint(std::vector<double> &pt)      const;
+	void   getGrevilleParameter(std::vector<double> &pt) const;
 	int    getId()                           const { return id_; };
 	int    nSupportedElements()              const { return support_.size(); };
 	int    nVariate()                        const { return knots_.size(); };
@@ -133,7 +141,6 @@ public:
 	std::vector<double>::const_iterator cp() const { return controlpoint_.begin(); };
 	double cp(int i)                         const { return controlpoint_[i]; };
 	double w()                               const { return weight_; };
-	Go::Point getGrevilleParameter() const;
 
 	long hashCode() const ;
 

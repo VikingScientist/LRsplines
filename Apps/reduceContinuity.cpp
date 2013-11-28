@@ -7,7 +7,6 @@
 #include "LRSpline/Element.h"
 #include "LRSpline/Meshline.h"
 
-using namespace Go;
 using namespace LR;
 using namespace std;
 

@@ -3,9 +3,10 @@
 #include <cstring>
 #include <sstream>
 #include <fstream>
-
-#include <GoTools/geometry/SplineSurface.h>
-#include <GoTools/geometry/ObjectHeader.h>
+#ifdef HAS_GOTOOLS
+	#include <GoTools/geometry/SplineSurface.h>
+	#include <GoTools/geometry/ObjectHeader.h>
+#endif
 
 #include "LRSpline/LRSpline.h"
 #include "LRSpline/LRSplineSurface.h"
@@ -13,7 +14,6 @@
 #include "LRSpline/Element.h"
 #include "LRSpline/Meshline.h"
 
-using namespace Go;
 using namespace LR;
 using namespace std;
 
@@ -83,9 +83,6 @@ int main(int argc, char **argv) {
 		cerr << "Error: could not open file " << filename << endl;
 		exit(2);
 	}
-	ObjectHeader   head;
-	SplineSurface    ss;
-	SplineVolume     sv;
 	LRSpline        *lr;
 	LRSplineSurface *lrs = NULL;
 	LRSplineVolume  *lrv = NULL;
@@ -99,17 +96,22 @@ int main(int argc, char **argv) {
 		lr = lrs = new LRSplineSurface();
 		inputfile >> *lrs;
 	} else {
+#ifdef HAS_GOTOOLS
+		Go::ObjectHeader   head;
 		inputfile >> head;
-		if(head.classType() == Class_SplineVolume) {
+		if(head.classType() == Go::Class_SplineVolume) {
+			Go::SplineVolume     sv;
 			inputfile >> sv;
 			lr = lrv = new LRSplineVolume(&sv);
-		} else if(head.classType() == Class_SplineSurface) {
+		} else if(head.classType() == Go::Class_SplineSurface) {
+			Go::SplineSurface    ss;
 			inputfile >> ss;
 			lr = lrs = new LRSplineSurface(&ss);
 		}  else {
 			std::cerr << "Unsupported GoTools object\n";
 			exit(3);
 		}
+#endif
 	}
 	
 	// setup refinement parameters

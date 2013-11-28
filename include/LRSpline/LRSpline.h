@@ -2,8 +2,7 @@
 #define LRSPLINE_H
 
 #include "HashSet.h"
-#include "HashSet.h"
-#include <GoTools/geometry/Streamable.h>
+#include "Streamable.h"
 #include <vector>
 
 enum refinementStrategy {
@@ -37,7 +36,7 @@ typedef enum parameterEdge parameterEdge;
 class Basisfunction;
 class Element;
 
-class LRSpline : public Go::Streamable {
+class LRSpline : public Streamable {
 
 public:
 	LRSpline();
@@ -45,6 +44,7 @@ public:
 	virtual void generateIDs() const;
 
 	// common get methods
+
 	//! \brief returns the number of B-splines (basisfunctions) in this LR-spline object
 	int nBasisFunctions()    const { return basis_.size()  ; }; 
 	//! \brief returns the number of elements
@@ -147,8 +147,41 @@ protected:
 
 	// caching stuff
 	mutable int lastElementEvaluation;
+
+	static std::vector<double> getUniformKnotVector(int n, int p) {
+		std::vector<double> result(n+p);
+		int k=0;
+		for(int i=0; i<p-1; i++)
+			result[k++] = 0;
+		for(int i=0; i<n-p+2; i++)
+			result[k++] = i;
+		for(int i=0; i<p-1; i++)
+			result[k++] = n-p+1;
+		return result;
+	}
+
+	template <typename RandomIterator>
+	static std::vector<double> getGrevillePoints(RandomIterator knotStart, RandomIterator knotEnd) {
+		RandomIterator knot = knotStart;
+		int p=0;
+		while(knot++ != knotStart)
+			p++;
+		int n = (knotEnd-knotStart)-p;
+
+		std::vector<double> result(n);
+		for(int i=0; i<n; i++) {
+			result[i] = 0.0;
+			for(int j=i+1; j<i+p-1; j++)
+				result[i] += *(knotStart+j);
+			result[i] /= (p-1);
+		}
+		return result;
+	}
 	
 };
+
+
+
 
 } // end namespace LR
 

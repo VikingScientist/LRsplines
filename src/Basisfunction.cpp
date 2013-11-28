@@ -35,6 +35,7 @@ Basisfunction::~Basisfunction() {
 		support_[i]->removeSupportFunction( (Basisfunction*) this);
 }
 
+#ifdef HAS_GOTOOLS
 /************************************************************************************************************************//**
  * \brief Get parametric greville parameter for this B-spline
  * \returns The internal knot average 
@@ -49,6 +50,32 @@ Go::Point Basisfunction::getGrevilleParameter() const {
 	ans[0] /= (knots_[0].size()-2);
 	ans[1] /= (knots_[1].size()-2);
 	return ans;
+}
+
+/************************************************************************************************************************//**
+ * \brief Get the control point
+ * \param pt [out] The ascociated control point to this B-spline
+ ***************************************************************************************************************************/
+void Basisfunction::getControlPoint(Go::Point &pt) const {
+	pt.resize(controlpoint_.size());
+	for(uint d=0; d<controlpoint_.size(); d++)
+		pt[d] = controlpoint_[d];
+}
+#endif
+
+
+/************************************************************************************************************************//**
+ * \brief Get parametric greville parameter for this B-spline
+ * \returns The internal knot average 
+ ***************************************************************************************************************************/
+void Basisfunction::getGrevilleParameter(std::vector<double> &pt) const {
+	pt.resize(knots_.size());
+	for(uint i=0; i<knots_.size(); i++) {
+		pt[i] = 0;
+		for(uint j=0; j<knots_[i].size()-1; j++)
+			pt[i] += knots_[i][j];
+		pt[i] /= (knots_[i].size()-2);
+	}
 }
 
 
@@ -394,7 +421,7 @@ void Basisfunction::evaluate(std::vector<double> &results, const std::vector<dou
  * \brief Get the control point
  * \param pt [out] The ascociated control point to this B-spline
  ***************************************************************************************************************************/
-void Basisfunction::getControlPoint(Go::Point &pt) const {
+void Basisfunction::getControlPoint(std::vector<double> &pt) const {
 	pt.resize(controlpoint_.size());
 	for(uint d=0; d<controlpoint_.size(); d++)
 		pt[d] = controlpoint_[d];

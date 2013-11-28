@@ -1,5 +1,4 @@
 
-#include <GoTools/trivariate/SplineVolume.h>
 #include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/Element.h"
 #include "LRSpline/Profiler.h"
@@ -7,8 +6,8 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <cmath>
 
-using namespace Go;
 using namespace LR;
 using namespace std;
 
@@ -67,24 +66,8 @@ int main(int argc, char **argv) {
 	else if(scheme == 2)
 		strat = LR_STRUCTURED_MESH;
 
-	// make a uniform integer knot vector
-	double knot_u[] = {0,0,1,1};
-	double knot_v[] = {0,0,1,1};
-	double knot_w[] = {0,0,1,1};
-	double cp3[]    = {0,0,0,
-	                   1,0,0,
-	                   0,1,0,
-	                   1,1,0,
-	                   0,0,1,
-	                   1,0,1,
-	                   0,1,1,
-	                   1,1,1};
-
-
 	// create initial geometry and an empty value thing
-	SplineVolume   sv(2, 2, 2,  2, 2, 2, knot_u, knot_v, knot_w, cp3, 3, false); // WHY does this not compile!?
-	sv.raiseOrder(p-1, p-1, p-1);
-	LRSplineVolume *lrGeom   = new LRSplineVolume(&sv);
+	LRSplineVolume *lrGeom   = new LRSplineVolume(p+1,p+1, p+1,p+1, p+1,p+1);
 	LRSplineVolume *lrValues = lrGeom->copy();
 
 	// do a variational diminishing approximation on the LRSpline object

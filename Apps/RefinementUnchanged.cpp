@@ -1,20 +1,28 @@
+#include <cmath>
 #include <stdio.h>
 #include <iostream>
 #include <string.h>
 #include <fstream>
 #include <sstream>
-#include <GoTools/geometry/SplineSurface.h>
-#include <GoTools/trivariate/SplineVolume.h>
-#include <GoTools/geometry/ObjectHeader.h>
+#ifdef HAS_GOTOOLS
+	#include <GoTools/geometry/SplineSurface.h>
+	#include <GoTools/trivariate/SplineVolume.h>
+	#include <GoTools/geometry/ObjectHeader.h>
+#endif
 #include "LRSpline/LRSplineSurface.h"
 #include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/Profiler.h"
 #include "LRSpline/Element.h"
 #include "LRSpline/MeshRectangle.h"
 
-using namespace Go;
 using namespace LR;
 using namespace std;
+
+ostream& operator<<(ostream& out, const vector<double> vec) {
+	for(double d : vec)
+		out << d << " ";
+	return out;
+}
 
 int main(int argc, char **argv) {
 #ifdef TIME_LRSPLINE
@@ -134,8 +142,13 @@ int main(int argc, char **argv) {
 		exit(3);
 	}
 
-	SplineSurface   *ss;
-	SplineVolume    *sv;
+#ifdef HAS_GOTOOLS
+	Go::SplineSurface   *ss;
+	Go::SplineVolume    *sv;
+#else 
+	LRSplineSurface *ss;
+	LRSplineVolume  *sv;
+#endif
 	LRSplineSurface *lrs;
 	LRSplineVolume  *lrv;
 
@@ -166,26 +179,35 @@ int main(int argc, char **argv) {
 		for(int i=0; i<nCP; i++) // 839 as a generator over Z_853 gives a period of 425. Should suffice
 			cp[k++] = (i*839 % 853) / 853.0 + 0.1;  // rational weights also random and thus we need >0
 			
-		// make two spline objects
+		// make two spline objects (using GoTools for reference if available)
 		if(vol) {
-			sv  = new SplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
-			lrv = new LRSplineVolume(n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
+#ifdef HAS_GOTOOLS
+			sv  = new Go::SplineVolume(n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
+#else 
+			sv  = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
+#endif
+			lrv = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
 		} else {
-			ss  = new SplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
-			lrs = new LRSplineSurface(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
+#ifdef HAS_GOTOOLS
+			ss  = new Go::SplineSurface(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
+#else 
+			ss  = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
+#endif
+			lrs = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
 		}
 	} else {
+#ifdef HAS_GOTOOLS
 		ifstream inputfile;
 		inputfile.open(lrInitMesh);
 		if(!inputfile.is_open()) {
 			cerr << "Error: could not open file " << lrInitMesh << endl;
 			exit(3);
 		}
-		ObjectHeader head;
-		ss = new SplineSurface();
-		sv = new SplineVolume();
+		Go::ObjectHeader head;
+		ss = new Go::SplineSurface();
+		sv = new Go::SplineVolume();
 		inputfile >> head;
-		if(head.classType() == Class_SplineVolume) {
+		if(head.classType() == Go::Class_SplineVolume) {
 			vol = true;
 			inputfile >> *sv;
 			lrv = new LRSplineVolume(sv);
@@ -197,7 +219,7 @@ int main(int argc, char **argv) {
 			p1  = sv->order(0);
 			p2  = sv->order(1);
 			p3  = sv->order(2);
-		} else if(head.classType() == Class_SplineSurface) {
+		} else if(head.classType() == Go::Class_SplineSurface) {
 			vol = false;
 			inputfile >> *ss;
 			lrs = new LRSplineSurface(ss);
@@ -208,6 +230,10 @@ int main(int argc, char **argv) {
 			p1  = ss->order_u();
 			p2  = ss->order_v();
 		}
+#else
+		cerr << "Error: could not open file " << lrInitMesh << endl;
+		exit(4);
+#endif
 	}
 
 	vector<bool>   is_const_u;  // for surfaces
@@ -305,7 +331,11 @@ int main(int argc, char **argv) {
 		/***************************************************************************
 		******                SURFACE TESTING                                  *****
 		****************************************************************************/
-		vector<Point> lr_pts(3), ss_pts(3);
+#ifdef HAS_GOTOOLS
+		vector<Go::Point> lr_pts(3), ss_pts(3);
+#else
+		vector<vector<double> > lr_pts(3), ss_pts(3);
+#endif
 		vector<double> par_u_values;
 		vector<double> par_v_values;
 		vector<Element*>::iterator el;
@@ -335,15 +365,15 @@ int main(int argc, char **argv) {
 					par_v_values.push_back(v);
 
 					// test for partition of unity
-					BasisDerivsSf lr_basis;
-					lrs->computeBasis(u,v, lr_basis);
+					vector<vector<double> > lr_basis;
+					lrs->computeBasis(u,v, lr_basis, 1);
 					double sum        = 0;
 					double sum_diff_u = 0;
 					double sum_diff_v = 0;
-					for(uint i=0; i<lr_basis.basisValues.size(); i++) {
-						sum        += lr_basis.basisValues[i] ;
-						sum_diff_u += lr_basis.basisDerivs_u[i];
-						sum_diff_v += lr_basis.basisDerivs_v[i];
+					for(uint i=0; i<lr_basis.size(); i++) {
+						sum        += lr_basis[i][0];
+						sum_diff_u += lr_basis[i][1];
+						sum_diff_v += lr_basis[i][2];
 					}
 					cout << "   LR(" << u << ", " << v << ") = " << lr_pts[0] << endl;
 					cout << "   SS(" << u << ", " << v << ") = " << ss_pts[0] << endl;
@@ -389,7 +419,11 @@ int main(int argc, char **argv) {
 		/***************************************************************************
 		******                VOLUME  TESTING                                  *****
 		****************************************************************************/
-		vector<Point> lr_pts(4), ss_pts(4);
+#ifdef HAS_GOTOOLS
+		vector<Go::Point> lr_pts(4), ss_pts(4);
+#else
+		vector<vector<double> > lr_pts(4), ss_pts(4);
+#endif
 		vector<double> par_u_values;
 		vector<double> par_v_values;
 		vector<double> par_w_values;
@@ -426,17 +460,17 @@ int main(int argc, char **argv) {
 						par_w_values.push_back(w);
 
 						// test for partition of unity
-						BasisDerivs lr_basis;
-						lrv->computeBasis(u,v,w, lr_basis);
+						vector<vector<double> > lr_basis;
+						lrv->computeBasis(u,v,w, lr_basis, 1);
 						double sum        = 0;
 						double sum_diff_u = 0;
 						double sum_diff_v = 0;
 						double sum_diff_w = 0;
-						for(uint i=0; i<lr_basis.basisValues.size(); i++) {
-							sum        += lr_basis.basisValues[i] ;
-							sum_diff_u += lr_basis.basisDerivs_u[i];
-							sum_diff_v += lr_basis.basisDerivs_v[i];
-							sum_diff_w += lr_basis.basisDerivs_w[i];
+						for(uint i=0; i<lr_basis.size(); i++) {
+							sum        += lr_basis[i][0];
+							sum_diff_u += lr_basis[i][1];
+							sum_diff_v += lr_basis[i][2];
+							sum_diff_w += lr_basis[i][3];
 						}
 						cout << "   LR(" << u << ", " << v << ", " << w << ") = " << lr_pts[0] << endl;
 						cout << "   SS(" << u << ", " << v << ", " << w << ") = " << ss_pts[0] << endl;

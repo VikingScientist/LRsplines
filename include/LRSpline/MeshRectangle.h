@@ -1,7 +1,7 @@
 #ifndef MESHRECTANGLE_H
 #define MESHRECTANGLE_H
 
-#include <GoTools/geometry/Streamable.h>
+#include "Streamable.h"
 #include <vector>
 
 namespace LR {
@@ -9,7 +9,7 @@ namespace LR {
 class Basisfunction;
 class Element;
 
-class MeshRectangle : public Go::Streamable {
+class MeshRectangle : public Streamable {
 
 public:
 	MeshRectangle();

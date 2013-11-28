@@ -1,7 +1,7 @@
 #ifndef ELEMENT_H
 #define ELEMENT_H
 
-#include <GoTools/geometry/Streamable.h>
+#include "Streamable.h"
 #include <vector>
 #include "HashSet.h"
 
@@ -16,7 +16,7 @@ class Meshline;
  *          on this element. It is noteworthy to state that all computations on the Element class take place in the parametric
  *          space rather than in the physical (geometry) space. This class is shared by both LRSplineVolume and LRSplineSurface
  ***************************************************************************************************************************/
-class Element : public Go::Streamable {
+class Element : public Streamable {
 
 public:
 	Element();

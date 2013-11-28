@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <boost/rational.hpp>
 #include <cfloat>
 #include <cmath>
@@ -31,37 +32,27 @@ namespace LR {
  * \brief Default constructor. Creates an empty LRSplineSurface object
  ***************************************************************************************************************************/
 LRSplineSurface::LRSplineSurface() {
+#ifdef TIME_LRSPLINE
+	PROFILE("Constructor");
+#endif
 	order_.resize(2);
 	start_.resize(2);
 	end_.resize(2);
-	rational_ = false;
-	dim_      = 0;
+	rational_  = false;
+	dim_       = 0;
 	order_[0]  = 0;
 	order_[1]  = 0;
 	start_[0]  = 0;
 	start_[1]  = 0;
 	end_[0]    = 0;
 	end_[1]    = 0;
-	meshline_ = std::vector<Meshline*>(0);
-	element_  = std::vector<Element*>(0);
-	maxTjoints_       = -1;
-	doCloseGaps_      = true;
-	maxAspectRatio_   = 2.0;
-	doAspectRatioFix_ = false;
-	refStrat_         = LR_FULLSPAN;
-	refKnotlineMult_  = 1;
-	symmetry_         = 1;
-	element_red       = 0.5;
-	element_green     = 0.5;
-	element_blue      = 0.5;
-	basis_red         = 1.0;
-	basis_green       = 0.83;
-	basis_blue        = 0.0;
-	selected_basis_red    = 1.0;
-	selected_basis_green  = 0.2;
-	selected_basis_blue   = 0.05;
+	meshline_  = std::vector<Meshline*>(0);
+	element_   = std::vector<Element*>(0);
+
+	initMeta();
 }
 
+#ifdef HAS_GOTOOLS
 /************************************************************************************************************************//**
  * \brief Copy constructor. Creates an LRSplineSurface representation from a Go::SplineSurface one
  * \param surf The SplineSurface to copy
@@ -70,75 +61,13 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
 #endif
-	order_.resize(2);
-	start_.resize(2);
-	end_.resize(2);
-	rational_ = surf->rational();
-	dim_      = surf->dimension();
-	order_[0]  = surf->order_u();
-	order_[1]  = surf->order_v();
-	start_[0]  = surf->startparam_u();
-	start_[1]  = surf->startparam_v();
-	end_[0]    = surf->endparam_u();
-	end_[1]    = surf->endparam_v();
-	maxTjoints_       = -1;
-	doCloseGaps_      = true;
-	maxAspectRatio_   = 2.0;
-	doAspectRatioFix_ = false;
-	refStrat_         = LR_FULLSPAN;
-	refKnotlineMult_  = 1;
-	symmetry_         = 1;
-	element_red       = 0.5;
-	element_green     = 0.5;
-	element_blue      = 0.5;
-	basis_red         = 1.0;
-	basis_green       = 0.83;
-	basis_blue        = 0.0;
-	selected_basis_red    = 1.0;
-	selected_basis_green  = 0.2;
-	selected_basis_blue   = 0.05;
-
-
-	int n1 = surf->numCoefs_u();
-	int n2 = surf->numCoefs_v();
-	std::vector<double>::iterator coef  = surf->coefs_begin();
-	std::vector<double>::const_iterator knot_u = surf->basis(0).begin();
-	std::vector<double>::const_iterator knot_v = surf->basis(1).begin();
-	for(int j=0; j<n2; j++)
-		for(int i=0; i<n1; i++)
-			basis_.insert(new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim_+rational_), dim_, order_[0], order_[1]));
-	int unique_u=0;
-	int unique_v=0;
-	for(int i=0; i<n1+order_[0]; i++) {// const u, spanning v
-		int mult = 1;
-		while(i+1<n1+order_[0] && knot_u[i]==knot_u[i+1]) {
-			i++;
-			mult++;
-		}
-		unique_u++;
-		meshline_.push_back(new Meshline(false, knot_u[i], knot_v[0], knot_v[n2], mult) );
-	}
-	for(int i=0; i<n2+order_[1]; i++) {// const v, spanning u
-		int mult = 1;
-		while(i+1<n2+order_[1] && knot_v[i]==knot_v[i+1]) {
-			i++;
-			mult++;
-		}
-		unique_v++;
-		meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n1], mult) );
-	}
-	for(int j=0; j<unique_v-1; j++) {
-		for(int i=0; i<unique_u-1; i++) {
-			double umin = meshline_[i]->const_par_;
-			double vmin = meshline_[unique_u + j]->const_par_;
-			double umax = meshline_[i+1]->const_par_;
-			double vmax = meshline_[unique_u + j+1]->const_par_;
-			element_.push_back(new Element(umin, vmin, umax, vmax));
-		}
-	}
-	for(Basisfunction* b : basis_)
-		updateSupport(b);
+	initMeta();
+	initCore(surf->numCoefs_u(),      surf->numCoefs_v(),
+	         surf->order_u(),         surf->order_v(),
+	         surf->basis_u().begin(), surf->basis_v().begin(),
+			 surf->ctrl_begin(), surf->dimension(), surf->rational() );
 }
+#endif
 
 
 /************************************************************************************************************************//**
@@ -157,69 +86,85 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
 #endif
-	order_.resize(2);
-	start_.resize(2);
-	end_.resize(2);
-	rational_ = rational;
-	dim_      = dim;
-	order_[0]  = order_u;
-	order_[1]  = order_v;
-	start_[0]  = knot_u[0];
-	start_[1]  = knot_v[0];
-	end_[0]    = knot_u[n1];
-	end_[1]    = knot_v[n2];
-	maxTjoints_       = -1;
-	doCloseGaps_      = true;
-	maxAspectRatio_   = 2.0;
-	doAspectRatioFix_ = false;
-	refStrat_         = LR_FULLSPAN;
-	refKnotlineMult_  = 1;
-	symmetry_         = 1;
-	element_red       = 0.5;
-	element_green     = 0.5;
-	element_blue      = 0.5;
-	basis_red         = 1.0;
-	basis_green       = 0.83;
-	basis_blue        = 0.0;
+	initMeta();
+	initCore(n1,n2,order_u, order_v, knot_u, knot_v, coef, dim, rational);
+}
+
+/************************************************************************************************************************//**
+ * \brief Constructor. Creates a tensor product LRSplineSurface of the 2D unit square
+ * \param n1 The number of basisfunctions in the first parametric direction
+ * \param n2 The number of basisfunctions in the second parametric direction
+ * \param order_u The order (polynomial degree + 1) in the first parametric direction
+ * \param order_v The order (polynomial degree + 1) in the second parametric direction
+ * \param knot_u The first knot vector consisting of n1+order_u elements
+ * \param knot_v The second knot vector consisting of n2+order_v elements
+ ***************************************************************************************************************************/
+LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v) {
+#ifdef TIME_LRSPLINE
+	PROFILE("Constructor");
+#endif
+	initMeta();
+
+	std::vector<double> grevU = LRSpline::getGrevillePoints(knot_u, knot_u + n1 + order_u);
+	std::vector<double> grevV = LRSpline::getGrevillePoints(knot_v, knot_v + n2 + order_v);
+	double coef[n1*n2*2];
+	int k=0;
+	for(int j=0; j<n2; j++)
+		for(int i=0; i<n1; i++) {
+			coef[k++] = grevU[i];
+			coef[k++] = grevV[j];
+	}
+
+	initCore(n1,n2,order_u, order_v, knot_u, knot_v, coef, 2, false);
+}
+
+/************************************************************************************************************************//**
+ * \brief Constructor. Creates a uniform tensor product LRSplineSurface of the 2D unit square
+ * \param n1 The number of basisfunctions in the first parametric direction
+ * \param n2 The number of basisfunctions in the second parametric direction
+ * \param order_u The order (polynomial degree + 1) in the first parametric direction
+ * \param order_v The order (polynomial degree + 1) in the second parametric direction
+ ***************************************************************************************************************************/
+LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v) {
+#ifdef TIME_LRSPLINE
+	PROFILE("Constructor");
+#endif
+	initMeta();
+
+	std::vector<double> knot_u = LRSpline::getUniformKnotVector(n1, order_u);
+	std::vector<double> knot_v = LRSpline::getUniformKnotVector(n2, order_v);
+	std::vector<double> grev_u = LRSpline::getGrevillePoints(knot_u.begin(), knot_u.end());
+	std::vector<double> grev_v = LRSpline::getGrevillePoints(knot_v.begin(), knot_v.end());
+	double coef[n1*n2*2];
+	int k=0;
+	for(int j=0; j<n2; j++)
+		for(int i=0; i<n1; i++) {
+			coef[k++] = grev_u[i];
+			coef[k++] = grev_v[j];
+	}
+	
+	// generate the uniform knot vector
+	initCore(n1,n2,order_u, order_v, knot_u.begin(), knot_v.begin(), coef, 2, false);
+}
+
+void LRSplineSurface::initMeta() {
+	maxTjoints_           = -1;
+	doCloseGaps_          = true;
+	maxAspectRatio_       = 2.0;
+	doAspectRatioFix_     = false;
+	refStrat_             = LR_FULLSPAN;
+	refKnotlineMult_      = 1;
+	symmetry_             = 1;
+	element_red           = 0.5;
+	element_green         = 0.5;
+	element_blue          = 0.5;
+	basis_red             = 1.0;
+	basis_green           = 0.83;
+	basis_blue            = 0.0;
 	selected_basis_red    = 1.0;
 	selected_basis_green  = 0.2;
 	selected_basis_blue   = 0.05;
-
-	for(int j=0; j<n2; j++)
-		for(int i=0; i<n1; i++)
-			basis_.insert(new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim+rational), dim, order_u, order_v));
-	int unique_u=0;
-	int unique_v=0;
-	for(int i=0; i<n1+order_u; i++) {// const u, spanning v
-		int mult = 1;
-		while(i<n1+order_u && knot_u[i]==knot_u[i+1]) {
-			i++;
-			mult++;
-		}
-		unique_u++;
-		meshline_.push_back(new Meshline(false, knot_u[i], knot_v[0], knot_v[n2], mult) );
-	}
-	for(int i=0; i<n2+order_v; i++) {// const v, spanning u
-		int mult = 1;
-		while(i<n2+order_v && knot_v[i]==knot_v[i+1]) {
-			i++;
-			mult++;
-		}
-		unique_v++;
-		meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n1], mult) );
-	}
-	for(int j=0; j<unique_v-1; j++) {
-		for(int i=0; i<unique_u-1; i++) {
-			double umin = meshline_[i]->const_par_;
-			double vmin = meshline_[unique_u + j]->const_par_;
-			double umax = meshline_[i+1]->const_par_;
-			double vmax = meshline_[unique_u + j+1]->const_par_;
-			element_.push_back(new Element(umin, vmin, umax, vmax));
-		}
-	}
-
-	for(Basisfunction* b : basis_)
-		updateSupport(b);
+	lastElementEvaluation = -1;
 }
 
 /************************************************************************************************************************//**
@@ -280,6 +225,8 @@ LRSplineSurface* LRSplineSurface::copy() const {
 	return returnvalue;
 }
 
+
+#ifdef HAS_GOTOOLS
 /************************************************************************************************************************//**
  * \brief Evaluate the surface at a point (u,v)
  * \param[out] pt The result, i.e. the parametric surface mapped to physical space
@@ -290,19 +237,11 @@ LRSplineSurface* LRSplineSurface::copy() const {
  * \param v_from_right True if second coordinate should be evaluated in the limit from the right 
  ***************************************************************************************************************************/
 void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl, bool u_from_right, bool v_from_right) const {
-	Go::Point cp;
-	double basis_ev;
+	std::vector<std::vector<double> > res;
+	point(res, u, v, 0, iEl, u_from_right, v_from_right);
+	pt = Go::Point(res[0].begin(), res[0].end());
+	return ;
 
-	pt.resize(dim_);
-	pt.setValue(0.0);
-	
-	for(Basisfunction* b : element_[iEl]->support()) {
-		b->getControlPoint(cp);
-		
-		basis_ev = b->evaluate(u,v, u_from_right, v_from_right);
-		pt += basis_ev*cp;
-	}
-	
 }
 
 /************************************************************************************************************************//**
@@ -313,21 +252,11 @@ void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl, bool u_f
  * \param iEl The element index which this point is contained in. If used will speed up computational efficiency
  ***************************************************************************************************************************/
 void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl) const {
-	Go::Point cp;
-	double basis_ev;
+	std::vector<std::vector<double> > res;
+	point(res, u, v, 0, iEl);
+	pt = Go::Point(res[0].begin(), res[0].end());
+	return ;
 
-	pt.resize(dim_);
-	pt.setValue(0.0);
-	if(iEl == -1)
-		iEl = getElementContaining(u,v);
-
-	for(Basisfunction* b : element_[iEl]->support()) {
-		b->getControlPoint(cp);
-		
-		basis_ev = b->evaluate(u,v, u!=end_[0], v!=end_[1]);
-		pt += basis_ev*cp;
-	}
-	
 }
 
 /************************************************************************************************************************//**
@@ -341,29 +270,97 @@ void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl) const {
  *          The next three is the second derivatives in order d2u, dudv and d2v. The next four are in order d3u, d2udv, dvd2u and d3v.
  ***************************************************************************************************************************/
 void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int derivs, int iEl) const {
-#ifdef TIME_LRSPLINE
-	PROFILE("Point()");
-#endif
-	Go::Point cp;
-	std::vector<double> basis_ev;
+
+	std::vector<std::vector<double> > res;
+	point(res, u, v, derivs, iEl);
 
 	// clear and resize output array (optimization may consider this an outside task)
 	pts.resize((derivs+1)*(derivs+2)/2);
 	for(uint i=0; i<pts.size(); i++) {
 		pts[i].resize(dim_);
 		pts[i].setValue(0.0);
+		for(int j=0; j<dim_; j++)
+			pts[i][j] = res[i][j];
 	}
+	return;
+
+}
+#endif 
+
+/************************************************************************************************************************//**
+ * \brief Evaluate the surface at a point (u,v)
+ * \param[out] pt The result, i.e. the parametric surface mapped to physical space
+ * \param u The u-coordinate on which to evaluate the surface
+ * \param v The v-coordinate on which to evaluate the surface
+ * \param iEl The element index which this point is contained in. If used will speed up computational efficiency
+ * \param u_from_right True if first coordinate should be evaluated in the limit from the right 
+ * \param v_from_right True if second coordinate should be evaluated in the limit from the right 
+ ***************************************************************************************************************************/
+void LRSplineSurface::point(std::vector<double> &pt, double u, double v, int iEl, bool u_from_right, bool v_from_right) const {
+	std::vector<std::vector<double> > res;
+	point(res, u, v, 0, u_from_right, v_from_right, iEl);
+	pt = res[0];
+}
+
+/************************************************************************************************************************//**
+ * \brief Evaluate the surface at a point (u,v)
+ * \param[out] pt The result, i.e. the parametric surface mapped to physical space
+ * \param u The u-coordinate on which to evaluate the surface
+ * \param v The v-coordinate on which to evaluate the surface
+ * \param iEl The element index which this point is contained in. If used will speed up computational efficiency
+ ***************************************************************************************************************************/
+void LRSplineSurface::point(std::vector<double> &pt, double u, double v, int iEl) const {
+	std::vector<std::vector<double> > res;
+	point(res, u, v, 0, iEl);
+	pt = res[0];
+}
+
+/************************************************************************************************************************//**
+ * \brief Evaluate the surface and its derivatives at a point (u,v)
+ * \param[out] pts The result, i.e. the parametric surface as well as all parametric derivatives
+ * \param u The u-coordinate on which to evaluate the surface
+ * \param v The v-coordinate on which to evaluate the surface
+ * \param derivs The number of derivatives requested
+ * \param iEl The element index which this point is contained in. If used it will speed up computational efficiency
+ * \details Pts is a vector where the first element is the values themselves, the next two is the first derivatives du and dv.
+ *          The next three is the second derivatives in order d2u, dudv and d2v. The next four are in order d3u, d2udv, dvd2u and d3v.
+ ***************************************************************************************************************************/
+void LRSplineSurface::point(std::vector<std::vector<double> > &pts, double u, double v, int derivs, int iEl) const {
+	point(pts, u, v, derivs, u!=end_[0], v!=end_[1], iEl);
+}
+
+/************************************************************************************************************************//**
+ * \brief Evaluate the surface and its derivatives at a point (u,v)
+ * \param[out] pts The result, i.e. the parametric surface as well as all parametric derivatives
+ * \param u The u-coordinate on which to evaluate the surface
+ * \param v The v-coordinate on which to evaluate the surface
+ * \param derivs The number of derivatives requested
+ * \param iEl The element index which this point is contained in. If used it will speed up computational efficiency
+ * \details Pts is a vector where the first element is the values themselves, the next two is the first derivatives du and dv.
+ *          The next three is the second derivatives in order d2u, dudv and d2v. The next four are in order d3u, d2udv, dvd2u and d3v.
+ ***************************************************************************************************************************/
+void LRSplineSurface::point(std::vector<std::vector<double> > &pts, double u, double v, int derivs, bool u_from_right, bool v_from_right, int iEl) const {
+#ifdef TIME_LRSPLINE
+	PROFILE("Point()");
+#endif
+	std::vector<double> basis_ev;
+
+	// clear and resize output array (optimization may consider this an outside task)
+	pts.resize((derivs+1)*(derivs+2)/2);
+	for(uint i=0; i<pts.size(); i++)
+		pts[i].resize(dim_, 0);
 
 	if(iEl == -1)
 		iEl = getElementContaining(u,v);
 	for(Basisfunction* b : element_[iEl]->support() ) {
-		b->getControlPoint(cp);
-		b->evaluate(basis_ev, u,v, derivs, u!=end_[0], v!=end_[1]);
-		for(uint j=0; j<pts.size(); j++)
-			pts[j] += basis_ev[j]*cp;
+		b->evaluate(basis_ev, u,v, derivs, u_from_right, v_from_right);
+		for(uint i=0; i<pts.size(); i++)
+			for(int j=0; j<dim_; j++)
+				pts[i][j] += basis_ev[i]*b->cp(j);
 	}
 }
 
+#ifdef HAS_GOTOOLS
 /************************************************************************************************************************//**
  * \brief Compute all basis functions at a parametric point (u,v)
  * \param param_u The u-coordinate on which to evaluate the surface
@@ -455,6 +452,7 @@ void LRSplineSurface::computeBasis(double param_u, double param_v, Go::BasisPtsS
 	for(it=itStart; it!=itStop; ++it, ++i)
 		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_u!=end_[0], param_v!=end_[1]);
 }
+#endif
 
 /************************************************************************************************************************//**
  * \brief Compute all basis functions as well as an arbitrary number of derivatives at the parametric point (u,v)
@@ -2395,7 +2393,7 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 				double vmin = element_[iEl]->vmin();
 				double vmax = element_[iEl]->vmax();
 
-				Go::Point pt;
+				std::vector<double> pt;
 				point(pt, umin, vmin, iEl);
 				out << "newpath\n";
 				out <<  pt[0]*scale << " " << pt[1]*scale << " moveto\n";
@@ -2463,7 +2461,7 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 		}
 */
 
-		Go::Point pt;
+		std::vector<double> pt;
 		point(pt, umin, vmin, iEl);
 		out << "newpath\n";
 		out <<  pt[0]*scale << " " << pt[1]*scale << " moveto\n";

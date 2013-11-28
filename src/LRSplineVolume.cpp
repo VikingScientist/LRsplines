@@ -9,6 +9,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <cfloat>
 #include <cmath>
 
@@ -45,194 +46,100 @@ LRSplineVolume::LRSplineVolume() {
 	end_[2]    = 0;
 	meshrect_ = std::vector<MeshRectangle*>(0);
 	element_  = std::vector<Element*>(0);
-	maxTjoints_       = -1;
-	doCloseGaps_      = true;
-	maxAspectRatio_   = 2.0;
-	doAspectRatioFix_ = false;
-	refStrat_         = LR_FULLSPAN;
-	refKnotlineMult_  = 1;
-	symmetry_         = 1;
+
+	initMeta();
 }
 
+#ifdef HAS_GOTOOLS
 LRSplineVolume::LRSplineVolume(Go::SplineVolume *vol) {
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
 #endif
-	order_.resize(3);
-	start_.resize(3);
-	end_.resize(3);
-	rational_ = vol->rational();
-	dim_      = vol->dimension();
-	order_[0]  = vol->order(0);
-	order_[1]  = vol->order(1);
-	order_[2]  = vol->order(2);
-	start_[0]  = vol->startparam(0);
-	start_[1]  = vol->startparam(1);
-	start_[2]  = vol->startparam(2);
-	end_[0]    = vol->endparam(0);
-	end_[1]    = vol->endparam(1);
-	end_[2]    = vol->endparam(2);
-	maxTjoints_       = -1;
-	doCloseGaps_      = true;
-	maxAspectRatio_   = 2.0;
-	doAspectRatioFix_ = false;
-	refStrat_         = LR_FULLSPAN;
-	refKnotlineMult_  = 1;
-	symmetry_         = 1;
 
-	int n1 = vol->numCoefs(0);
-	int n2 = vol->numCoefs(1);
-	int n3 = vol->numCoefs(2);
-	std::vector<double>::iterator coef  = vol->coefs_begin();
-	std::vector<double>::const_iterator knot_u = vol->basis(0).begin();
-	std::vector<double>::const_iterator knot_v = vol->basis(1).begin();
-	std::vector<double>::const_iterator knot_w = vol->basis(2).begin();
-	for(int k=0; k<n3; k++)
-		for(int j=0; j<n2; j++)
-			for(int i=0; i<n1; i++)
-				basis_.insert(new Basisfunction(&(*(knot_u+i)),
-				                                &(*(knot_v+j)),
-				                                &(*(knot_w+k)),
-				                                &(*(coef+(k*n1*n2+j*n1+i)*(dim_+rational_))),
-				                                dim_, order_[0], order_[1], order_[2]) );
-	int unique_u=0;
-	int unique_v=0;
-	int unique_w=0;
-	for(int i=0; i<n1+order_[0]; i++) {// const u, spanning v
-		int mult = 1;
-		while(i+1<n1+order_[0] && knot_u[i]==knot_u[i+1]) {
-			i++;
-			mult++;
-		}
-		unique_u++;
-		meshrect_.push_back(new MeshRectangle(knot_u[i], knot_v[0],  knot_w[0],
-		                                      knot_u[i], knot_v[n2], knot_w[n3], mult));
-	}
-	for(int i=0; i<n2+order_[1]; i++) {// const v, spanning u
-		int mult = 1;
-		while(i+1<n2+order_[1] && knot_v[i]==knot_v[i+1]) {
-			i++;
-			mult++;
-		}
-		unique_v++;
-		meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[i], knot_w[0],
-		                                      knot_u[n1], knot_v[i], knot_w[n3], mult));
-	}
-	for(int i=0; i<n3+order_[2]; i++) {
-		int mult = 1;
-		while(i+1<n3+order_[2] && knot_w[i]==knot_w[i+1]) {
-			i++;
-			mult++;
-		}
-		unique_w++;
-		meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[0],  knot_w[i],
-		                                      knot_u[n1], knot_v[n2], knot_w[i], mult));
-	}
-	for(int k=0; k<unique_w-1; k++) {
-		for(int j=0; j<unique_v-1; j++) {
-			for(int i=0; i<unique_u-1; i++) {
-				double umin = meshrect_[                      i  ]->start_[0];
-				double vmin = meshrect_[unique_u +            j  ]->start_[1];
-				double wmin = meshrect_[unique_v + unique_u + k  ]->start_[2];
-				double umax = meshrect_[                      i+1]->stop_[0];
-				double vmax = meshrect_[unique_u +            j+1]->stop_[1];
-				double wmax = meshrect_[unique_v + unique_u + k+1]->stop_[2];
-				double min[] = {umin, vmin, wmin};
-				double max[] = {umax, vmax, wmax};
-				element_.push_back(new Element(3, min, max));
-			}
-		}
-	}
-	for(Basisfunction* b : basis_)
-		updateSupport(b);
+	initMeta();
+	initCore(vol->numCoefs(0),      vol->numCoefs(1),      vol->numCoefs(2),
+	         vol->order(0),         vol->order(1),         vol->order(2),
+	         vol->basis(0).begin(), vol->basis(1).begin(), vol->basis(2).begin(),
+			 vol->ctrl_begin(),     vol->dimension(),      vol->rational() );
 }
+#endif
 
 
 LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w, double *knot_u, double *knot_v, double *knot_w, double *coef, int dim, bool rational) {
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
 #endif
-	order_.resize(3);
-	start_.resize(3);
-	end_.resize(3);
-	rational_ = rational;
-	dim_      = dim;
-	order_[0]  = order_u;
-	order_[1]  = order_v;
-	order_[2]  = order_w;
-	start_[0]  = knot_u[0];
-	start_[1]  = knot_v[0];
-	start_[2]  = knot_w[0];
-	end_[0]    = knot_u[n1];
-	end_[1]    = knot_v[n2];
-	end_[2]    = knot_w[n3];
-	maxTjoints_       = -1;
-	doCloseGaps_      = true;
-	maxAspectRatio_   = 2.0;
-	doAspectRatioFix_ = false;
-	refStrat_         = LR_FULLSPAN;
-	refKnotlineMult_  = 1;
-	symmetry_         = 1;
+	initMeta();
+	initCore(n1, n2, n3, order_u, order_v, order_w, knot_u, knot_v, knot_w, coef, dim, rational);
+}
 
+/************************************************************************************************************************//**
+ * \brief Constructor. Creates a tensor product LRSplineVolume of the 3D unit cube
+ * \param n1 The number of basisfunctions in the first parametric direction
+ * \param n2 The number of basisfunctions in the second parametric direction
+ * \param n3 The number of basisfunctions in the third parametric direction
+ * \param order_u The order (polynomial degree + 1) in the first parametric direction
+ * \param order_v The order (polynomial degree + 1) in the second parametric direction
+ * \param order_w The order (polynomial degree + 1) in the third parametric direction
+ * \param knot_u The first knot vector consisting of n1+order_u elements
+ * \param knot_v The second knot vector consisting of n2+order_v elements
+ * \param knot_w The third knot vector consisting of n2+order_v elements
+ ***************************************************************************************************************************/
+LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w, double *knot_u, double *knot_v, double *knot_w) {
+#ifdef TIME_LRSPLINE
+	PROFILE("Constructor");
+#endif
+	initMeta();
+
+	std::vector<double> grev_u = LRSpline::getGrevillePoints(knot_u, knot_u + n1 + order_u);
+	std::vector<double> grev_v = LRSpline::getGrevillePoints(knot_v, knot_v + n2 + order_v);
+	std::vector<double> grev_w = LRSpline::getGrevillePoints(knot_w, knot_w + n3 + order_w);
+	double coef[n1*n2*n3*3];
+	int l=0;
 	for(int k=0; k<n3; k++)
 		for(int j=0; j<n2; j++)
-			for(int i=0; i<n1; i++)
-				basis_.insert(new Basisfunction(knot_u+i,
-				                                knot_v+j,
-				                                knot_w+k,
-				                                coef+(k*n1*n2+j*n1+i)*(dim_+rational_),
-				                                dim_, order_[0], order_[1], order_[2]) );
-	int unique_u=0;
-	int unique_v=0;
-	int unique_w=0;
-	for(int i=0; i<n1+order_[0]; i++) {// const u, spanning v
-		int mult = 1;
-		while(i+1<n1+order_[0] && knot_u[i]==knot_u[i+1]) {
-			i++;
-			mult++;
-		}
-		unique_u++;
-		meshrect_.push_back(new MeshRectangle(knot_u[i], knot_v[0],  knot_w[0],
-		                                      knot_u[i], knot_v[n2], knot_w[n3], mult));
+			for(int i=0; i<n1; i++) {
+				coef[l++] = grev_u[i];
+				coef[l++] = grev_v[j];
+				coef[l++] = grev_w[k];
 	}
-	for(int i=0; i<n2+order_[1]; i++) {// const v, spanning u
-		int mult = 1;
-		while(i+1<n2+order_[1] && knot_v[i]==knot_v[i+1]) {
-			i++;
-			mult++;
-		}
-		unique_v++;
-		meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[i], knot_w[0],
-		                                      knot_u[n1], knot_v[i], knot_w[n3], mult));
-	}
-	for(int i=0; i<n3+order_[2]; i++) {
-		int mult = 1;
-		while(i+1<n3+order_[2] && knot_w[i]==knot_w[i+1]) {
-			i++;
-			mult++;
-		}
-		unique_w++;
-		meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[0],  knot_w[i],
-		                                      knot_u[n1], knot_v[n2], knot_w[i], mult));
-	}
-	for(int k=0; k<unique_w-1; k++) {
-		for(int j=0; j<unique_v-1; j++) {
-			for(int i=0; i<unique_u-1; i++) {
-				double umin = meshrect_[                      i  ]->start_[0];
-				double vmin = meshrect_[unique_u +            j  ]->start_[1];
-				double wmin = meshrect_[unique_v + unique_u + k  ]->start_[2];
-				double umax = meshrect_[                      i+1]->stop_[0];
-				double vmax = meshrect_[unique_u +            j+1]->stop_[1];
-				double wmax = meshrect_[unique_v + unique_u + k+1]->stop_[2];
-				double min[] = {umin, vmin, wmin};
-				double max[] = {umax, vmax, wmax};
-				element_.push_back(new Element(3, min, max));
-			}
-		}
-	}
-	for(Basisfunction* b : basis_)
-		updateSupport(b);
 
+	initCore(n1,n2,n3, order_u, order_v, order_w, knot_u, knot_v, knot_w, coef, 3, false);
+}
+
+/************************************************************************************************************************//**
+ * \brief Constructor. Creates a uniform tensor product LRSplineVolume of the 2D unit square
+ * \param n1 The number of basisfunctions in the first parametric direction
+ * \param n2 The number of basisfunctions in the second parametric direction
+ * \param n3 The number of basisfunctions in the third parametric direction
+ * \param order_u The order (polynomial degree + 1) in the first parametric direction
+ * \param order_v The order (polynomial degree + 1) in the second parametric direction
+ * \param order_w The order (polynomial degree + 1) in the third parametric direction
+ ***************************************************************************************************************************/
+LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w) {
+#ifdef TIME_LRSPLINE
+	PROFILE("Constructor");
+#endif
+	initMeta();
+
+	std::vector<double> knot_u = LRSpline::getUniformKnotVector(n1, order_u);
+	std::vector<double> knot_v = LRSpline::getUniformKnotVector(n2, order_v);
+	std::vector<double> knot_w = LRSpline::getUniformKnotVector(n3, order_w);
+	std::vector<double> grev_u = LRSpline::getGrevillePoints(knot_u.begin(), knot_u.end());
+	std::vector<double> grev_v = LRSpline::getGrevillePoints(knot_v.begin(), knot_v.end());
+	std::vector<double> grev_w = LRSpline::getGrevillePoints(knot_w.begin(), knot_w.end());
+	double coef[n1*n2*n3*3];
+	int l=0;
+	for(int k=0; k<n3; k++)
+		for(int j=0; j<n2; j++)
+			for(int i=0; i<n1; i++) {
+				coef[l++] = grev_u[i];
+				coef[l++] = grev_v[j];
+				coef[l++] = grev_w[k];
+	}
+	
+	// generate the uniform knot vector
+	initCore(n1,n2,n3, order_u, order_v, order_w, knot_u.begin(), knot_v.begin(), knot_w.begin(), coef, 3, false);
 }
 
 LRSplineVolume::~LRSplineVolume() {
@@ -242,6 +149,16 @@ LRSplineVolume::~LRSplineVolume() {
 		delete meshrect_[i];
 	for(uint i=0; i<element_.size(); i++)
 		delete element_[i];
+}
+
+void LRSplineVolume::initMeta() {
+	maxTjoints_       = -1;
+	doCloseGaps_      = true;
+	maxAspectRatio_   = 2.0;
+	doAspectRatioFix_ = false;
+	refStrat_         = LR_FULLSPAN;
+	refKnotlineMult_  = 1;
+	symmetry_         = 1;
 }
 
 
@@ -287,6 +204,7 @@ LRSplineVolume* LRSplineVolume::copy() const {
 	return returnvalue;
 }
 
+#ifdef HAS_GOTOOLS
 void LRSplineVolume::point(Go::Point &pt, double u, double v, double w, int iEl, bool u_from_right, bool v_from_right, bool w_from_right) const {
 	Go::Point cp;
 	double basis_ev;
@@ -345,7 +263,90 @@ void LRSplineVolume::point(std::vector<Go::Point> &pts, double u, double v, doub
 			pts[j] += basis_ev[j]*cp;
 	}
 }
+#endif
 
+/************************************************************************************************************************//**
+ * \brief Evaluate the volume at a point (u,v,w)
+ * \param[out] pt The result, i.e. the parametric volume mapped to physical space
+ * \param u The u-coordinate on which to evaluate the volume
+ * \param v The v-coordinate on which to evaluate the volume
+ * \param w The w-coordinate on which to evaluate the volume
+ * \param iEl The element index which this point is contained in. If used will speed up computational efficiency
+ * \param u_from_right True if first coordinate should be evaluated in the limit from the right 
+ * \param v_from_right True if second coordinate should be evaluated in the limit from the right 
+ * \param w_from_right True if third coordinate should be evaluated in the limit from the right 
+ ***************************************************************************************************************************/
+void LRSplineVolume::point(std::vector<double> &pt, double u, double v, double w, int iEl, bool u_from_right, bool v_from_right, bool w_from_right) const {
+	std::vector<std::vector<double> > res;
+	point(res, u, v, w, 0, u_from_right, v_from_right, w_from_right, iEl);
+	pt = res[0];
+}
+
+/************************************************************************************************************************//**
+ * \brief Evaluate the volume at a point (u,v)
+ * \param[out] pt The result, i.e. the parametric volume mapped to physical space
+ * \param u The u-coordinate on which to evaluate the volume
+ * \param v The v-coordinate on which to evaluate the volume
+ * \param w The w-coordinate on which to evaluate the volume
+ * \param iEl The element index which this point is contained in. If used will speed up computational efficiency
+ ***************************************************************************************************************************/
+void LRSplineVolume::point(std::vector<double> &pt, double u, double v, double w, int iEl) const {
+	std::vector<std::vector<double> > res;
+	point(res, u, v, w, 0, iEl);
+	pt = res[0];
+}
+
+/************************************************************************************************************************//**
+ * \brief Evaluate the volume and its derivatives at a point (u,v)
+ * \param[out] pts The result, i.e. the parametric volume as well as all parametric derivatives
+ * \param u The u-coordinate on which to evaluate the volume
+ * \param v The v-coordinate on which to evaluate the volume
+ * \param w The w-coordinate on which to evaluate the volume
+ * \param derivs The number of derivatives requested
+ * \param iEl The element index which this point is contained in. If used it will speed up computational efficiency
+ * \details Pts is a vector where the first element is the values themselves, the next two is the first derivatives du, dv and dw
+ *          The next six is the second derivatives in order d2u, dudv, dudw, d2v, dvdw and d2w. The next ten are the third derivatives
+ ***************************************************************************************************************************/
+void LRSplineVolume::point(std::vector<std::vector<double> > &pts, double u, double v, double w, int derivs, int iEl) const {
+	point(pts, u, v, w, derivs, u!=end_[0], v!=end_[1], w!=end_[2], iEl);
+}
+
+/************************************************************************************************************************//**
+ * \brief Evaluate the volume and its derivatives at a point (u,v)
+ * \param[out] pts The result, i.e. the parametric volume as well as all parametric derivatives
+ * \param u The u-coordinate on which to evaluate the volume
+ * \param v The v-coordinate on which to evaluate the volume
+ * \param w The w-coordinate on which to evaluate the volume
+ * \param derivs The number of derivatives requested
+ * \param u_from_right True if first coordinate should be evaluated in the limit from the right 
+ * \param v_from_right True if second coordinate should be evaluated in the limit from the right 
+ * \param w_from_right True if third coordinate should be evaluated in the limit from the right 
+ * \param iEl The element index which this point is contained in. If used it will speed up computational efficiency
+ * \details Pts is a vector where the first element is the values themselves, the next three is the first derivatives du, dv and dw
+ *          The next six is the second derivatives in order d2u, dudv, dudw, d2v, dvdw and d2w. The next ten are the third derivatives
+ ***************************************************************************************************************************/
+void LRSplineVolume::point(std::vector<std::vector<double> > &pts, double u, double v, double w, int derivs, bool u_from_right, bool v_from_right, bool w_from_right, int iEl) const {
+#ifdef TIME_LRSPLINE
+	PROFILE("Point()");
+#endif
+	std::vector<double> basis_ev;
+
+	// clear and resize output array (optimization may consider this an outside task)
+	pts.resize((derivs+1)*(derivs+2)*(2*derivs+6)/12);
+	for(uint i=0; i<pts.size(); i++)
+		pts[i].resize(dim_, 0);
+
+	if(iEl == -1)
+		iEl = getElementContaining(u,v,w);
+	for(Basisfunction* b : element_[iEl]->support() ) {
+		b->evaluate(basis_ev, u,v,w, derivs, u_from_right, v_from_right, w_from_right);
+		for(uint i=0; i<pts.size(); i++)
+			for(int j=0; j<dim_; j++)
+				pts[i][j] += basis_ev[i]*b->cp(j);
+	}
+}
+
+#ifdef HAS_GOTOOLS
 void LRSplineVolume::computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivs2 & result, int iEl ) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("computeBasis()");
@@ -411,6 +412,7 @@ void LRSplineVolume::computeBasis(double param_u, double param_v, double param_w
 	for(it=itStart; it!=itStop; ++it, ++i)
 		result.basisValues[i] = (*it)->evaluate(param_u, param_v, param_w, param_u!=end_[0], param_v!=end_[1], param_w!=end_[2]);
 }
+#endif
 
 void LRSplineVolume::computeBasis (double param_u,
                                    double param_v,

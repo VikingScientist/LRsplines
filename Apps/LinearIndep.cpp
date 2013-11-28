@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <iomanip>
 #include <string.h>
 #include <fstream>
 #include "LRSpline/LRSplineSurface.h"
@@ -7,7 +8,6 @@
 #include "LRSpline/Element.h"
 #include "LRSpline/Meshline.h"
 
-using namespace Go;
 using namespace LR;
 using namespace std;
 

@@ -1,9 +1,9 @@
+#include <cmath>
 #include <stdio.h>
 #include <iostream>
 #include <string.h>
 #include "LRSpline/LRSplineSurface.h"
 
-using namespace Go;
 using namespace LR;
 using namespace std;
 
@@ -80,22 +80,22 @@ int main(int argc, char **argv) {
 	vector<double> par_v_values;
 	for(double u=0; u<=n1-p1+1; u+=0.5) {
 		for(double v=0; v<=n2-p2+1; v+=0.5) {
-
-			BasisDerivsSf2 lr_basis;
-			lr.computeBasis(u,v, lr_basis);
+			
+			vector<vector<double> > lr_basis;
+			lr.computeBasis(u,v, lr_basis, 2);
 			double sum         = 0;
 			double sum_diff_u  = 0;
 			double sum_diff_v  = 0;
 			double sum_diff_uu = 0;
 			double sum_diff_uv = 0;
 			double sum_diff_vv = 0;
-			for(uint i=0; i<lr_basis.basisValues.size(); i++) {
-				sum         += lr_basis.basisValues[i] ;
-				sum_diff_u  += lr_basis.basisDerivs_u[i];
-				sum_diff_v  += lr_basis.basisDerivs_v[i];
-				sum_diff_uu += lr_basis.basisDerivs_uu[i];
-				sum_diff_uv += lr_basis.basisDerivs_uv[i];
-				sum_diff_vv += lr_basis.basisDerivs_vv[i];
+			for(uint i=0; i<lr_basis.size(); i++) {
+				sum         += lr_basis[i][0];
+				sum_diff_u  += lr_basis[i][1];
+				sum_diff_v  += lr_basis[i][2];
+				sum_diff_uu += lr_basis[i][3];
+				sum_diff_uv += lr_basis[i][4];
+				sum_diff_vv += lr_basis[i][5];
 			}
 			cout << "sum (" << u << ", " << v <<") minus one = " << sum-1.0 << endl;
 			cout << "sum diff u  = " << sum_diff_u  << endl;

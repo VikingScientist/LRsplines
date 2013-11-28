@@ -1,10 +1,10 @@
 
 #include <cstdio>
+#include <cmath>
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <cstring>
-#include <GoTools/geometry/SplineSurface.h>
 #include "LRSpline/LRSplineSurface.h"
 #include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/Element.h"
@@ -72,34 +72,13 @@ int main(int argc, char **argv) {
 
 
 
-	// make a uniform integer knot vector
-	double knot_u[] = {0,0,1,1};
-	double knot_v[] = {0,0,1,1};
-	double knot_w[] = {0,0,1,1};
-	double cp2[]    = {0,0,
-	                   1,0,
-	                   0,1,
-	                   1,1};
-	double cp3[]    = {0,0,0,
-	                   1,0,0,
-	                   0,1,0,
-	                   1,1,0,
-	                   0,0,1,
-	                   1,0,1,
-	                   0,1,1,
-	                   1,1,1};
-
 	// make two identical splines
 	LRSplineSurface *lrs;
 	LRSplineVolume  *lrv;
 	if(vol) {
-		SplineVolume   sv(2, 2, 2, 2, 2, 2, knot_u, knot_v, knot_w, cp3, 3, false);
-		sv.raiseOrder(p-1, p-1, p-1);
-		lrv = new LRSplineVolume(&sv);
+		lrv = new LRSplineVolume(p+1, p+1, p+1, p+1, p+1, p+1);
 	} else {
-		SplineSurface   ss(2, 2, 2, 2, knot_u, knot_v, cp2, 2, false);
-		ss.raiseOrder(p-1, p-1);
-		lrs = new LRSplineSurface(&ss);
+		lrs = new LRSplineSurface(p+1, p+1, p+1, p+1);
 	}
 
 	// setup refinement parameters
