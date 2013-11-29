@@ -223,8 +223,8 @@ public:
 			data[hc] = std::list<T>(1,obj);
 			numb++;
 		} else {
-			for(T a : it->second)
-				if(a->equals(*obj))
+			for(list_iter lit = it->second.begin(); lit != it->second.end(); lit++)
+				if((*lit)->equals(*obj))
 					return;
 			data[hc].push_back(obj);
 			numb++;

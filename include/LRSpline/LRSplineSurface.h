@@ -177,8 +177,9 @@ private:
 			}
 		}
 
-		for(Basisfunction* b : basis_)
-			updateSupport(b);
+		HashSet_iterator<Basisfunction*> it;
+		for(it=basis_.begin(); it!=basis_.end(); ++it)
+			updateSupport(*it);
 	}
 
 	void split(bool insert_in_u, Basisfunction* b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);

@@ -5,7 +5,7 @@ SET(LRSpline_VERSION_MAJOR 0)
 SET(LRSpline_VERSION_MINOR 5)
 SET(LRSpline_VERSION_PATCH 0)
 SET(LRSpline_VERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR}.${LRSpline_VERSION_PATCH})
-SET(HAS_GOTOOLS 1)
+SET(HAS_GOTOOLS 0)
 
 # Generate header with version info
 CONFIGURE_FILE(include/LRSpline/LRSpline_version.h.in
@@ -193,6 +193,7 @@ ELSE(WIN32)
                              include/LRSpline/LRSpline.h
                              include/LRSpline/LRSplineSurface.h
                              include/LRSpline/LRSplineVolume.h
+                             include/LRSpline/Streamable.h
                              include/LRSpline/HashSet.h
                              include/LRSpline/MeshRectangle.h)
   INSTALL(FILES ${LRSPLINE_HEADERS}

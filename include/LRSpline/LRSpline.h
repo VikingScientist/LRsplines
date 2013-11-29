@@ -83,18 +83,20 @@ public:
 	Element* getElement(int i)                                     { return element_[i]; };
 	const Element* getElement(int i) const                         { return element_[i]; };
 	Basisfunction* getBasisfunction(int iBasis) {
-		int i=0;
-		for(Basisfunction* b : getAllBasisfunctions())
-			if(i++ == iBasis)
-				return b;
-		return NULL;
+		if(iBasis<0 || iBasis>=basis_.size())
+			return NULL;
+		HashSet_iterator<Basisfunction*> it=basis_.begin(); 
+		for(int i=0; i<iBasis; i++)
+			++it;
+		return *it;
 	}
 	const Basisfunction* getBasisfunction(int iBasis) const {
-		int i=0;
-		for(const Basisfunction* b : getAllBasisfunctions())
-			if(i++ == iBasis)
-				return b;
-		return NULL;
+		if(iBasis<0 || iBasis>=basis_.size())
+			return NULL;
+		HashSet_const_iterator<Basisfunction*> it=basis_.begin(); 
+		for(int i=0; i<iBasis; i++)
+			++it;
+		return *it;
 	}
 
 	// refinement functions
