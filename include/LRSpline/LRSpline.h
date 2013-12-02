@@ -153,12 +153,13 @@ protected:
 	static std::vector<double> getUniformKnotVector(int n, int p) {
 		std::vector<double> result(n+p);
 		int k=0;
+		double max = n-p+1;
 		for(int i=0; i<p-1; i++)
-			result[k++] = 0;
+			result[k++] = 0.0;
 		for(int i=0; i<n-p+2; i++)
-			result[k++] = i;
+			result[k++] = 1.0*i/max;
 		for(int i=0; i<p-1; i++)
-			result[k++] = n-p+1;
+			result[k++] = 1.0;
 		return result;
 	}
 
@@ -166,15 +167,17 @@ protected:
 	static std::vector<double> getGrevillePoints(RandomIterator knotStart, RandomIterator knotEnd) {
 		RandomIterator knot = knotStart;
 		int p=0;
-		while(knot++ != knotStart)
+		while(*knot == *knotStart) {
+			knot++;
 			p++;
+		}
 		int n = (knotEnd-knotStart)-p;
 
 		std::vector<double> result(n);
 		for(int i=0; i<n; i++) {
 			result[i] = 0.0;
-			for(int j=i+1; j<i+p-1; j++)
-				result[i] += *(knotStart+j);
+			for(int j=i+1; j<i+p; j++)
+				result[i] +=  *(knotStart+j);
 			result[i] /= (p-1);
 		}
 		return result;
