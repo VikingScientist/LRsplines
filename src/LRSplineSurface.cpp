@@ -1225,12 +1225,6 @@ void LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot,
 
 }
 
-void LRSplineSurface::rebuildDimension(int dimvalue) {
-	for(Basisfunction *b : basis_)
-		b->setDimension(dimvalue);
-	dim_ = dimvalue;
-}
-
 void LRSplineSurface::getGlobalKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const {
 	getGlobalUniqueKnotVector(knot_u, knot_v);
 

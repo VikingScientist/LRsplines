@@ -1180,12 +1180,6 @@ void LRSplineVolume::split(int constDir, Basisfunction *b, double new_knot, int 
 }
 
 
-void LRSplineVolume::rebuildDimension(int dimvalue) {
-	for(Basisfunction* b : basis_)
-		b->setDimension(dimvalue);
-	dim_ = dimvalue;
-}
-
 #if 0
 void LRSplineVolume::getGlobalKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const {
 	getGlobalUniqueKnotVector(knot_u, knot_v);

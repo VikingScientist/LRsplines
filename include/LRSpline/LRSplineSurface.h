@@ -98,7 +98,6 @@ public:
 	const std::vector<Meshline*> getAllMeshlines() const           { return meshline_;    };
 
 	// assorted specialized functions
-	void rebuildDimension(int dimvalue) ;
 	double makeIntegerKnots();
 	void getSupportElements(       std::vector<int> &result, const std::vector<int> &basisfunctions) const ;
 	void getDiagonalElements(      std::vector<int> &result) const ;

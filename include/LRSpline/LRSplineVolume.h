@@ -106,7 +106,6 @@ public:
 	void getBezierExtraction(int iEl, std::vector<double> &extractMatrix) const;
 
 	// assorted specialized functions
-	void rebuildDimension(int dimvalue) ;
 	void getDiagonalElements(      std::vector<int> &result) const ;
 	void getDiagonalBasisfunctions(std::vector<Basisfunction*> &result) const ;
 	void printElements(std::ostream &out) const;

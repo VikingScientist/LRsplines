@@ -118,7 +118,8 @@ public:
 	}
 
 	// set methods
-	bool setControlPoints(std::vector<double> cps);
+	virtual bool setControlPoints(std::vector<double> cps);
+	virtual void rebuildDimension(int dimvalue) ;
 
 	// linear independence methods
 	virtual bool isLinearIndepByOverloading(  bool verbose) = 0;

@@ -91,4 +91,11 @@ bool LRSpline::setControlPoints(std::vector<double> controlpoints) {
 	return true;
 }
 
+void LRSpline::rebuildDimension(int dimvalue) {
+	for(Basisfunction *b : basis_)
+		b->setDimension(dimvalue);
+	dim_ = dimvalue;
+}
+
+
 } // end namespace LR
