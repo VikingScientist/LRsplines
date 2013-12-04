@@ -98,19 +98,15 @@ public:
 	const std::vector<Meshline*> getAllMeshlines() const           { return meshline_;    };
 
 	// assorted specialized functions
-	void set_dim(int dimvalue)                         {dim_ = dimvalue;};
 	void rebuildDimension(int dimvalue) ;
 	double makeIntegerKnots();
 	void getSupportElements(       std::vector<int> &result, const std::vector<int> &basisfunctions) const ;
 	void getDiagonalElements(      std::vector<int> &result) const ;
 	void getDiagonalBasisfunctions(std::vector<int> &result) const ;
 	void printElements(std::ostream &out) const;
-
-	// interpolate and approximate functions
-	void getLeastSquaresEdge(double (*f)(double, double),
-	                         parameterEdge edge,
-	                         std::vector<int> id,
-	                         std::vector<double> val) const;
+	LRSplineSurface* getRaiseOrderSpace(int raiseOrderU, int raiseOrderV) const;
+	bool setGlobalContinuity(int contU, int contV);
+	bool decreaseContinuity( int du,    int dv);
 
 	// input output methods
 	virtual void read(std::istream &is);

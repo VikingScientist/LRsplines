@@ -1941,6 +1941,96 @@ double LRSplineSurface::makeIntegerKnots() {
 	return scale;
 }
 
+/************************************************************************************************************************//**
+ * \brief Gets the basis functions corresponding to an order elevation (control points must be set yourself)
+ * \param raiseOrderU The number of degrees to raise the first parametric direction
+ * \param raiseOrderV The number of degrees to raise the second parametric direction
+ * \returns pointer to the newly created LRSplineSurface object
+ * \details This generates a brand new LRSplineSurface object which has higher polynomial degree, and meshlines in the same
+ *          place, but with higher multiplicity which gives them the same continuity as the initial basis.
+ ***************************************************************************************************************************/
+LRSplineSurface* LRSplineSurface::getRaiseOrderSpace(int raiseOrderU, int raiseOrderV) const {
+	int p1 = order_[0]+raiseOrderU;
+	int p2 = order_[1]+raiseOrderV;
+	double knotU[2*p1];
+	double knotV[2*p2];
+	for(int i=0; i<p1; i++)
+		knotU[i] = start_[0];
+	for(int i=0; i<p1; i++)
+		knotU[i+p1] = end_[0];
+	for(int i=0; i<p2; i++)
+		knotV[i] = start_[1];
+	for(int i=0; i<p2; i++)
+		knotV[i+p2] = end_[1];
+	int N = dim_ * p1*p2;
+	double coef[N];
+	for(int i=0; i<N; i++)
+		coef[i] = 0.0;
+	LRSplineSurface *result = new LRSplineSurface(p1,p2,p1,p2,knotU, knotV, coef, dim_, false);
+
+	for(Meshline *m : meshline_) {
+		int newMult = m->multiplicity_ + ((m->span_u_line_) ? raiseOrderV : raiseOrderU);
+		result->insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, newMult);
+	}
+
+	return result;
+}
+
+/************************************************************************************************************************//**
+ * \brief provides a maximum regularity constraint on the entire mesh
+ * \param contU The maximum continuity on all meshlines with constant u
+ * \param contV The maximum continuity on all meshlines with constant v
+ * \returns True if operation was successful. False if error on input parameters
+ * \details Ensures that all meshlines have at least multiplictity p-c, where p is the polynomial degree and c is the requested
+ *          continuity. Note that any existing meshlines of lower continuity is unchanged by this call.
+ ***************************************************************************************************************************/
+bool LRSplineSurface::setGlobalContinuity(int contU, int contV) {
+	if(contU < -1 || contV < -1)
+		return false;
+	std::vector<Meshline*> existingLines;
+	for(Meshline *m : meshline_)
+		existingLines.push_back(m->copy());
+
+	for(Meshline *m : existingLines) {
+		int newMult = (m->span_u_line_) ? order_[1]-contV-1 : order_[0]-contU-1;
+		if(newMult < 1) continue;
+		insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, newMult);
+	}
+
+	// clean up
+	for(Meshline *m : existingLines)
+		delete m;
+	return true;
+}
+
+/************************************************************************************************************************//**
+ * \brief Decreases the continuity of all meshlines by fixed amount down to minimum of C^{-1}
+ * \param du The amount of continuity reduction on all lines with constant u parameter
+ * \param dv The amount of continuity reduction on all lines with constant v parameter
+ * \returns True if operation was successful. False if error on input parameters
+ ***************************************************************************************************************************/
+bool LRSplineSurface::decreaseContinuity(int du, int dv) {
+	if(du < 0 || dv < 0) {
+		return false;
+	}
+	std::vector<Meshline*> existingLines;
+	for(Meshline *m : meshline_)
+		existingLines.push_back(m->copy());
+
+	for(Meshline *m : existingLines) {
+		int newMult = m->multiplicity_ + ((m->span_u_line_) ? dv : du);
+		int maxMult = ((m->span_u_line_) ? order_[1] : order_[0]);
+		if(newMult > maxMult)
+			newMult = maxMult;
+		insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, newMult);
+	}
+
+	// clean up
+	for(Meshline *m : existingLines)
+		delete m;
+	return true;
+}
+
 void LRSplineSurface::getSupportElements(std::vector<int> &result, const std::vector<int> &basisfunctions) const  {
 	result.clear();
 	std::set<int> tmp;

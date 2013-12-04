@@ -33,8 +33,8 @@ NORTH_EAST = 10};  // 001010
 
 typedef enum parameterEdge parameterEdge;
 
-class Basisfunction;
 class Element;
+class Basisfunction;
 
 class LRSpline : public Streamable {
 
@@ -116,6 +116,9 @@ public:
 		maxAspectRatio_ = r;
 		doAspectRatioFix_ = aposterioriFix;
 	}
+
+	// set methods
+	bool setControlPoints(std::vector<double> cps);
 
 	// linear independence methods
 	virtual bool isLinearIndepByOverloading(  bool verbose) = 0;
