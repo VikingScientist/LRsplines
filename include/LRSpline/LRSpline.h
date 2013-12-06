@@ -118,7 +118,7 @@ public:
 	}
 
 	// set methods
-	virtual bool setControlPoints(std::vector<double> cps);
+	virtual bool setControlPoints(std::vector<double>& cps);
 	virtual void rebuildDimension(int dimvalue) ;
 
 	// linear independence methods

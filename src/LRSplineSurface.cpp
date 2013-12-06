@@ -499,7 +499,7 @@ int LRSplineSurface::getElementContaining(double u, double v) const {
 	if(lastElementEvaluation >= 0) 
 		if(element_[lastElementEvaluation]->umin() <= u && element_[lastElementEvaluation]->vmin() <= v) 
 			if((u < element_[lastElementEvaluation]->umax() || (u == end_[0] && u <= element_[lastElementEvaluation]->umax())) && 
-		   	(v < element_[lastElementEvaluation]->vmax() || (v == end_[1] && v <= element_[lastElementEvaluation]->vmax())))
+			   (v < element_[lastElementEvaluation]->vmax() || (v == end_[1] && v <= element_[lastElementEvaluation]->vmax())))
 				return lastElementEvaluation;
 	for(uint i=0; i<element_.size(); i++)
 		if(element_[i]->umin() <= u && element_[i]->vmin() <= v) 
