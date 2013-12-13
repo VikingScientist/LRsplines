@@ -1936,6 +1936,47 @@ double LRSplineSurface::makeIntegerKnots() {
 }
 
 /************************************************************************************************************************//**
+ * \brief Gets the basis functions corresponding to the derivatives wrt u and v (control points must be set yourself)
+ * \param diffU Derivative space for differentiation wrt u
+ * \param diffV Derivative space for differentiation wrt v
+ * \details This generates two brand new LRSplineSurface objects which has lower polynomial degree, and lower continuity, but
+ *          meshlines in the same place. For d/du space, all constant-v meshlines have reduced continuity by 1 and the polynomial
+ *          degree in u-direction is reduced by 1, while v-direction remains unchanged. 
+ ***************************************************************************************************************************/
+std::vector<LRSplineSurface*> LRSplineSurface::getDerivativeSpace() const {
+	int p1 = order_[0];
+	int p2 = order_[1];
+	double knotU[2*p1];
+	double knotV[2*p2];
+	for(int i=0; i<p1; i++)
+		knotU[i] = start_[0];
+	for(int i=0; i<p1; i++)
+		knotU[i+p1] = end_[0];
+	for(int i=0; i<p2; i++)
+		knotV[i] = start_[1];
+	for(int i=0; i<p2; i++)
+		knotV[i+p2] = end_[1];
+	int N1 = dim_ * (p1-1)*p2;
+	int N2 = dim_ * p1*(p2-1);
+	double coef1[N1];
+	double coef2[N2];
+	for(int i=0; i<N1; i++) coef1[i] = 0.0;
+	for(int i=0; i<N2; i++) coef2[i] = 0.0;
+
+	LRSplineSurface *diffU = new LRSplineSurface(p1-1, p2  , p1-1, p2  , knotU+1, knotV, coef1, dim_, false);
+	LRSplineSurface *diffV = new LRSplineSurface(p1  , p2-1, p1  , p2-1, knotU, knotV+1, coef2, dim_, false);
+
+	for(Meshline *m : meshline_) {
+		diffU->insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, m->multiplicity_);
+		diffV->insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, m->multiplicity_);
+	}
+	std::vector<LRSplineSurface*> results(2);
+	results[0] = diffU;
+	results[1] = diffV;
+	return results;
+}
+
+/************************************************************************************************************************//**
  * \brief Gets the basis functions corresponding to an order elevation (control points must be set yourself)
  * \param raiseOrderU The number of degrees to raise the first parametric direction
  * \param raiseOrderV The number of degrees to raise the second parametric direction
