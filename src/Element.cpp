@@ -3,6 +3,8 @@
 #include "LRSpline/Meshline.h"
 #include "LRSpline/Basisfunction.h"
 
+typedef unsigned int uint;
+
 namespace LR {
 
 /************************************************************************************************************************//**

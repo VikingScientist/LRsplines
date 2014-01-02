@@ -2,6 +2,8 @@
 #include "LRSpline/Basisfunction.h"
 #include "LRSpline/Element.h"
 
+typedef unsigned int uint;
+
 namespace LR {
 
 LRSpline::LRSpline() {
@@ -77,7 +79,7 @@ void LRSpline::getEdgeElements( std::vector<Element*> &edgeElements, parameterEd
 }
 
 bool LRSpline::setControlPoints(std::vector<double>& controlpoints) {
-	if(controlpoints.size() != dim_*basis_.size())
+	if((int) controlpoints.size() != dim_*basis_.size())
 		return false;
 	
 	std::vector<double>::iterator newCP = controlpoints.begin();

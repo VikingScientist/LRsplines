@@ -28,7 +28,6 @@ int main(int argc, char **argv) {
 	double maxAspectRatio         = -1;
 	int maxTjoints                = -1;
 	bool closeGaps                = true;
-	enum refinementStrategy strat = LR_FULLSPAN;
 	int mult                      = 1;
 	int symmetry                  = 1;
 	char *inputFileName           = NULL;
@@ -117,16 +116,6 @@ int main(int argc, char **argv) {
 		vector<int> sorted_list;
 		refineFile >> beta >> mult >> strat_index >> symmetry;
 		refineFile >> maxTjoints >> maxAspectRatio >> closeGaps;
-		if(strat_index == 0) 
-			strat = LR_FULLSPAN;
-		else if(strat_index == 1) 
-			strat = LR_MINSPAN;
-		else if(strat_index == 2) 
-			strat = LR_STRUCTURED_MESH;
-		else {
-			cerr << "Error: Invalid refinement strategy " << strat_index << " (valid input: 0,1,2)\n";
-			exit(4);
-		}
 		int a;
 		int N;
 		ws(refineFile);
