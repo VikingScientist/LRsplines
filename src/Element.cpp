@@ -2,6 +2,7 @@
 #include "LRSpline/Element.h"
 #include "LRSpline/Meshline.h"
 #include "LRSpline/Basisfunction.h"
+#include <stdlib.h>
 
 typedef unsigned int uint;
 

@@ -28,7 +28,6 @@ IF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
   ENDIF(HAVE_0x)
 ENDIF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
 
 # Check that the required C++11 features are available
@@ -47,6 +46,8 @@ CHECK_CXX_SOURCE_COMPILES("
 IF (NOT COMPILER_SATISFIES_CXX11)
   MESSAGE(FATAL_ERROR "Compiler do not provide C++-11 features required, bailing")
 ENDIF(NOT COMPILER_SATISFIES_CXX11)
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L/boost_1_55_0/boost_1_55_0/stage/lib -I/boost_1_55_0/boost_1_55_0")
 
 ENABLE_TESTING()
 

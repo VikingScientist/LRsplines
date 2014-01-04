@@ -4,6 +4,8 @@
 #include <string.h>
 #include "LRSpline/LRSplineSurface.h"
 
+typedef unsigned int uint;
+
 using namespace LR;
 using namespace std;
 

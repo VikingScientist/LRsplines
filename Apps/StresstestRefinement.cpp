@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string.h>
 #include <fstream>
-#include <GoTools/geometry/SplineSurface.h>
+#include <cmath>
 #include "LRSpline/LRSplineSurface.h"
 #include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/Profiler.h"
@@ -10,7 +10,6 @@
 #include "LRSpline/MeshRectangle.h"
 #include "LRSpline/HashSet.h"
 
-using namespace Go;
 using namespace LR;
 using namespace std;
 

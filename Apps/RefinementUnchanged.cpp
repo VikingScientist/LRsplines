@@ -15,6 +15,8 @@
 #include "LRSpline/Element.h"
 #include "LRSpline/MeshRectangle.h"
 
+typedef unsigned int uint;
+
 using namespace LR;
 using namespace std;
 
