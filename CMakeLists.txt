@@ -5,7 +5,6 @@ SET(LRSpline_VERSION_MAJOR 0)
 SET(LRSpline_VERSION_MINOR 5)
 SET(LRSpline_VERSION_PATCH 0)
 SET(LRSpline_VERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR}.${LRSpline_VERSION_PATCH})
-SET(HAS_GOTOOLS 0)
 SET(TIME_LRSPLINE 1)
 
 # Generate header with version info
@@ -52,19 +51,20 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L/boost_1_55_0/boost_1_55_0/stage/lib -
 ENABLE_TESTING()
 
 # Required packages
-FIND_PACKAGE(Boost REQUIRED)
-
-# Required libraries
-SET(DEPLIBS ${BOOST_LIBRARIES})
+#    - none -
 
 # Required include directories
-SET(INCLUDES ${PROJECT_SOURCE_DIR}/include
-             ${BOOST_INCLUDES})
+SET(INCLUDES ${PROJECT_SOURCE_DIR}/include)
 
 # Optional packages
-IF(HAS_GOTOOLS)
+FIND_PACKAGE(GoTools)
+FIND_PACKAGE(Boost)
+
+
+IF(GOTOOLS_FOUND)
+  # must have all of GoTools or none of it
   FIND_PACKAGE(GoTrivariate REQUIRED)
-  FIND_PACKAGE(GoTools REQUIRED)
+  OPTION(HAS_GOTOOLS "Link library with GoTools" ON)
   SET(INCLUDES ${INCLUDES}
                ${GoTools_INCLUDE_DIRS} 
                ${GoTrivariate_INCLUDE_DIRS})
@@ -72,7 +72,20 @@ IF(HAS_GOTOOLS)
               ${GoTrivariate_LIBRARIES}
               ${GoTools_LIBRARIES})
   ADD_DEFINITIONS(-DHAS_GOTOOLS)
-ENDIF(HAS_GOTOOLS)
+ELSE(GOTOOLS_FOUND)
+  OPTION(HAS_GOTOOLS "Link library with GoTools" OFF)
+ENDIF(GOTOOLS_FOUND)
+
+IF(Boost_FOUND)
+  SET(DEPLIBS  ${DEPLIBS}  ${BOOST_LIBRARIES})
+  SET(INCLUDES ${INCLUDES} ${BOOST_INCLUDES} )
+  ADD_DEFINITIONS(-DHAS_BOOST)
+  OPTION(HAS_BOOST "Link library with Boost" ON)
+ELSE(Boost_FOUND)
+  OPTION(HAS_BOOST "Link library with Boost" OFF)
+ENDIF(Boost_FOUND)
+
+
 IF(TIME_LRSPLINE)
   ADD_DEFINITIONS(-DTIME_LRSPLINE)
 ENDIF(TIME_LRSPLINE)
@@ -92,10 +105,10 @@ ENDIF(NOT WIN32)
 
 # Make the LRSpline library
 FILE(GLOB_RECURSE LRSPLINE_SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp)
-ADD_LIBRARY(LRSpline ${LRSPLINE_SRCS})
+ADD_LIBRARY(LRSpline STATIC ${LRSPLINE_SRCS})
 TARGET_LINK_LIBRARIES(LRSpline ${DEPLIBS})
-SET_TARGET_PROPERTIES(LRSpline PROPERTIES  VERSION ${LRSpline_VERSION}
-                      SOVERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR})
+#SET_TARGET_PROPERTIES(LRSpline PROPERTIES  VERSION ${LRSpline_VERSION}
+#                      SOVERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR})
 
 # Make some Apps
 ADD_EXECUTABLE(reduceContinuity ${PROJECT_SOURCE_DIR}/Apps/reduceContinuity.cpp)
@@ -177,6 +190,8 @@ ENDFOREACH()
 
 # 'install' target
 IF(WIN32)
+  install(TARGET LRSplines DESTINATION LRSplines)
+  install(FILES ${INCLUDES} DESTINATION LRSplines/include)
   # TODO
 ELSE(WIN32)
   # lib
@@ -208,3 +223,5 @@ ELSE(WIN32)
   INSTALL(FILES cmake/Modules/LRSplineConfig.cmake
     DESTINATION lib/LRSpline COMPONENT liblrspline-dev)
 ENDIF(WIN32)
+
+include(CPack)

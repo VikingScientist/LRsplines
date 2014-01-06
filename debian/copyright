@@ -3,7 +3,7 @@ Upstream-Name: lr-splines
 Source: <url://example.com>
 
 Files: *
-Copyright: Kjetil yo
+Copyright: 2014 Kjetil Andre Johannessen <kjetijo@gmail.com>
 Files: debian/*
 Copyright: 2013 Arne Morten Kvarving <arne.morten.kvarving@sintef.no>
 License: GPL-2+
