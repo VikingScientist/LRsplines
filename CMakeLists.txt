@@ -11,6 +11,10 @@ SET(TIME_LRSPLINE 1)
 CONFIGURE_FILE(include/LRSpline/LRSpline_version.h.in
                ${PROJECT_SOURCE_DIR}/include/LRSpline/LRSpline_version.h @ONLY)
 
+# Generate doxy in build tree
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/Doxyfile.in
+               Doxyfile @ONLY)
+
 ENABLE_LANGUAGE(CXX)
 
 INCLUDE(CheckCXXCompilerFlag)
@@ -204,7 +208,7 @@ ELSE(WIN32)
           COMPONENT liblrspline)
 
   # For generating the doxy
-  ADD_CUSTOM_TARGET(doc doxygen 
+  ADD_CUSTOM_TARGET(doc doxygen ${CMAKE_BINARY_DIR}/Doxyfile
                     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
                     COMMENT "Generating API documentation" VERBATIM)
   INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${CMAKE_BUILD_TOOL} doc WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")" COMPONENT doc)
