@@ -65,7 +65,7 @@ FIND_PACKAGE(GoTools)
 FIND_PACKAGE(Boost)
 FIND_PACKAGE(Matlab)
 
-IF(GOTOOLS_FOUND)
+IF(GoTools_FOUND)
   # must have all of GoTools or none of it
   FIND_PACKAGE(GoTrivariate REQUIRED)
   OPTION(HAS_GOTOOLS "Link library with GoTools" ON)
@@ -76,19 +76,20 @@ IF(GOTOOLS_FOUND)
               ${GoTrivariate_LIBRARIES}
               ${GoTools_LIBRARIES})
   ADD_DEFINITIONS(-DHAS_GOTOOLS)
-ELSE(GOTOOLS_FOUND)
+ELSE()
   OPTION(HAS_GOTOOLS "Link library with GoTools" OFF)
-ENDIF(GOTOOLS_FOUND)
+ENDIF()
 
 IF(Boost_FOUND)
   SET(DEPLIBS  ${DEPLIBS}  ${BOOST_LIBRARIES})
   SET(INCLUDES ${INCLUDES} ${BOOST_INCLUDES} )
   ADD_DEFINITIONS(-DHAS_BOOST)
-  OPTION(HAS_BOOST "Link library with Boost" ON)
 ELSE(Boost_FOUND)
   OPTION(HAS_BOOST "Link library with Boost" OFF)
 ENDIF(Boost_FOUND)
 
+CONFIGURE_FILE(cmake/Templates/LRSplineConfig.cmake.in
+                LRSplineConfig.cmake @ONLY)
 
 IF(TIME_LRSPLINE)
   ADD_DEFINITIONS(-DTIME_LRSPLINE)
@@ -199,8 +200,8 @@ ENDFOREACH()
 
 # 'install' target
 IF(WIN32)
-  install(TARGET LRSplines DESTINATION LRSplines)
-  install(FILES ${INCLUDES} DESTINATION LRSplines/include)
+  #  install(TARGETS LRSplines DESTINATION LRSplines)
+  #  install(FILES ${INCLUDES} DESTINATION LRSplines/include)
   # TODO
 ELSE(WIN32)
   # lib
@@ -230,7 +231,7 @@ ELSE(WIN32)
   INSTALL(FILES ${LRSPLINE_HEADERS}
                 DESTINATION include/LRSpline
                 COMPONENT liblrspline-dev)
-  INSTALL(FILES cmake/Modules/LRSplineConfig.cmake
+  INSTALL(FILES ${CMAKE_BINARY_DIR}/LRSplineConfig.cmake
     DESTINATION lib/LRSpline COMPONENT liblrspline-dev)
 ENDIF(WIN32)
 
