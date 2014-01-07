@@ -9,7 +9,7 @@ SET(TIME_LRSPLINE 1)
 
 # Generate header with version info
 CONFIGURE_FILE(include/LRSpline/LRSpline_version.h.in
-               ${PROJECT_SOURCE_DIR}/include/LRSpline/LRSpline_version.h @ONLY)
+               ${CMAKE_BINARY_DIR}/include/LRSpline/LRSpline_version.h @ONLY)
 
 # Generate doxy in build tree
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/Doxyfile.in
@@ -58,7 +58,7 @@ ENABLE_TESTING()
 #    - none -
 
 # Required include directories
-SET(INCLUDES ${PROJECT_SOURCE_DIR}/include)
+SET(INCLUDES ${PROJECT_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include)
 
 # Optional packages
 FIND_PACKAGE(GoTools)
@@ -116,7 +116,7 @@ SET_TARGET_PROPERTIES(LRSpline PROPERTIES  VERSION ${LRSpline_VERSION}
 
 IF(MATLAB_FOUND)
   file(COPY ${PROJECT_SOURCE_DIR}/src/matlab/LRSplineSurface.m DESTINATION ${CMAKE_BINARY_DIR}/matlab)
-  ADD_CUSTOM_TARGET(matlab-lrspline ALL DEPENDS LRSpline COMMAND ${MATLAB_MEX} CC=${MATLAB_CC} -I${INCLUDES} ${PROJECT_SOURCE_DIR}/src/matlab/lrsplinesurface_interface.cpp -L${CMAKE_BINARY_DIR}/lib -lLRSpline -outdir ${CMAKE_BINARY_DIR}/matlab)
+  ADD_CUSTOM_TARGET(matlab-lrspline ALL DEPENDS LRSpline COMMAND ${MATLAB_MEX} CC=${MATLAB_CC} -I${PROJECT_SOURCE_DIR}/include -I${CMAKE_BINARY_DIR}/include ${PROJECT_SOURCE_DIR}/src/matlab/lrsplinesurface_interface.cpp -L${CMAKE_BINARY_DIR}/lib -lLRSpline -outdir ${CMAKE_BINARY_DIR}/matlab)
 ENDIF()
 
 # Make some Apps
@@ -213,7 +213,7 @@ ELSE(WIN32)
                     COMMENT "Generating API documentation" VERBATIM)
   INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${CMAKE_BUILD_TOOL} doc WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")" COMPONENT doc)
 
-  INSTALL(DIRECTORY doc/html/ DESTINATION share/doc/liblrsplines1/html)
+  INSTALL(DIRECTORY ${CMAKE_BINARY_DIR}/doc/html/ DESTINATION share/doc/liblrsplines1/html)
 
   # headers
   FILE(GLOB LRSPLINE_HEADERS include/LRSpline/Basisfunction.h
@@ -225,7 +225,8 @@ ELSE(WIN32)
                              include/LRSpline/LRSplineVolume.h
                              include/LRSpline/Streamable.h
                              include/LRSpline/HashSet.h
-                             include/LRSpline/MeshRectangle.h)
+                             include/LRSpline/MeshRectangle.h
+                             ${CMAKE_BINARY_DIR}/include/LRSpline/LRSpline_version.h)
   INSTALL(FILES ${LRSPLINE_HEADERS}
                 DESTINATION include/LRSpline
                 COMPONENT liblrspline-dev)
