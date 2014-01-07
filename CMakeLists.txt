@@ -16,6 +16,8 @@ ENABLE_LANGUAGE(CXX)
 INCLUDE(CheckCXXCompilerFlag)
 INCLUDE(cmake/Modules/UseMultiArch.cmake)
 
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
+
 IF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
 # check if compiler supports c++-0x
   CHECK_CXX_COMPILER_FLAG("-std=gnu++0x" HAVE_0x)
@@ -26,8 +28,6 @@ IF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
     EXIT(1)
   ENDIF(HAVE_0x)
 ENDIF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-
-
 
 # Check that the required C++11 features are available
 CHECK_CXX_SOURCE_COMPILES("
@@ -59,7 +59,7 @@ SET(INCLUDES ${PROJECT_SOURCE_DIR}/include)
 # Optional packages
 FIND_PACKAGE(GoTools)
 FIND_PACKAGE(Boost)
-
+FIND_PACKAGE(Matlab)
 
 IF(GOTOOLS_FOUND)
   # must have all of GoTools or none of it
@@ -104,11 +104,16 @@ IF(NOT WIN32)
 ENDIF(NOT WIN32)
 
 # Make the LRSpline library
-FILE(GLOB_RECURSE LRSPLINE_SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp)
+FILE(GLOB LRSPLINE_SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp)
 ADD_LIBRARY(LRSpline STATIC ${LRSPLINE_SRCS})
 TARGET_LINK_LIBRARIES(LRSpline ${DEPLIBS})
-#SET_TARGET_PROPERTIES(LRSpline PROPERTIES  VERSION ${LRSpline_VERSION}
-#                      SOVERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR})
+SET_TARGET_PROPERTIES(LRSpline PROPERTIES  VERSION ${LRSpline_VERSION}
+                      SOVERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR})
+
+IF(MATLAB_FOUND)
+  file(COPY ${PROJECT_SOURCE_DIR}/src/matlab/LRSplineSurface.m DESTINATION ${CMAKE_BINARY_DIR}/matlab)
+  ADD_CUSTOM_TARGET(matlab-lrspline ALL DEPENDS LRSpline COMMAND ${MATLAB_MEX} CC=${MATLAB_CC} -I${INCLUDES} ${PROJECT_SOURCE_DIR}/src/matlab/lrsplinesurface_interface.cpp -L${CMAKE_BINARY_DIR}/lib -lLRSpline -outdir ${CMAKE_BINARY_DIR}/matlab)
+ENDIF()
 
 # Make some Apps
 ADD_EXECUTABLE(reduceContinuity ${PROJECT_SOURCE_DIR}/Apps/reduceContinuity.cpp)
