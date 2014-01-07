@@ -246,10 +246,12 @@ int main(int argc, char **argv) {
 	cout << "Number of unique hashcodes          : " << basis.uniqueHashCodes() ;
 	cout <<                                      " (" << hashCodePercentage*100 << " %)"  << endl;
 	cout << "-------------------------------------------------------------" << endl;
+#ifdef HAS_BOOST
 	if(nBasis < 1300 && !vol) {
 	cout << "Is linearly independent : " << ((lrs->isLinearIndepByMappingMatrix(false) )? "True":"False") << endl;
 	cout << "-------------------------------------------------------------" << endl;
 	}
+#endif
 
 
 	if(dumpfile) {

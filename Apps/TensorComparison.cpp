@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
 		// display results
 		cout << "     =======    RESULT (SURFACE) SUMMARY   ========     \n\n";
 		cout << "_____u____________v_____________ASSERT__\n";
-		for(uint i=0; i<assertion_passed.size(); i++) {
+		for(size_t i=0; i<assertion_passed.size(); i++) {
 			printf("%10.4g   %10.4g           ", par_u_values[i], par_v_values[i]);
 			if(assertion_passed[i])
 				cout << "OK\n";
@@ -226,7 +226,7 @@ int main(int argc, char **argv) {
 		// display results
 		cout << "     =======    RESULT (VOLUME) SUMMARY   ========     \n\n";
 		cout << "_____u____________v____________w_____________ASSERT__\n";
-		for(uint i=0; i<assertion_passed.size(); i++) {
+		for(size_t i=0; i<assertion_passed.size(); i++) {
 			printf("%10.4g   %10.4g   %10.4g           ", par_u_values[i], par_v_values[i], par_w_values[i]);
 			if(assertion_passed[i])
 				cout << "OK\n";

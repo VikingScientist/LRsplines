@@ -11,7 +11,9 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#ifdef HAS_BOOST
 #include <boost/rational.hpp>
+#endif
 #include <cfloat>
 #include <cmath>
 
@@ -1370,6 +1372,7 @@ bool LRSplineSurface::isLinearIndepByOverloading(bool verbose) {
 	return overloaded.size() == 0;
 }
 
+#ifdef HAS_BOOST
 bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("Linear independent)");
@@ -1713,6 +1716,7 @@ void LRSplineSurface::getNullSpace(std::vector<std::vector<boost::rational<long 
 			nullspace[i][j] = -Ct[j][nmb_bas-(i+1)]; // no need to divide by C[j][j] since it's 1
 
 }
+#endif
 
 bool LRSplineSurface::isLinearIndepByFloatingPointMappingMatrix(bool verbose) const {
 #ifdef TIME_LRSPLINE

@@ -198,8 +198,10 @@ int main(int argc, char **argv) {
 					isLinearIndep = lr_original->isLinearIndepByFloatingPointMappingMatrix(false);
 				else if(overload) 
 					isLinearIndep = lr_original->isLinearIndepByOverloading(false);
+#ifdef HAS_BOOST
 				else
 					isLinearIndep = lr_original->isLinearIndepByMappingMatrix(false);
+#endif
 				if( ! isLinearIndep) {
 					printf("Nelements = %5d Nbasis = %5d \n", lr_original->nElements(), lr_original->nBasisFunctions());
 					lr = lr_original;
@@ -215,8 +217,10 @@ int main(int argc, char **argv) {
 			isLinearIndep = lr->isLinearIndepByFloatingPointMappingMatrix(verbose);
 		else if(overload) 
 			isLinearIndep = lr->isLinearIndepByOverloading(verbose);
+#ifdef HAS_BOOST
 		else 
 			isLinearIndep = lr->isLinearIndepByMappingMatrix(verbose);
+#endif
 	}
 
 	if(dumpFile) {
@@ -254,6 +258,7 @@ int main(int argc, char **argv) {
 		exit(0);
 	} else {
 		cout << "Linear dependent mesh!\n";
+#ifdef HAS_BOOST
 		if(dumpNullSpace) {
 			vector<vector<boost::rational<long long> > > nullspace;
 			lr->getNullSpace(nullspace);
@@ -266,6 +271,7 @@ int main(int argc, char **argv) {
 				cout << endl;
 			}
 		}
+#endif
 		exit(1);
 	}
 

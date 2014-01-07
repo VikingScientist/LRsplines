@@ -6,7 +6,9 @@
 	#include <GoTools/utils/Point.h>
 	#include <GoTools/geometry/SplineSurface.h>
 #endif
+#ifdef HAS_BOOST
 #include <boost/rational.hpp>
+#endif
 #include "LRSpline.h"
 #include "Basisfunction.h"
 #include "Meshline.h"
@@ -73,9 +75,11 @@ public:
 
 	// linear independence methods
 	bool isLinearIndepByOverloading(bool verbose) ;
-	bool isLinearIndepByMappingMatrix(bool verbose) const ;
 	bool isLinearIndepByFloatingPointMappingMatrix(bool verbose) const ;
+#ifdef HAS_BOOST
+	bool isLinearIndepByMappingMatrix(bool verbose) const ;
 	void getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const ;
+#endif
 
 	void updateSupport(Basisfunction *f) ;
 	void updateSupport(Basisfunction *f,
