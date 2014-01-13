@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string.h>
 #include <fstream>
+#include <cstdlib>
 #include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/Profiler.h"
 #include "LRSpline/Element.h"

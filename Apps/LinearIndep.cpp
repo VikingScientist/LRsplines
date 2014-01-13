@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <string.h>
 #include <fstream>
+#include <cstdlib>
 #include "LRSpline/LRSplineSurface.h"
 #include "LRSpline/Profiler.h"
 #include "LRSpline/Element.h"

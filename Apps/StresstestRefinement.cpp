@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <cstdlib>
 #include <string.h>
 #include <fstream>
 #include <cmath>
