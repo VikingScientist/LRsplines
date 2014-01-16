@@ -2,7 +2,7 @@
 //!
 //! \file LR-splines.dox
 //!
-//! \date January 2013
+//! \date January 2014
 //!
 //! \author Kjetil A. Johannessen / NTNU
 //!
@@ -17,16 +17,16 @@
 \author Kjetil A. Johannessen, NTNU, Trondheim
 
 \section intro Introduction
-This is the LR-splines. Currently supports bivariate (2D) splines, but soon to be trivariate as well.
+LR B-splines is a technology which enables users to perform local refinement on B-spline surfaces or volumes, which traditionally have been limited to tensor products. This has a wide variety of applications within computer-aided design (CAD) and computer-aided engineering (CAE). While this library was written with the latter in mind, it is also possible to take use of it in a design environment.
 
 
 \section overview Overview
-This is the overivew section. It views over.
+This is a research code which was written by researchers for researchers. It is provided as open source under GNU public license v3. We provide here two versions of the code. One full c++ library which may be compiled from source code, and a slightly slower (but more accessible) Matlab overlay of the same code. Note that the volumetric code is currently only available in the c++ libraries.
 
 
 \section requirements Library requirements
 
-The class depends on the presence of GoTools (more specific the core and trivariate modules) as well as boost.
+The class uses GoTools (more specific the core and trivariate modules) as well as boost if avaiable. Not required.
 
 
 */
