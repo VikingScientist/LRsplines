@@ -1,8 +1,7 @@
 Source: lrspline
 Priority: extra
 Maintainer: Arne Morten Kvarving <arne.morten.kvarving@sintef.no>
-Build-Depends: debhelper (>= 8.0.0), cmake, libgotools-trivariate-dev,
-               libgotools-core-dev, libboost-dev, libifem-cmakerules, doxygen
+Build-Depends: debhelper (>= 8.0.0), cmake, doxygen
 Standards-Version: 3.9.2
 Section: libs
 Homepage: http://some.where
