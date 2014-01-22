@@ -1,6 +1,6 @@
 Source: lrspline
 Priority: extra
-Maintainer: Arne Morten Kvarving <arne.morten.kvarving@sintef.no>
+Maintainer: Kjetil Andre Johannessen <kjetijo@gmail.com>
 Build-Depends: debhelper (>= 8.0.0), cmake, doxygen
 Standards-Version: 3.9.2
 Section: libs
