@@ -63,7 +63,6 @@ SET(INCLUDES ${PROJECT_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include)
 # Optional packages
 FIND_PACKAGE(GoTools)
 FIND_PACKAGE(Boost)
-FIND_PACKAGE(Matlab)
 
 IF(GoTools_FOUND)
   # must have all of GoTools or none of it
@@ -115,11 +114,6 @@ ADD_LIBRARY(LRSpline SHARED ${LRSPLINE_SRCS})
 TARGET_LINK_LIBRARIES(LRSpline ${DEPLIBS})
 SET_TARGET_PROPERTIES(LRSpline PROPERTIES  VERSION ${LRSpline_VERSION}
                       SOVERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR})
-
-IF(MATLAB_FOUND)
-  file(COPY ${PROJECT_SOURCE_DIR}/src/matlab/LRSplineSurface.m DESTINATION ${CMAKE_BINARY_DIR}/matlab)
-  ADD_CUSTOM_TARGET(matlab-lrspline ALL DEPENDS LRSpline COMMAND ${MATLAB_MEX} CC=${MATLAB_CC} -I${PROJECT_SOURCE_DIR}/include -I${CMAKE_BINARY_DIR}/include ${PROJECT_SOURCE_DIR}/src/matlab/lrsplinesurface_interface.cpp -L${CMAKE_BINARY_DIR}/lib -lLRSpline -outdir ${CMAKE_BINARY_DIR}/matlab)
-ENDIF()
 
 # Make some Apps
 ADD_EXECUTABLE(reduceContinuity ${PROJECT_SOURCE_DIR}/Apps/reduceContinuity.cpp)
