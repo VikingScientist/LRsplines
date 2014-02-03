@@ -4,14 +4,15 @@ Maintainer: Kjetil Andre Johannessen <kjetijo@gmail.com>
 Build-Depends: debhelper (>= 8.0.0), cmake, doxygen
 Standards-Version: 3.9.2
 Section: libs
-Homepage: http://some.where
+Homepage: http://www.math.ntnu.no/~kjetijo/LRsplines
 
 Package: liblrspline1-dev
 Section: libdevel
 Architecture: any
 Multi-Arch: same
 Provides: liblrspline-dev
-Depends: lr-spline1 (= ${binary:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: libboost-dev
 Description: Locally refined B-splines -- development files
  This library provides support for locally refined 2D/3D B-splines
 

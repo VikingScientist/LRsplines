@@ -1099,8 +1099,8 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 #endif
 	for(Basisfunction* b : basis_) {
 		if(newline->splits(b)) {
-			int nKnots;
-			if( ((nKnots=newline->nKnotsIn(b)) != newline->multiplicity_) ) {
+			int nKnots = newline->nKnotsIn(b);
+			if( nKnots < newline->multiplicity_ ) {
 				removeFunc.insert(b);
 				split( const_u, b, const_par, newline->multiplicity_-nKnots, newFuncStp1 );
 			}
@@ -1133,7 +1133,7 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 		for(Meshline *m : meshline_) {
 			if(m->splits(b)) {
 				int nKnots = m->nKnotsIn(b);
-				if( nKnots != m->multiplicity_ ) {
+				if( nKnots < m->multiplicity_ ) {
 					splitMore = true;
 					split( !m->is_spanning_u(), b, m->const_par_, m->multiplicity_-nKnots, newFuncStp1);
 					delete b;

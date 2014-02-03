@@ -1057,8 +1057,8 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 	for(Basisfunction* b : basis_) {
 		for(MeshRectangle *m : newGuys) {
 			if(m->splits(b)) {
-				int nKnots;
-				if( ((nKnots=m->nKnotsIn(b)) != m->multiplicity_) ) {
+				int nKnots = m->nKnotsIn(b);
+				if( nKnots < m->multiplicity_) {
 					removeFunc.insert(b);
 					split( m->constDirection(), b, m->constParameter(), m->multiplicity_-nKnots, newFuncStp1 ); 
 					break; // can only be split once by single meshrectangle insertion
@@ -1090,7 +1090,7 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 		for(MeshRectangle *m : meshrect_) {
 			if(m->splits(b)) {
 				int nKnots = m->nKnotsIn(b);
-				if( nKnots != m->multiplicity_ ) {
+				if( nKnots < m->multiplicity_ ) {
 					splitMore = true;
 					split( m->constDirection(), b, m->constParameter(), m->multiplicity_-nKnots, newFuncStp1);
 					delete b;
