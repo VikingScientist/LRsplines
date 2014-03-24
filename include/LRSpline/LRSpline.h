@@ -170,13 +170,7 @@ protected:
 	}
 
 	template <typename RandomIterator>
-	static std::vector<double> getGrevillePoints(RandomIterator knotStart, RandomIterator knotEnd) {
-		RandomIterator knot = knotStart;
-		int p=0;
-		while(*knot == *knotStart) {
-			knot++;
-			p++;
-		}
+	static std::vector<double> getGrevillePoints(int p, RandomIterator knotStart, RandomIterator knotEnd) {
 		int n = (knotEnd-knotStart)-p;
 
 		std::vector<double> result(n);

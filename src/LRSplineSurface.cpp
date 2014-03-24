@@ -107,8 +107,8 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 #endif
 	initMeta();
 
-	std::vector<double> grevU = LRSpline::getGrevillePoints(knot_u, knot_u + n1 + order_u);
-	std::vector<double> grevV = LRSpline::getGrevillePoints(knot_v, knot_v + n2 + order_v);
+	std::vector<double> grevU = LRSpline::getGrevillePoints(order_u, knot_u, knot_u + n1 + order_u);
+	std::vector<double> grevV = LRSpline::getGrevillePoints(order_v, knot_v, knot_v + n2 + order_v);
 	double coef[n1*n2*2];
 	int k=0;
 	for(int j=0; j<n2; j++)
@@ -135,8 +135,8 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v) {
 
 	std::vector<double> knot_u = LRSpline::getUniformKnotVector(n1, order_u);
 	std::vector<double> knot_v = LRSpline::getUniformKnotVector(n2, order_v);
-	std::vector<double> grev_u = LRSpline::getGrevillePoints(knot_u.begin(), knot_u.end());
-	std::vector<double> grev_v = LRSpline::getGrevillePoints(knot_v.begin(), knot_v.end());
+	std::vector<double> grev_u = LRSpline::getGrevillePoints(order_u, knot_u.begin(), knot_u.end());
+	std::vector<double> grev_v = LRSpline::getGrevillePoints(order_v, knot_v.begin(), knot_v.end());
 	double coef[n1*n2*2];
 	int k=0;
 	for(int j=0; j<n2; j++)

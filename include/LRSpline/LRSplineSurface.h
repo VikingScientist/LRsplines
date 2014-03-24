@@ -132,6 +132,8 @@ private:
 	          typename RandomIterator2,
 	          typename RandomIterator3>
 	void initCore(int n1, int n2, int order_u, int order_v, RandomIterator1 knot_u, RandomIterator2 knot_v, RandomIterator3 coef, int dim, bool rational=false) {
+		int p1     = order_u;
+		int p2     = order_v;
 		order_.resize(2);
 		start_.resize(2);
 		end_.resize(2);
@@ -141,31 +143,31 @@ private:
 		order_[1]  = order_v;
 		start_[0]  = knot_u[0];
 		start_[1]  = knot_v[0];
-		end_[0]    = knot_u[n1];
-		end_[1]    = knot_v[n2];
+		end_[0]    = knot_u[n1+p1-1];
+		end_[1]    = knot_v[n2+p2-1];
 	
 		for(int j=0; j<n2; j++)
 			for(int i=0; i<n1; i++)
 				basis_.insert(new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim+rational), dim, order_u, order_v));
 		int unique_u=0;
 		int unique_v=0;
-		for(int i=0; i<n1+order_u; i++) {// const u, spanning v
+		for(int i=0; i<n1+p1; i++) {// const u, spanning v
 			int mult = 1;
-			while(i<n1+order_u-1 && knot_u[i]==knot_u[i+1]) {
+			while(i<n1+p1 && knot_u[i]==knot_u[i+1]) {
 				i++;
 				mult++;
 			}
 			unique_u++;
-			meshline_.push_back(new Meshline(false, knot_u[i], knot_v[0], knot_v[n2], mult) );
+			meshline_.push_back(new Meshline(false, knot_u[i], knot_v[0], knot_v[n2+p2-1], mult) );
 		}
-		for(int i=0; i<n2+order_v; i++) {// const v, spanning u
+		for(int i=0; i<n2+p2; i++) {// const v, spanning u
 			int mult = 1;
-			while(i<n2+order_v-1 && knot_v[i]==knot_v[i+1]) {
+			while(i<n2+p2 && knot_v[i]==knot_v[i+1]) {
 				i++;
 				mult++;
 			}
 			unique_v++;
-			meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n1], mult) );
+			meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n1+p1-1], mult) );
 		}
 		for(int j=0; j<unique_v-1; j++) {
 			for(int i=0; i<unique_u-1; i++) {
