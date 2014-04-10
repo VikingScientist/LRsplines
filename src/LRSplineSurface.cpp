@@ -27,7 +27,7 @@ typedef std::pair<double,int> IndexDouble;
 
 namespace LR {
 
-#define DOUBLE_TOL 1e-14
+#define DOUBLE_TOL 1e-13
 
 
 /************************************************************************************************************************//**
@@ -1971,6 +1971,8 @@ std::vector<LRSplineSurface*> LRSplineSurface::getDerivativeSpace() const {
 	LRSplineSurface *diffV = new LRSplineSurface(p1  , p2-1, p1  , p2-1, knotU, knotV+1, coef2, dim_, false);
 
 	for(Meshline *m : meshline_) {
+		if( m->span_u_line_ && (fabs(m->const_par_-start_[1])<DOUBLE_TOL || fabs(m->const_par_-end_[1])<DOUBLE_TOL)) continue;
+		if(!m->span_u_line_ && (fabs(m->const_par_-start_[0])<DOUBLE_TOL || fabs(m->const_par_-end_[0])<DOUBLE_TOL)) continue;
 		diffU->insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, m->multiplicity_);
 		diffV->insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, m->multiplicity_);
 	}

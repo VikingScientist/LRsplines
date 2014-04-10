@@ -162,7 +162,7 @@ private:
 		int unique_w=0;
 		for(int i=0; i<n1+order_u; i++) {// const u, spanning v,w
 			int mult = 1;
-			while(i<n1+order_u && knot_u[i]==knot_u[i+1]) {
+			while(i+1<n1+order_u && knot_u[i]==knot_u[i+1]) {
 				i++;
 				mult++;
 			}
@@ -172,7 +172,7 @@ private:
 		}
 		for(int i=0; i<n2+order_v; i++) {// const v, spanning u,w
 			int mult = 1;
-			while(i<n2+order_v && knot_v[i]==knot_v[i+1]) {
+			while(i+1<n2+order_v && knot_v[i]==knot_v[i+1]) {
 				i++;
 				mult++;
 			}
@@ -180,9 +180,9 @@ private:
 			meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[i], knot_w[0],
 			                                      knot_u[n1], knot_v[i], knot_w[n3], mult));
 		}
-		for(int i=0; i<n3+order_[2]; i++) {
+		for(int i=0; i<n3+order_w; i++) {
 			int mult = 1;
-			while(i+1<n3+order_[2] && knot_w[i]==knot_w[i+1]) {
+			while(i+1<n3+order_w && knot_w[i]==knot_w[i+1]) {
 				i++;
 				mult++;
 			}
