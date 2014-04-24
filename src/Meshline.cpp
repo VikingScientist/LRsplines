@@ -73,11 +73,11 @@ bool Meshline::touches(Element *el) const {
 bool Meshline::splits(Element *el) const {
 	if(span_u_line_) {
 		if( el->vmin() < const_par_ && const_par_ < el->vmax() &&
-		    start_ <= el->umin()    && el->umax() <= stop_)
+		    start_-DOUBLE_TOL <= el->umin()    && el->umax()-DOUBLE_TOL <= stop_)
 			return  true;
 	} else { // span-v line
 		if( el->umin() < const_par_ && const_par_ < el->umax() &&
-		    start_ <= el->vmin()    && el->vmax() <= stop_)
+		    start_-DOUBLE_TOL <= el->vmin()    && el->vmax()-DOUBLE_TOL <= stop_)
 			return  true;
 	}
 	return false;
@@ -99,11 +99,11 @@ bool Meshline::touches(Basisfunction *basis) const {
 bool Meshline::splits(Basisfunction *basis) const {
 	if(span_u_line_) {
 		if( (*basis)[1][0] < const_par_ && const_par_ < (*basis)[1][basis->getOrder(1)] &&
-		    start_ <= (*basis)[0][0]  && (*basis)[0][basis->getOrder(0)] <= stop_)
+		    start_-DOUBLE_TOL <= (*basis)[0][0]  && (*basis)[0][basis->getOrder(0)] <= stop_+DOUBLE_TOL)
 			return  true;
 	} else { // span-v line
 		if( (*basis)[0][0] < const_par_ && const_par_ < (*basis)[0][basis->getOrder(0)] &&
-		    start_ <= (*basis)[1][0]  && (*basis)[1][basis->getOrder(1)] <= stop_)
+		    start_-DOUBLE_TOL <= (*basis)[1][0]  && (*basis)[1][basis->getOrder(1)] <= stop_+DOUBLE_TOL)
 			return  true;
 	}
 	return false;

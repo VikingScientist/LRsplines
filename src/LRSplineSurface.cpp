@@ -1976,6 +1976,8 @@ std::vector<LRSplineSurface*> LRSplineSurface::getDerivativeSpace() const {
 		diffU->insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, m->multiplicity_);
 		diffV->insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, m->multiplicity_);
 	}
+	diffU->aPosterioriFixElements();
+	diffV->aPosterioriFixElements();
 	std::vector<LRSplineSurface*> results(2);
 	results[0] = diffU;
 	results[1] = diffV;
@@ -2013,6 +2015,7 @@ LRSplineSurface* LRSplineSurface::getRaiseOrderSpace(int raiseOrderU, int raiseO
 		int newMult = m->multiplicity_ + ((m->span_u_line_) ? raiseOrderV : raiseOrderU);
 		result->insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, newMult);
 	}
+	result->aPosterioriFixElements();
 
 	return result;
 }
@@ -2102,6 +2105,22 @@ void LRSplineSurface::getDiagonalBasisfunctions(std::vector<int> &result) const 
 		if(isDiag)
 			result.push_back(i);
 		i++;
+	}
+}
+
+/************************************************************************************************************************//**
+ * \brief functions inserting batch of lines (i.e. getDerivativeSpace) may not do proper element-splits during refinement.
+          This function fixes them a priori.
+ ***************************************************************************************************************************/
+void LRSplineSurface::aPosterioriFixElements() {
+	for(uint i=0; i<element_.size(); i++) {
+		for(uint j=0; j<meshline_.size(); j++) {
+			if(meshline_[j]->splits(element_[i])) {
+				element_.push_back(element_[i]->split(meshline_[j]->is_spanning_u(), meshline_[j]->const_par_));
+				i=0;
+				break;
+			}
+		}
 	}
 }
 

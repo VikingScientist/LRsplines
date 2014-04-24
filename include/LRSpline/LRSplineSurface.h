@@ -184,6 +184,7 @@ private:
 			updateSupport(*it);
 	}
 
+	void aPosterioriFixElements();
 	void split(bool insert_in_u, Basisfunction* b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
 	Meshline* insert_line(bool const_u, double const_par, double start, double stop, int multiplicity);
 	
