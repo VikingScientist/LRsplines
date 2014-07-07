@@ -44,7 +44,7 @@ Basisfunction::~Basisfunction() {
  ***************************************************************************************************************************/
 Go::Point Basisfunction::getGrevilleParameter() const {
 	Go::Point ans(2);
-	ans *= 0;
+        ans[0] = ans[1] = 0.0;
 	for(uint i=1; i<knots_[0].size()-1; i++)
 		ans[0] += knots_[0][i];
 	for(uint i=1; i<knots_[1].size()-1; i++)
