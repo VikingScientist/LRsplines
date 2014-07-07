@@ -151,7 +151,7 @@ private:
 		int unique_v=0;
 		for(int i=0; i<n1+order_u; i++) {// const u, spanning v
 			int mult = 1;
-			while(i<n1+order_u && knot_u[i]==knot_u[i+1]) {
+			while(i<n1+order_u-1 && knot_u[i]==knot_u[i+1]) {
 				i++;
 				mult++;
 			}
@@ -160,7 +160,7 @@ private:
 		}
 		for(int i=0; i<n2+order_v; i++) {// const v, spanning u
 			int mult = 1;
-			while(i<n2+order_v && knot_v[i]==knot_v[i+1]) {
+			while(i<n2+order_v-1 && knot_v[i]==knot_v[i+1]) {
 				i++;
 				mult++;
 			}
