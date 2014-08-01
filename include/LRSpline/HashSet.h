@@ -195,7 +195,6 @@ public:
 
 	HashSet() {
 		numb      = 0;
-		last      = data.end();
 	}
 	
 	//! \brief Default copy constructor
@@ -203,8 +202,6 @@ public:
 	HashSet(const HashSet<T> &other) {
 		data = other.data;
 		numb = other.numb;
-		last = this->data.end();
-		if(numb > 0) last--;
 	}
 
 	//! \brief insert an element in the container if it does not already exist
@@ -214,10 +211,6 @@ public:
 	void insert(const T &obj) {
 		long hc = obj->hashCode();
 		iter it = data.find(hc);
-
-		bool updateLast = false;
-		if(last == data.end() || hc > last->first)
-			updateLast = true;
 
 		if(it == data.end()) {
 			data[hc] = std::list<T>(1,obj);
@@ -229,8 +222,6 @@ public:
 			data[hc].push_back(obj);
 			numb++;
 		}
-		if(updateLast)
-			last = data.find(hc);
 	}
 
 	//! \brief erase an element in the container if it does exist
@@ -249,9 +240,6 @@ public:
 				it->second.erase(lit);
 				if(it->second.size() == 0) {
 					data.erase(it);
-					if(it == last)  {
-						last--;
-					}
 				}
 				numb--;
 				return 1;
@@ -322,8 +310,11 @@ public:
 	//! \brief iterator to one past the last element
 	//! \details dereferencing the iterator returns an object of class <T>
 	HashSet_const_iterator<T> end() const {
+                auto end = data.end();
+                if (!data.empty())
+                  end--;
 		return HashSet_const_iterator<T>(data.end(),
-		                                 (numb==0)?dummyLast.end():last->second.end(),
+		                                 (numb==0)?dummyLast.end():end->second.end(),
 		                                 data.end());
 	}
 
@@ -339,14 +330,16 @@ public:
 	//! \brief iterator to one past the last element
 	//! \details dereferencing the iterator returns an object of class <T>
 	HashSet_iterator<T> end() {
+                auto end = data.end();
+                if (!data.empty())
+                  end--;
 		return HashSet_iterator<T>(data.end(),
-		                           (numb==0)?dummyLast.end():last->second.end(),
+		                           (numb==0)?dummyLast.end():end->second.end(),
 		                           data.end());
 	}
 
 private:
 	std::map<long, std::list<T> > data;
-	iter last;
 	std::list<T> dummyLast;
 	int  numb;
 

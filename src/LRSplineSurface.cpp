@@ -240,7 +240,7 @@ LRSplineSurface* LRSplineSurface::copy() const {
  ***************************************************************************************************************************/
 void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl, bool u_from_right, bool v_from_right) const {
 	std::vector<std::vector<double> > res;
-	point(res, u, v, 0, iEl, u_from_right, v_from_right);
+	point(res, u, v, 0, u_from_right, v_from_right, iEl);
 	pt = Go::Point(res[0].begin(), res[0].end());
 	return ;
 
