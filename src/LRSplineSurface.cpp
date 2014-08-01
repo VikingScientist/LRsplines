@@ -1985,6 +1985,44 @@ std::vector<LRSplineSurface*> LRSplineSurface::getDerivativeSpace() const {
 }
 
 /************************************************************************************************************************//**
+ * \brief Gets the basis functions corresponding to the primal space derived from a dual space (control points must be set yourself)
+ * \details This generates a brand new LRSplineSurface objects which has lower polynomial degree in both directions, and lower continuity, but
+ *          is restricted to a minimum of C^0 continuity. The returned LRSpline may be used for the primal space, while *this corresponds to
+ *          the dual space. The dual space can be thought of as the k-refinement of the primal space. It is important that the dual space is
+ *          created first as this is of the highest degree and thus comprimise a stricter requirement on meshline length.
+ ***************************************************************************************************************************/
+LRSplineSurface* LRSplineSurface::getPrimalSpace() const {
+	int p1 = order_[0]-1;
+	int p2 = order_[1]-1;
+	double knotU[2*p1];
+	double knotV[2*p2];
+	for(int i=0; i<p1; i++)
+		knotU[i] = start_[0];
+	for(int i=0; i<p1; i++)
+		knotU[i+p1] = end_[0];
+	for(int i=0; i<p2; i++)
+		knotV[i] = start_[1];
+	for(int i=0; i<p2; i++)
+		knotV[i+p2] = end_[1];
+	int N = dim_ * p1*p2;
+	double coef[N];
+	for(int i=0; i<N; i++) coef[i] = 0.0;
+
+	LRSplineSurface *primal = new LRSplineSurface(p1, p2, p1, p2, knotU, knotV, coef, dim_, false);
+
+	for(Meshline *m : meshline_) {
+		if( m->span_u_line_ && (fabs(m->const_par_-start_[1])<DOUBLE_TOL || fabs(m->const_par_-end_[1])<DOUBLE_TOL)) continue;
+		if(!m->span_u_line_ && (fabs(m->const_par_-start_[0])<DOUBLE_TOL || fabs(m->const_par_-end_[0])<DOUBLE_TOL)) continue;
+		int mult = m->multiplicity_;
+		if( m->span_u_line_ && mult >= p2) mult = p2-1;
+		if(!m->span_u_line_ && mult >= p1) mult = p1-1;
+		primal->insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, mult);
+	}
+	primal->aPosterioriFixElements();
+	return primal;
+}
+
+/************************************************************************************************************************//**
  * \brief Gets the basis functions corresponding to an order elevation (control points must be set yourself)
  * \param raiseOrderU The number of degrees to raise the first parametric direction
  * \param raiseOrderV The number of degrees to raise the second parametric direction
@@ -2109,8 +2147,8 @@ void LRSplineSurface::getDiagonalBasisfunctions(std::vector<int> &result) const 
 }
 
 /************************************************************************************************************************//**
- * \brief functions inserting batch of lines (i.e. getDerivativeSpace) may not do proper element-splits during refinement.
-          This function fixes them a priori.
+ * \brief functions inserting batch of lines (i.e. getDerivativeSpace, getPrimalSpace) may not do proper element-splits
+ *        during refinement. This function fixes them a priori.
  ***************************************************************************************************************************/
 void LRSplineSurface::aPosterioriFixElements() {
 	for(uint i=0; i<element_.size(); i++) {

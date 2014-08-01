@@ -18,6 +18,7 @@ class HashSet_iterator
 {
 
 	typedef typename std::map<long, std::list<T> >::iterator       iter;
+	typedef typename std::map<long, std::list<T> >::const_iterator citer;
 	typedef typename std::list<T>::iterator                        list_iter;
 
     public:
@@ -310,7 +311,7 @@ public:
 	//! \brief iterator to one past the last element
 	//! \details dereferencing the iterator returns an object of class <T>
 	HashSet_const_iterator<T> end() const {
-                auto end = data.end();
+                citer end = data.end();
                 if (!data.empty())
                   end--;
 		return HashSet_const_iterator<T>(data.end(),
@@ -330,7 +331,7 @@ public:
 	//! \brief iterator to one past the last element
 	//! \details dereferencing the iterator returns an object of class <T>
 	HashSet_iterator<T> end() {
-                auto end = data.end();
+                iter end = data.end();
                 if (!data.empty())
                   end--;
 		return HashSet_iterator<T>(data.end(),

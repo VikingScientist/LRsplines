@@ -107,8 +107,11 @@ public:
 	void getDiagonalElements(      std::vector<int> &result) const ;
 	void getDiagonalBasisfunctions(std::vector<int> &result) const ;
 	void printElements(std::ostream &out) const;
-	LRSplineSurface* getRaiseOrderSpace(int raiseOrderU, int raiseOrderV) const;
+
+	// fetch function spaces of different order/continuity
+	LRSplineSurface*              getRaiseOrderSpace(int raiseOrderU, int raiseOrderV) const;
 	std::vector<LRSplineSurface*> getDerivativeSpace() const ;
+	LRSplineSurface*              getPrimalSpace() const ;
 	bool setGlobalContinuity(int contU, int contV);
 	bool decreaseContinuity( int du,    int dv);
 
