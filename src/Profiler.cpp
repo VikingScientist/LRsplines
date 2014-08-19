@@ -11,6 +11,7 @@
 //!
 //==============================================================================
 
+#ifdef TIME_LRSPLINE
 #include "LRSpline/Profiler.h"
 #include <sys/time.h>
 
@@ -181,4 +182,8 @@ void Profiler::report (std::ostream& os) const
      << std::endl;
 }
 
+
 } // end namespace LR
+
+
+#endif

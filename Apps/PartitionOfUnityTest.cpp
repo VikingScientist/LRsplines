@@ -41,10 +41,10 @@ int main(int argc, char **argv) {
 		else if(strcmp(argv[i], "-dim") == 0)
 			dim = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-help") == 0) {
-			cout << "usage: " << argv[0] << endl << parameters;
+			cout << "usage: " << argv[0] << endl << parameters.c_str();
 			exit(0);
 		} else {
-			cout << "usage: " << argv[0] << endl << parameters;
+			cout << "usage: " << argv[0] << endl << parameters.c_str();
 			exit(1);
 		}
 	}
@@ -59,9 +59,9 @@ int main(int argc, char **argv) {
 	}
 
 	// make a uniform integer knot vector
-	double knot_u[n1+p1];
-	double knot_v[n2+p2];
-	double cp[(dim+rat)*n1*n2];
+	std::vector<double> knot_u(n1 + p1);
+	std::vector<double> knot_v(n2 + p2);
+	std::vector<double> cp((dim + rat)*n1*n2);
 	for(int i=0; i<p1+n1; i++)
 		knot_u[i] = (i<p1) ? 0 : (i>n1) ? n1-p1+1 : i-p1+1;
 	for(int i=0; i<p2+n2; i++)
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 				cp[k++] = ((i*2+j*3+d*5) % 13) / 13.0 + 0.1;  // rational weights also random and thus we need >0
 		
 	// make the LR B-spline surface
-	LRSplineSurface lr(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
+	LRSplineSurface lr(n1, n2, p1, p2, knot_u.begin(), knot_v.begin(), cp.begin(), dim, rat);
 
 	// evaluate function values on edges, knots and in between the knots
 	vector<bool> assertion_passed;

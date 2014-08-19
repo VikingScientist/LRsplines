@@ -64,7 +64,7 @@ LRSplineVolume::LRSplineVolume(Go::SplineVolume *vol) {
 }
 #endif
 
-
+/*
 LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w, double *knot_u, double *knot_v, double *knot_w, double *coef, int dim, bool rational) {
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
@@ -72,6 +72,7 @@ LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v,
 	initMeta();
 	initCore(n1, n2, n3, order_u, order_v, order_w, knot_u, knot_v, knot_w, coef, dim, rational);
 }
+*/
 
 /************************************************************************************************************************//**
  * \brief Constructor. Creates a tensor product LRSplineVolume of the 3D unit cube
@@ -94,7 +95,7 @@ LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v,
 	std::vector<double> grev_u = LRSpline::getGrevillePoints(order_u, knot_u, knot_u + n1 + order_u);
 	std::vector<double> grev_v = LRSpline::getGrevillePoints(order_v, knot_v, knot_v + n2 + order_v);
 	std::vector<double> grev_w = LRSpline::getGrevillePoints(order_w, knot_w, knot_w + n3 + order_w);
-	double coef[n1*n2*n3*3];
+	std::vector<double> coef(n1*n2*n3*3);
 	int l=0;
 	for(int k=0; k<n3; k++)
 		for(int j=0; j<n2; j++)
@@ -104,7 +105,7 @@ LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v,
 				coef[l++] = grev_w[k];
 	}
 
-	initCore(n1,n2,n3, order_u, order_v, order_w, knot_u, knot_v, knot_w, coef, 3, false);
+	initCore(n1, n2, n3, order_u, order_v, order_w, knot_u, knot_v, knot_w, coef.begin(), 3, false);
 }
 
 /************************************************************************************************************************//**
@@ -128,7 +129,7 @@ LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v,
 	std::vector<double> grev_u = LRSpline::getGrevillePoints(order_u, knot_u.begin(), knot_u.end());
 	std::vector<double> grev_v = LRSpline::getGrevillePoints(order_v, knot_v.begin(), knot_v.end());
 	std::vector<double> grev_w = LRSpline::getGrevillePoints(order_w, knot_w.begin(), knot_w.end());
-	double coef[n1*n2*n3*3];
+	std::vector<double> coef(n1*n2*n3*3);
 	int l=0;
 	for(int k=0; k<n3; k++)
 		for(int j=0; j<n2; j++)
@@ -139,7 +140,7 @@ LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v,
 	}
 	
 	// generate the uniform knot vector
-	initCore(n1,n2,n3, order_u, order_v, order_w, knot_u.begin(), knot_v.begin(), knot_w.begin(), coef, 3, false);
+	initCore(n1,n2,n3, order_u, order_v, order_w, knot_u.begin(), knot_v.begin(), knot_w.begin(), coef.begin(), 3, false);
 }
 
 LRSplineVolume::~LRSplineVolume() {
@@ -731,7 +732,7 @@ void LRSplineVolume::refineByDimensionIncrease(const std::vector<double> &errPer
 	}
 
 	/* sort errors */
-	std::sort(errors.begin(), errors.end(), std::greater<IndexDouble>());
+	std::sort(errors.begin(), errors.end());
 
 	/* first retrieve all possible meshrects needed */
 	std::vector<std::vector<MeshRectangle*> > newRects(errors.size(), std::vector<MeshRectangle*>(0));
@@ -1121,19 +1122,19 @@ void LRSplineVolume::split(int constDir, Basisfunction *b, double new_knot, int 
 		insert_index++;
 	double alpha1 = (insert_index == p)  ? 1.0 : (new_knot-knot[0])/(knot[p-1]-knot[0]);
 	double alpha2 = (insert_index == 1 ) ? 1.0 : (knot[p]-new_knot)/(knot[p]-knot[1]);
-	double newKnot[p+2];
-	std::copy(knot.begin(), knot.begin()+p+1, newKnot+1);
+	std::vector<double> newKnot(p+2);
+	std::copy(knot.begin(), knot.begin()+p+1, newKnot.begin()+1);
 	newKnot[0] = new_knot;
-	std::sort(newKnot, newKnot + p+2);
+	std::sort(newKnot.begin(), newKnot.begin() + p+2);
 	if(constDir == 0) {
-		b1 = new Basisfunction(newKnot  ,  (*b)[1].begin(),  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha1);
-		b2 = new Basisfunction(newKnot+1,  (*b)[1].begin(),  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha2);
+		b1 = new Basisfunction(newKnot.begin()  ,  (*b)[1].begin(),  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha1);
+		b2 = new Basisfunction(newKnot.begin()+1,  (*b)[1].begin(),  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha2);
 	} else if(constDir == 1) {
-		b1 = new Basisfunction((*b)[0].begin(), newKnot   ,  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha1);
-		b2 = new Basisfunction((*b)[0].begin(), newKnot+1 ,  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha2);
+		b1 = new Basisfunction((*b)[0].begin(), newKnot.begin()   ,  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha1);
+		b2 = new Basisfunction((*b)[0].begin(), newKnot.begin()+1 ,  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha2);
 	} else { // insert in w
-		b1 = new Basisfunction((*b)[0].begin(), (*b)[1].begin(),  newKnot   , b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha1);
-		b2 = new Basisfunction((*b)[0].begin(), (*b)[1].begin(),  newKnot+1 , b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha2);
+		b1 = new Basisfunction((*b)[0].begin(), (*b)[1].begin(),  newKnot.begin()   , b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha1);
+		b2 = new Basisfunction((*b)[0].begin(), (*b)[1].begin(),  newKnot.begin()+1 , b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha2);
 	}
 
 	// add any brand new functions and detect their support elements

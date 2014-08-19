@@ -121,9 +121,9 @@ int main(int argc, char **argv) {
 
 	if(lrInitMesh == NULL) {
 		// make a uniform integer knot vector
-		double knot_u[n1+p1];
-		double knot_v[n2+p2];
-		double knot_w[n3+p3];
+		vector<double> knot_u(n1+p1);
+		vector<double> knot_v(n2 + p2);
+		vector<double> knot_w(n3 + p3);
 		for(int i=0; i<p1+n1; i++)
 			knot_u[i] = (i<p1) ? 0 : (i>n1) ? n1-p1+1 : i-p1+1;
 		for(int i=0; i<p2+n2; i++)
@@ -134,16 +134,16 @@ int main(int argc, char **argv) {
 		// create a list of random control points (all between 0.1 and 1.1)
 		int nCP = (vol) ? n1*n2*n3 : n1*n2;
 		nCP    *= (dim+rat);
-		double cp[nCP];
+		vector<double> cp(nCP);
 		int k=0;
 		for(int i=0; i<nCP; i++) // 839 as a generator over Z_853 gives a period of 425. Should suffice
 			cp[k++] = (i*839 % 853) / 853.0 + 0.1;  // rational weights also random and thus we need >0
 			
 		// make two spline objects
 		if(vol) {
-			lrv = new LRSplineVolume(n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
+			lrv = new LRSplineVolume(n1, n2, n3, p1, p2, p3, knot_u.begin(), knot_v.begin(), knot_w.begin(), cp.begin(), dim, rat);
 		} else {
-			lrs = new LRSplineSurface(n1, n2,    p1, p2,     knot_u, knot_v,         cp, dim, rat);
+			lrs = new LRSplineSurface(n1, n2, p1, p2, knot_u.begin(), knot_v.begin(), cp.begin(), dim, rat);
 		}
 	} else {
 #ifdef HAS_GOTOOLS

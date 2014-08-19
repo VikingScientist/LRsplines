@@ -177,7 +177,7 @@ int main(int argc, char **argv) {
 		// create a list of random control points (all between 0.1 and 1.1)
 		int nCP = (vol) ? n1*n2*n3 : n1*n2;
 		nCP    *= (dim+rat);
-		double cp[nCP];
+		std::vector<double> cp(nCP);
 		int k=0;
 		for(int i=0; i<nCP; i++) // 839 as a generator over Z_853 gives a period of 425. Should suffice
 			cp[k++] = (i*839 % 853) / 853.0 + 0.1;  // rational weights also random and thus we need >0
@@ -187,16 +187,16 @@ int main(int argc, char **argv) {
 #ifdef HAS_GOTOOLS
 			sv  = new Go::SplineVolume(n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
 #else 
-			sv  = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
+			sv  = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
 #endif
-			lrv = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
+			lrv = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
 		} else {
 #ifdef HAS_GOTOOLS
 			ss  = new Go::SplineSurface(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
 #else 
-			ss  = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
+			ss  = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
 #endif
-			lrs = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
+			lrs = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
 		}
 	} else {
 #ifdef HAS_GOTOOLS

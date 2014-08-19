@@ -31,7 +31,15 @@ public:
 #endif 
 	LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w);
 	LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w, double *knot_u, double *knot_v, double *knot_w);
-	LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w, double *knot_u, double *knot_v, double *knot_w, double *coef, int dim, bool rational=false);
+	template <typename RandomIterator1,
+	          typename RandomIterator2,
+	          typename RandomIterator3,
+	          typename RandomIterator4>
+	LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w, RandomIterator1 knot_u, RandomIterator2 knot_v, RandomIterator3 knot_w, RandomIterator4 coef, int dim, bool rational = false) {
+		initMeta();
+		initCore(n1, n2, n3, order_u, order_v, order_w, knot_u, knot_v, knot_w, coef, dim, rational);
+	}
+	// LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w, double *knot_u, double *knot_v, double *knot_w, double *coef, int dim, bool rational=false);
 	~LRSplineVolume();
 
 	LRSplineVolume* copy() const;
@@ -155,8 +163,13 @@ private:
 	
 		for(int k=0; k<n3; k++)
 			for(int j=0; j<n2; j++)
-				for(int i=0; i<n1; i++)
-					basis_.insert(new Basisfunction(knot_u+i, knot_v+j, knot_w+k, coef+(k*n1*n2+j*n1+i)*(dim+rational), dim, order_u, order_v, order_w));
+				for (int i = 0; i < n1; i++) {
+					RandomIterator1 ku = knot_u + i;
+					RandomIterator2 kv = knot_v + j;
+					RandomIterator3 kw = knot_w + k;
+					RandomIterator4 c = coef + (k*n1*n2 + j*n1 + i)*(dim + rational);
+					basis_.insert(new Basisfunction(ku, kv, kw, c , dim, order_u, order_v, order_w));
+		}
 		int unique_u=0;
 		int unique_v=0;
 		int unique_w=0;

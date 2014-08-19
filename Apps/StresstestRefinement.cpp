@@ -97,10 +97,10 @@ int main(int argc, char **argv) {
 		else if(strcmp(argv[i], "-dumpfile") == 0)
 			dumpFile = true;
 		else if(strcmp(argv[i], "-help") == 0) {
-			cerr << "usage: " << argv[0] << endl << parameters;
+			cerr << "usage: " << argv[0] << endl << parameters.c_str();
 			exit(0);
 		} else {
-			cerr << "usage: " << argv[0] << endl << parameters;
+			cerr << "usage: " << argv[0] << endl << parameters.c_str();
 			exit(1);
 		}
 	}
@@ -118,12 +118,12 @@ int main(int argc, char **argv) {
 	}
 
 	// make a uniform integer knot vector
-	double knot_u[n1+p1];
-	double knot_v[n2+p2];
-	double knot_w[n3+p3];
+	std::vector<double> knot_u(n1 + p1);
+	std::vector<double> knot_v(n2 + p2);
+	std::vector<double> knot_w(n3 + p3);
 	int nCP = (vol) ? n1*n2*n3 : n1*n2;
 	nCP    *= (dim+rat);
-	double cp[nCP];
+	std::vector<double> cp(nCP);
 	for(int i=0; i<p1+n1; i++)
 		knot_u[i] = (i<p1) ? 0 : (i>n1) ? n1-p1+1 : i-p1+1;
 	for(int i=0; i<p2+n2; i++)
@@ -140,9 +140,9 @@ int main(int argc, char **argv) {
 	LRSplineVolume  *lv;
 	LRSplineSurface *lr;
 	if(vol)
-		lv = new LRSplineVolume (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
+		lv = new LRSplineVolume(n1, n2, n3, p1, p2, p3, knot_u.begin(), knot_v.begin(), knot_w.begin(), cp.begin(), dim, rat);
 	else                         
-		lr = new LRSplineSurface(n1, n2,     p1, p2,     knot_u, knot_v,         cp, dim, rat);
+		lr = new LRSplineSurface(n1, n2, p1, p2, knot_u.begin(), knot_v.begin(), cp.begin(), dim, rat);
 
 	// perform the actual refinement
 	int end1 = n1-p1+1;

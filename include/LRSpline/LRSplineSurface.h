@@ -29,7 +29,14 @@ public:
 #endif
 	LRSplineSurface(int n1, int n2, int order_u, int order_v);
 	LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v);
-	LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v, double *coef, int dim, bool rational=false);
+	// LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v, double *coef, int dim, bool rational=false);
+	template <typename RandomIterator1,
+	          typename RandomIterator2,
+	          typename RandomIterator3>
+	LRSplineSurface(int n1, int n2, int order_u, int order_v, RandomIterator1 knot_u, RandomIterator2 knot_v, RandomIterator3 coef, int dim, bool rational=false) {
+		initMeta();
+		initCore(n1, n2, order_u, order_v, knot_u, knot_v, coef, dim, rational);
+	}
 	~LRSplineSurface();
 	LRSplineSurface* copy() const;
 		
@@ -149,8 +156,8 @@ private:
 		end_[0]    = knot_u[n1+p1-1];
 		end_[1]    = knot_v[n2+p2-1];
 	
-		for(int j=0; j<n2; j++)
-			for(int i=0; i<n1; i++)
+		for(size_t j=0; j<n2; j++)
+			for(size_t i=0; i<n1; i++)
 				basis_.insert(new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim+rational), dim, order_u, order_v));
 		int unique_u=0;
 		int unique_v=0;

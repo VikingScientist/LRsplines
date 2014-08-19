@@ -123,7 +123,7 @@ bool Meshline::operator==(const Meshline &other) const {
 }
 
 // convenience macro for reading formated input
-#define ASSERT_NEXT_CHAR(c) {ws(is); nextChar = is.get(); if(nextChar!=c) { std::cerr << "Error parsing meshline\n"; std::cout << is; exit(325); } ws(is); }
+#define ASSERT_NEXT_CHAR(c) {ws(is); nextChar = is.get(); if(nextChar!=c) { std::cerr << "Error parsing meshline\n"; exit(325); } ws(is); }
 void Meshline::read(std::istream &is) {
 	char nextChar;
 	ws(is);

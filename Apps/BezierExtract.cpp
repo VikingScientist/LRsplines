@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 	ifstream inputfile;
 	inputfile.open(filename.c_str());
 	if(!inputfile.is_open()) {
-		cerr << "Error: could not open file " << filename << endl;
+		cerr << "Error: could not open file " << filename.c_str() << endl;
 		exit(2);
 	}
 	LRSplineVolume lr;

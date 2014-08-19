@@ -14,6 +14,8 @@
 #ifndef _PROFILER_H
 #define _PROFILER_H
 
+#ifdef TIME_LRSPLINE
+
 #include <iostream>
 #include <string>
 #include <map>
@@ -142,5 +144,16 @@ namespace utl
 #endif
 
 } // end namespace LR
+
+#else
+
+// declare dummy definitions which will do nothing
+#define PROFILE(label)
+#define PROFILE1(label)
+#define PROFILE2(label)
+#define PROFILE3(label)
+#define PROFILE4(label)
+
+#endif
 
 #endif

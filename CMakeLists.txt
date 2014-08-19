@@ -5,7 +5,9 @@ SET(LRSpline_VERSION_MAJOR 1)
 SET(LRSpline_VERSION_MINOR 0)
 SET(LRSpline_VERSION_PATCH 0)
 SET(LRSpline_VERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR}.${LRSpline_VERSION_PATCH})
-SET(TIME_LRSPLINE 1)
+IF(NOT WIN32)
+  SET(TIME_LRSPLINE 1)
+ENDIF(NOT WIN32)
 
 # Generate header with version info
 CONFIGURE_FILE(include/LRSpline/LRSpline_version.h.in
@@ -61,8 +63,8 @@ ENABLE_TESTING()
 SET(INCLUDES ${PROJECT_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include)
 
 # Optional packages
-FIND_PACKAGE(GoTools)
 FIND_PACKAGE(Boost)
+FIND_PACKAGE(GoTools)
 
 IF(GoTools_FOUND)
   # must have all of GoTools or none of it

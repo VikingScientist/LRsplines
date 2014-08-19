@@ -67,7 +67,7 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
 	initCore(surf->numCoefs_u(),      surf->numCoefs_v(),
 	         surf->order_u(),         surf->order_v(),
 	         surf->basis_u().begin(), surf->basis_v().begin(),
-			 surf->ctrl_begin(), surf->dimension(), surf->rational() );
+	         surf->ctrl_begin(), surf->dimension(), surf->rational() );
 }
 #endif
 
@@ -84,6 +84,7 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
  * \param dim The number of components of the control points, 2 for plane geometries, 3 for surfaces in 3D space 
  * \param rational True if this is a NURBS surface. If so, the last component of the control points is treated as the weight
  ***************************************************************************************************************************/
+/*
 LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v, double *coef, int dim, bool rational) {
 #ifdef TIME_LRSPLINE
 	PROFILE("Constructor");
@@ -91,6 +92,7 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 	initMeta();
 	initCore(n1,n2,order_u, order_v, knot_u, knot_v, coef, dim, rational);
 }
+*/
 
 /************************************************************************************************************************//**
  * \brief Constructor. Creates a tensor product LRSplineSurface of the 2D unit square
@@ -109,7 +111,7 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 
 	std::vector<double> grevU = LRSpline::getGrevillePoints(order_u, knot_u, knot_u + n1 + order_u);
 	std::vector<double> grevV = LRSpline::getGrevillePoints(order_v, knot_v, knot_v + n2 + order_v);
-	double coef[n1*n2*2];
+	std::vector<double> coef(n1*n2*2);
 	int k=0;
 	for(int j=0; j<n2; j++)
 		for(int i=0; i<n1; i++) {
@@ -117,7 +119,7 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v, doubl
 			coef[k++] = grevV[j];
 	}
 
-	initCore(n1,n2,order_u, order_v, knot_u, knot_v, coef, 2, false);
+	initCore(n1, n2, order_u, order_v, knot_u, knot_v, coef.begin(), 2, false);
 }
 
 /************************************************************************************************************************//**
@@ -137,7 +139,7 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v) {
 	std::vector<double> knot_v = LRSpline::getUniformKnotVector(n2, order_v);
 	std::vector<double> grev_u = LRSpline::getGrevillePoints(order_u, knot_u.begin(), knot_u.end());
 	std::vector<double> grev_v = LRSpline::getGrevillePoints(order_v, knot_v.begin(), knot_v.end());
-	double coef[n1*n2*2];
+	std::vector<double> coef(n1*n2*2);
 	int k=0;
 	for(int j=0; j<n2; j++)
 		for(int i=0; i<n1; i++) {
@@ -146,7 +148,7 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v) {
 	}
 	
 	// generate the uniform knot vector
-	initCore(n1,n2,order_u, order_v, knot_u.begin(), knot_v.begin(), coef, 2, false);
+	initCore(n1, n2, order_u, order_v, knot_u.begin(), knot_v.begin(), coef.begin(), 2, false);
 }
 
 void LRSplineSurface::initMeta() {
@@ -778,7 +780,7 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 	}
 
 	/* sort errors */
-	std::sort(errors.begin(), errors.end(), std::greater<IndexDouble>());
+	std::sort(errors.begin(), errors.end());
 
 	/* first retrieve all possible meshlines needed */
 	std::vector<std::vector<Meshline*> > newLines(errors.size(), std::vector<Meshline*>(0));
@@ -1169,16 +1171,16 @@ void LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot,
 		insert_index++;
 	double alpha1 = (insert_index == p)  ? 1.0 : (new_knot-knot[0])/(knot[p-1]-knot[0]);
 	double alpha2 = (insert_index == 1 ) ? 1.0 : (knot[p]-new_knot)/(knot[p]-knot[1]);
-	double newKnot[p+2];
-	std::copy(knot.begin(), knot.end(), newKnot+1);
+	std::vector<double> newKnot(p+2);
+	std::copy(knot.begin(), knot.end(), newKnot.begin() + 1);
 	newKnot[0] = new_knot;
-	std::sort(newKnot, newKnot + p+2);
+	std::sort(newKnot.begin(), newKnot.begin() + p + 2);
 	if(insert_in_u) {
-		b1 = new Basisfunction(newKnot  , (*b)[1].begin(), b->cp(), b->dim(), order_[0], order_[1], b->w()*alpha1);
-		b2 = new Basisfunction(newKnot+1, (*b)[1].begin(), b->cp(), b->dim(), order_[0], order_[1], b->w()*alpha2);
+		b1 = new Basisfunction(newKnot.begin()  , (*b)[1].begin(), b->cp(), b->dim(), order_[0], order_[1], b->w()*alpha1);
+		b2 = new Basisfunction(newKnot.begin()+1, (*b)[1].begin(), b->cp(), b->dim(), order_[0], order_[1], b->w()*alpha2);
 	} else { // insert in v
-		b1 = new Basisfunction((*b)[0].begin(), newKnot  , b->cp(), b->dim(), order_[0], order_[1], b->w()*alpha1);
-		b2 = new Basisfunction((*b)[0].begin(), newKnot+1, b->cp(), b->dim(), order_[0], order_[1], b->w()*alpha2);
+		b1 = new Basisfunction((*b)[0].begin(), newKnot.begin(),     b->cp(), b->dim(), order_[0], order_[1], b->w()*alpha1);
+		b2 = new Basisfunction((*b)[0].begin(), newKnot.begin() + 1, b->cp(), b->dim(), order_[0], order_[1], b->w()*alpha2);
 	}
 
 	// add any brand new functions and detect their support elements
@@ -1762,7 +1764,7 @@ bool LRSplineSurface::isLinearIndepByFloatingPointMappingMatrix(bool verbose) co
 				std::vector<double > newRowU(rowU.size()+1, 0);
 				for(uint k=0; k<rowU.size(); k++) {
 					#define U(x) (locKnotU[x+k])
-					double z = knots_u[curU] ;
+					double z = knots_u[curU];
 					int p = order_[0]-1;
 					if(z < U(0) || z > U(p+1)) {
 						newRowU[k] = rowU[k];
@@ -1950,8 +1952,8 @@ double LRSplineSurface::makeIntegerKnots() {
 std::vector<LRSplineSurface*> LRSplineSurface::getDerivativeSpace() const {
 	int p1 = order_[0];
 	int p2 = order_[1];
-	double knotU[2*p1];
-	double knotV[2*p2];
+	std::vector<double> knotU(2*p1);
+	std::vector<double> knotV(2*p2);
 	for(int i=0; i<p1; i++)
 		knotU[i] = start_[0];
 	for(int i=0; i<p1; i++)
@@ -1962,13 +1964,13 @@ std::vector<LRSplineSurface*> LRSplineSurface::getDerivativeSpace() const {
 		knotV[i+p2] = end_[1];
 	int N1 = dim_ * (p1-1)*p2;
 	int N2 = dim_ * p1*(p2-1);
-	double coef1[N1];
-	double coef2[N2];
+	std::vector<double> coef1(N1);
+	std::vector<double> coef2(N2);
 	for(int i=0; i<N1; i++) coef1[i] = 0.0;
 	for(int i=0; i<N2; i++) coef2[i] = 0.0;
 
-	LRSplineSurface *diffU = new LRSplineSurface(p1-1, p2  , p1-1, p2  , knotU+1, knotV, coef1, dim_, false);
-	LRSplineSurface *diffV = new LRSplineSurface(p1  , p2-1, p1  , p2-1, knotU, knotV+1, coef2, dim_, false);
+	LRSplineSurface *diffU = new LRSplineSurface(p1-1, p2  , p1-1, p2  , knotU.begin()+1, knotV.begin(), coef1.begin(), dim_, false);
+	LRSplineSurface *diffV = new LRSplineSurface(p1  , p2-1, p1  , p2-1, knotU.begin(), knotV.begin()+1, coef2.begin(), dim_, false);
 
 	for(Meshline *m : meshline_) {
 		if( m->span_u_line_ && (fabs(m->const_par_-start_[1])<DOUBLE_TOL || fabs(m->const_par_-end_[1])<DOUBLE_TOL)) continue;
@@ -1994,8 +1996,8 @@ std::vector<LRSplineSurface*> LRSplineSurface::getDerivativeSpace() const {
 LRSplineSurface* LRSplineSurface::getPrimalSpace() const {
 	int p1 = order_[0]-1;
 	int p2 = order_[1]-1;
-	double knotU[2*p1];
-	double knotV[2*p2];
+	std::vector<double> knotU(2*p1);
+	std::vector<double> knotV(2*p2);
 	for(int i=0; i<p1; i++)
 		knotU[i] = start_[0];
 	for(int i=0; i<p1; i++)
@@ -2005,10 +2007,10 @@ LRSplineSurface* LRSplineSurface::getPrimalSpace() const {
 	for(int i=0; i<p2; i++)
 		knotV[i+p2] = end_[1];
 	int N = dim_ * p1*p2;
-	double coef[N];
+	std::vector<double> coef(N);
 	for(int i=0; i<N; i++) coef[i] = 0.0;
 
-	LRSplineSurface *primal = new LRSplineSurface(p1, p2, p1, p2, knotU, knotV, coef, dim_, false);
+	LRSplineSurface *primal = new LRSplineSurface(p1, p2, p1, p2, knotU.begin(), knotV.begin(), coef.begin(), dim_, false);
 
 	for(Meshline *m : meshline_) {
 		if( m->span_u_line_ && (fabs(m->const_par_-start_[1])<DOUBLE_TOL || fabs(m->const_par_-end_[1])<DOUBLE_TOL)) continue;
@@ -2033,8 +2035,8 @@ LRSplineSurface* LRSplineSurface::getPrimalSpace() const {
 LRSplineSurface* LRSplineSurface::getRaiseOrderSpace(int raiseOrderU, int raiseOrderV) const {
 	int p1 = order_[0]+raiseOrderU;
 	int p2 = order_[1]+raiseOrderV;
-	double knotU[2*p1];
-	double knotV[2*p2];
+	std::vector<double> knotU(2*p1);
+	std::vector<double> knotV(2*p2);
 	for(int i=0; i<p1; i++)
 		knotU[i] = start_[0];
 	for(int i=0; i<p1; i++)
@@ -2044,10 +2046,10 @@ LRSplineSurface* LRSplineSurface::getRaiseOrderSpace(int raiseOrderU, int raiseO
 	for(int i=0; i<p2; i++)
 		knotV[i+p2] = end_[1];
 	int N = dim_ * p1*p2;
-	double coef[N];
+	std::vector<double> coef(N);
 	for(int i=0; i<N; i++)
 		coef[i] = 0.0;
-	LRSplineSurface *result = new LRSplineSurface(p1,p2,p1,p2,knotU, knotV, coef, dim_, false);
+	LRSplineSurface *result = new LRSplineSurface(p1,p2,p1,p2,knotU.begin(), knotV.begin(), coef.begin(), dim_, false);
 
 	for(Meshline *m : meshline_) {
 		int newMult = m->multiplicity_ + ((m->span_u_line_) ? raiseOrderV : raiseOrderU);

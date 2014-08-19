@@ -42,10 +42,10 @@ int main(int argc, char **argv) {
 		else if(strcmp(argv[i], "-m") == 0)
 			m = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-help") == 0) {
-			cout << "usage: " << argv[0] << endl << parameters;
+			cout << "usage: " << argv[0] << endl << parameters.c_str();
 			exit(0);
 		} else {
-			cout << "usage: " << argv[0] << endl << parameters;
+			cout << "usage: " << argv[0] << endl << parameters.c_str();
 			exit(1);
 		}
 	}

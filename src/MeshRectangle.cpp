@@ -381,7 +381,7 @@ bool MeshRectangle::operator==(const MeshRectangle &other) const {
 }
 
 // convenience macro for reading formated input
-#define ASSERT_NEXT_CHAR(c) {ws(is); nextChar = is.get(); if(nextChar!=c) { std::cerr << "Error parsing meshrectangle\n"; std::cout << is; exit(325); } ws(is); }
+#define ASSERT_NEXT_CHAR(c) {ws(is); nextChar = is.get(); if(nextChar!=c) { std::cerr << "Error parsing meshrectangle\n"; exit(325); } ws(is); }
 void MeshRectangle::read(std::istream &is) {
 	char nextChar;
 	ws(is);
