@@ -353,6 +353,11 @@ void LRSplineSurface::point(std::vector<std::vector<double> > &pts, double u, do
 	pts.resize((derivs+1)*(derivs+2)/2);
 	for(uint i=0; i<pts.size(); i++)
 		pts[i].resize(dim_, 0);
+	/*
+	if(u < start_[0] || end_[0] < u || 
+	   v < start_[1] || end_[1] < v)
+		return;
+	*/
 
 	if(iEl == -1)
 		iEl = getElementContaining(u,v);

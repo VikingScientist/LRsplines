@@ -147,8 +147,8 @@ private:
 		order_.resize(2);
 		start_.resize(2);
 		end_.resize(2);
-		rational_ = rational;
-		dim_      = dim;
+		rational_  = rational;
+		dim_       = dim;
 		order_[0]  = order_u;
 		order_[1]  = order_v;
 		start_[0]  = knot_u[0];
@@ -156,8 +156,8 @@ private:
 		end_[0]    = knot_u[n1+p1-1];
 		end_[1]    = knot_v[n2+p2-1];
 	
-		for(size_t j=0; j<n2; j++)
-			for(size_t i=0; i<n1; i++)
+		for(int j=0; j<n2; j++)
+			for(int i=0; i<n1; i++)
 				basis_.insert(new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim+rational), dim, order_u, order_v));
 		int unique_u=0;
 		int unique_v=0;
