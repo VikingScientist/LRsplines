@@ -78,6 +78,7 @@ IF(GoTools_FOUND)
               ${GoTools_LIBRARIES})
   ADD_DEFINITIONS(-DHAS_GOTOOLS)
 ELSE()
+  MESSAGE(STATUS "Compiling without GoTools")
   OPTION(HAS_GOTOOLS "Link library with GoTools" OFF)
 ENDIF()
 
@@ -88,6 +89,7 @@ IF(Boost_FOUND)
   ADD_DEFINITIONS(-DHAS_BOOST)
 ELSE(Boost_FOUND)
   OPTION(HAS_BOOST "Link library with Boost" OFF)
+  MESSAGE(STATUS "Compiling without Boost")
 ENDIF(Boost_FOUND)
 
 CONFIGURE_FILE(cmake/Templates/LRSplineConfig.cmake.in

@@ -185,14 +185,14 @@ int main(int argc, char **argv) {
 		// make two spline objects (using GoTools for reference if available)
 		if(vol) {
 #ifdef HAS_GOTOOLS
-			sv  = new Go::SplineVolume(n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp, dim, rat);
+			sv  = new Go::SplineVolume(n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
 #else 
 			sv  = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
 #endif
 			lrv = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
 		} else {
 #ifdef HAS_GOTOOLS
-			ss  = new Go::SplineSurface(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
+			ss  = new Go::SplineSurface(n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
 #else 
 			ss  = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
 #endif

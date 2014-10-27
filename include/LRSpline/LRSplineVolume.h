@@ -6,7 +6,7 @@
 	#include <GoTools/trivariate/SplineVolume.h>
 #endif
 #ifdef HAS_BOOST
-#include <boost/rational.hpp>
+	#include <boost/rational.hpp>
 #endif
 #include "LRSpline.h"
 #include "HashSet.h"
