@@ -732,7 +732,7 @@ void LRSplineVolume::refineByDimensionIncrease(const std::vector<double> &errPer
 	}
 
 	/* sort errors */
-	std::sort(errors.begin(), errors.end());
+	std::sort(errors.begin(), errors.end(), std::greater<IndexDouble>());
 
 	/* first retrieve all possible meshrects needed */
 	std::vector<std::vector<MeshRectangle*> > newRects(errors.size(), std::vector<MeshRectangle*>(0));

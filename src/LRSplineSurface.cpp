@@ -783,7 +783,7 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 	}
 
 	/* sort errors */
-	std::sort(errors.begin(), errors.end());
+	std::sort(errors.begin(), errors.end(), std::greater<IndexDouble>());
 
 	/* first retrieve all possible meshlines needed */
 	std::vector<std::vector<Meshline*> > newLines(errors.size(), std::vector<Meshline*>(0));
