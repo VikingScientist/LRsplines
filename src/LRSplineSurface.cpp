@@ -715,7 +715,7 @@ void LRSplineSurface::refineBasisFunction(const std::vector<int> &indices) {
 	/* do a posteriori fixes to ensure a proper mesh */
 	aPosterioriFixes();
 
-	/* exit cleanly be deleting all temporary new lines */
+	/* exit cleanly by deleting all temporary new lines */
 	for(uint i=0; i<newLines.size(); i++) 
 		delete newLines[i];
 }
@@ -733,7 +733,6 @@ void LRSplineSurface::refineElement(int index) {
 /************************************************************************************************************************//**
  * \brief Refine several Elements
  * \param indices The Basisfunction to refine
- * \details This will refine a basisfunction in accordance with the structured mesh rules. Note that the length of all lines
  * \details This will refine some Elements in accordance with the strategy set by setRefStrat() (i.e. either fullspan or minspan)
  *          Note that the length of all lines will be precomputed before any of them are inserted. This means that you will get
  *          a different result from calling this function, rather than calling refineElement(int) several times.
@@ -758,7 +757,7 @@ void LRSplineSurface::refineElement(const std::vector<int> &indices) {
 	/* do a posteriori fixes to ensure a proper mesh */
 	aPosterioriFixes();
 
-	/* exit cleanly be deleting all temporary new lines */
+	/* exit cleanly by deleting all temporary new lines */
 	for(uint i=0; i<newLines.size(); i++) 
 		delete newLines[i];
 }
@@ -814,7 +813,7 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 	/* do a posteriori fixes to ensure a proper mesh */
 	aPosterioriFixes();
 
-	/* exit cleanly be deleting all temporary new lines */
+	/* exit cleanly by deleting all temporary new lines */
 	for(uint i=0; i<newLines.size(); i++) 
 		for(uint j=0; j<newLines[i].size(); j++) 
 			delete newLines[i][j];
