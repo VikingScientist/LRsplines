@@ -86,6 +86,8 @@ public:
 #ifdef HAS_BOOST
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
 	void getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const ;
+#else
+	bool isLinearIndepByMappingMatrix(bool verbose) const { return false; }
 #endif
 
 	void updateSupport(Basisfunction *f) ;

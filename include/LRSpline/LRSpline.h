@@ -123,9 +123,7 @@ public:
 
 	// linear independence methods
 	virtual bool isLinearIndepByOverloading(  bool verbose) = 0;
-#ifdef HAS_BOOST
 	virtual bool isLinearIndepByMappingMatrix(bool verbose) const = 0;
-#endif
 
 	// input output methods
 	virtual void read(std::istream &is)         { };
