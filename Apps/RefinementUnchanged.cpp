@@ -146,14 +146,14 @@ int main(int argc, char **argv) {
 	}
 
 #ifdef HAS_GOTOOLS
-	Go::SplineSurface   *ss;
-	Go::SplineVolume    *sv;
+	Go::SplineSurface   *ss=nullptr;
+	Go::SplineVolume    *sv=nullptr;
 #else 
-	LRSplineSurface *ss;
-	LRSplineVolume  *sv;
+	LRSplineSurface *ss=nullptr;
+	LRSplineVolume  *sv=nullptr;
 #endif
-	LRSplineSurface *lrs;
-	LRSplineVolume  *lrv;
+	LRSplineSurface *lrs=nullptr;
+	LRSplineVolume  *lrv=nullptr;
 
 	if(lrInitMesh == NULL) {
 

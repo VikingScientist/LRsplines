@@ -73,8 +73,8 @@ int main(int argc, char **argv) {
 
 
 	// make two identical splines
-	LRSplineSurface *lrs;
-	LRSplineVolume  *lrv;
+	LRSplineSurface *lrs=nullptr;
+	LRSplineVolume  *lrv=nullptr;
 	if(vol) {
 		lrv = new LRSplineVolume(p+1, p+1, p+1, p+1, p+1, p+1);
 	} else {
@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 	}
 
 	// setup refinement parameters
-	enum refinementStrategy strat;
+	enum refinementStrategy strat = LR_FULLSPAN;
 	if(scheme == 0)
 		strat = LR_FULLSPAN;
 	else if(scheme == 1)

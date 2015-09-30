@@ -137,8 +137,8 @@ int main(int argc, char **argv) {
 		cp[k++] = (i*839 % 853) / 853.0 + 0.1;  // rational weights also random and thus we need >0
 		
 	// make two identical surfaces
-	LRSplineVolume  *lv;
-	LRSplineSurface *lr;
+	LRSplineVolume  *lv=nullptr;
+	LRSplineSurface *lr=nullptr;
 	if(vol)
 		lv = new LRSplineVolume(n1, n2, n3, p1, p2, p3, knot_u.begin(), knot_v.begin(), knot_w.begin(), cp.begin(), dim, rat);
 	else                         
@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
 			nMeshlines = lr->nMeshlines();
 		}
 
-		system("clear");
+		if (system("clear")) ;
 		cout << "LR type                  : " << ((vol)?"Volume":"Surface") << endl;
 		cout << "Refinement scheme        : ";
 		if(refinement_scheme == UNIFORM) cout << "UNIFORM\n";
