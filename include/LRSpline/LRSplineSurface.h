@@ -5,6 +5,7 @@
 #ifdef HAS_GOTOOLS
 	#include <GoTools/utils/Point.h>
 	#include <GoTools/geometry/SplineSurface.h>
+	#include <GoTools/geometry/SplineCurve.h>
 #endif
 #ifdef HAS_BOOST
 #include <boost/rational.hpp>
@@ -48,6 +49,9 @@ public:
 	void computeBasis (double param_u, double param_v, Go::BasisPtsSf     & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf  & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf2 & result, int iEl=-1 ) const;
+
+        Go::SplineCurve* edgeCurve(parameterEdge edge,
+                                   std::vector<Basisfunction*>& functions) const;
 #endif
 	virtual void point(std::vector<double> &pt, double u, double v, int iEl=-1) const;
 	virtual void point(std::vector<double> &pt, double u, double v, int iEl, bool u_from_right, bool v_from_right) const;
