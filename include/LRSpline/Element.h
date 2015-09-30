@@ -41,6 +41,7 @@ public:
 	void addSupportFunction(Basisfunction *f);
 	Element *split(int splitDim, double par_value);
 	Element* copy();
+        virtual ~Element() {}
 	// get/set methods
 	//! \brief Get coordinate i of the lower left corner of the element
 	double getParmin(int i) const { return min[i]; };

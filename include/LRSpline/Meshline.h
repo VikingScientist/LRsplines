@@ -21,7 +21,7 @@ class Meshline : public Streamable {
 public:
 	Meshline();
 	Meshline(bool span_u_line, double const_par, double start, double stop, int multiplicity);
-	~Meshline();
+	virtual ~Meshline();
 	Meshline* copy();
 
 	int nKnotsIn(Basisfunction *basis) const;

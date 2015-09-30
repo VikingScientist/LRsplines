@@ -37,7 +37,7 @@ public:
 		initMeta();
 		initCore(n1, n2, order_u, order_v, knot_u, knot_v, coef, dim, rational);
 	}
-	~LRSplineSurface();
+	virtual ~LRSplineSurface();
 	LRSplineSurface* copy() const;
 		
 	// surface evaluation

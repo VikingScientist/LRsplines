@@ -35,7 +35,7 @@ public:
 		if(constDir_ == -1)
 			std::cerr << "Error creating MeshRectangle: Not parallel to the parametric axis\n";
 	}
-	~MeshRectangle();
+	virtual ~MeshRectangle();
 	MeshRectangle* copy() const;
 
 	int nKnotsIn(Basisfunction *basis) const;
