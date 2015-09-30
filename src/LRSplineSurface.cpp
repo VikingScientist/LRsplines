@@ -2839,7 +2839,7 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 		bool doColor = false;
 		if(colorBasis != NULL)
 			for(uint j=0; j<colorBasis->size(); j++)
-				if(i == (uint) colorBasis->at(j))
+				if(i == (int) colorBasis->at(j))
 					doColor = true;
 
 		if(doColor) {
