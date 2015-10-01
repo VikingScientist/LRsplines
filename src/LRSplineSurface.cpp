@@ -289,6 +289,35 @@ void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int
 	return;
 
 }
+
+Go::SplineCurve* LRSplineSurface::edgeCurve(parameterEdge edge,
+                                            std::vector<Basisfunction*>& functions) const
+{
+  functions.clear();
+  getEdgeFunctions(functions, edge);
+
+  int dir = (edge == WEST || edge == EAST) ? 1 : 0;
+  std::sort(functions.begin(), functions.end(),
+            [dir](const Basisfunction* a, const Basisfunction* b)
+            {
+              return a->getGrevilleParameter()[dir] < b->getGrevilleParameter()[dir];
+            });
+
+  std::vector<double> cpts;
+  std::vector<double> knots;
+  for (auto& it : functions) {
+    std::vector<double> pt;
+    it->getControlPoint(pt);
+    cpts.insert(cpts.end(), pt.begin(), pt.end());
+    if (knots.empty())
+      knots.insert(knots.end(),it->getknots(dir).begin(),it->getknots(dir).end());
+    else
+      knots.push_back(it->getknots(dir).back());
+  }
+
+  return new Go::SplineCurve(Go::BsplineBasis(order(dir), knots.begin(), knots.end()),
+                             cpts.begin(), functions.front()->dim(), false);
+}
 #endif 
 
 /************************************************************************************************************************//**
