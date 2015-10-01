@@ -97,7 +97,7 @@ public:
 		std::copy(knot_w,       knot_w       + order_w+1,   knots_[2].begin());
 		std::copy(controlpoint, controlpoint + dim,         controlpoint_.begin());
 	}
-	~Basisfunction();
+	virtual ~Basisfunction();
 	Basisfunction* copy() const;
 
 	//evaluation functions

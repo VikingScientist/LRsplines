@@ -116,8 +116,8 @@ int main(int argc, char **argv) {
 		exit(3);
 	}
 
-	LRSplineSurface *lrs;
-	LRSplineVolume  *lrv;
+	LRSplineSurface *lrs=nullptr;
+	LRSplineVolume  *lrv=nullptr;
 
 	if(lrInitMesh == NULL) {
 		// make a uniform integer knot vector

@@ -40,7 +40,7 @@ public:
 		initCore(n1, n2, n3, order_u, order_v, order_w, knot_u, knot_v, knot_w, coef, dim, rational);
 	}
 	// LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w, double *knot_u, double *knot_v, double *knot_w, double *coef, int dim, bool rational=false);
-	~LRSplineVolume();
+	virtual ~LRSplineVolume();
 
 	LRSplineVolume* copy() const;
 	// surface evaluation
