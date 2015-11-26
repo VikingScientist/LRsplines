@@ -27,7 +27,7 @@ TOP        = 16,   // 010000
 BOTTOM     = 32,   // 100000
 // convienience variables for 2D case follows. In general use SOUTH|WEST, SOUTH|EAST, etc
 SOUTH_WEST = 5,    // 000101
-SOUTH_EAST = 7,    // 000110
+SOUTH_EAST = 6,    // 000110
 NORTH_WEST = 9,    // 001001
 NORTH_EAST = 10};  // 001010
 
@@ -132,7 +132,7 @@ public:
 
 protected:
 	// useful descriptive stuff
-	int dim_;
+	int  dim_;
 	bool rational_;
 	std::vector<double> start_ ; //! \brief parametric start coordinate (2 components for surfaces, 3 for volumes)
 	std::vector<double> end_   ; //! \brief parametric stop coordinate (2 components for surfaces, 3 for volumes)
@@ -185,10 +185,6 @@ protected:
 };
 
 
-
-
 } // end namespace LR
-
-
 
 #endif
