@@ -1,5 +1,5 @@
-lrspline (1.0.0-1~precise) precise; urgency=low
+lrspline (1.1.0-2~precise) precise; urgency=medium
 
-  * Initial release
+  * New version
 
- -- Kjetil Andre Johannessen <kjetijo@gmail.com>  Wed, 22 Jan 2014 10:28:47 +0200
+ -- Arne Morten Kvarving <arne.morten.kvarving@sintef.no>  Fri, 27 Nov 2015 15:33:25 +0100
