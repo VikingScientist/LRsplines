@@ -1,10 +1,11 @@
 Source: lrspline
 Priority: extra
 Maintainer: Kjetil Andre Johannessen <kjetijo@gmail.com>
-Build-Depends: debhelper (>= 8.0.0), cmake, doxygen
+Build-Depends: debhelper (>= 8.0.0), cmake, doxygen, libgotools-core-dev,
+               libgotools-trivariate-dev, libboost-dev
 Standards-Version: 3.9.2
 Section: libs
-Homepage: http://www.math.ntnu.no/~kjetijo/LRsplines
+Homepage: http://www.lrbsplines.com
 
 Package: liblrspline1-dev
 Section: libdevel
