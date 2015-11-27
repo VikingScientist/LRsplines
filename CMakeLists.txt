@@ -66,6 +66,7 @@ SET(INCLUDES ${PROJECT_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include)
 FIND_PACKAGE(Boost)
 FIND_PACKAGE(GoTools)
 
+set(LRSpline_DEFINITIONS)
 IF(GoTools_FOUND)
   # must have all of GoTools or none of it
   FIND_PACKAGE(GoTrivariate REQUIRED)
@@ -77,6 +78,7 @@ IF(GoTools_FOUND)
               ${GoTrivariate_LIBRARIES}
               ${GoTools_LIBRARIES})
   ADD_DEFINITIONS(-DHAS_GOTOOLS)
+  set(LRSpline_DEFINITIONS "-DHAS_GOTOOLS")
 ELSE()
   MESSAGE(STATUS "Compiling without GoTools")
   OPTION(HAS_GOTOOLS "Link library with GoTools" OFF)
@@ -87,6 +89,7 @@ IF(Boost_FOUND)
   SET(INCLUDES ${INCLUDES} ${BOOST_INCLUDES} )
   OPTION(HAS_BOOST "Link library with Boost" ON)
   ADD_DEFINITIONS(-DHAS_BOOST)
+  set(LRSpline_DEFINITIONS "${LRSpline_DEFINITIONS} -DHAS_BOOST")
 ELSE(Boost_FOUND)
   OPTION(HAS_BOOST "Link library with Boost" OFF)
   MESSAGE(STATUS "Compiling without Boost")
@@ -94,6 +97,8 @@ ENDIF(Boost_FOUND)
 
 CONFIGURE_FILE(cmake/Templates/LRSplineConfig.cmake.in
                 LRSplineConfig.cmake @ONLY)
+CONFIGURE_FILE(cmake/Templates/LRSplineConfigVersion.cmake.in
+                LRSplineConfigVersion.cmake @ONLY)
 
 IF(TIME_LRSPLINE)
   ADD_DEFINITIONS(-DTIME_LRSPLINE)
@@ -239,7 +244,8 @@ ELSE(WIN32)
                 DESTINATION include/LRSpline
                 COMPONENT liblrspline-dev)
   INSTALL(FILES ${CMAKE_BINARY_DIR}/LRSplineConfig.cmake
-    DESTINATION lib/LRSpline COMPONENT liblrspline-dev)
+                ${CMAKE_BINARY_DIR}/LRSplineConfigVersion.cmake
+          DESTINATION lib/LRSpline COMPONENT liblrspline-dev)
 ENDIF(WIN32)
 
 include(CPack)
