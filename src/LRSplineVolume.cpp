@@ -230,6 +230,8 @@ void LRSplineVolume::point(Go::Point &pt, double u, double v, double w, int iEl)
 	pt.setValue(0.0);
 	if(iEl == -1)
 		iEl = getElementContaining(u,v,w);
+	if(iEl == -1)
+		return;
 	
 	for(Basisfunction* b : element_[iEl]->support()) {
 		b->getControlPoint(cp);
@@ -256,6 +258,8 @@ void LRSplineVolume::point(std::vector<Go::Point> &pts, double u, double v, doub
 
 	if(iEl == -1)
 		iEl = getElementContaining(u,v,w);
+	if(iEl == -1)
+		return;
 
 	for(Basisfunction* b : element_[iEl]->support() ) {
 		b->getControlPoint(cp);
@@ -339,6 +343,8 @@ void LRSplineVolume::point(std::vector<std::vector<double> > &pts, double u, dou
 
 	if(iEl == -1)
 		iEl = getElementContaining(u,v,w);
+	if(iEl == -1)
+		return;
 	for(Basisfunction* b : element_[iEl]->support() ) {
 		b->evaluate(basis_ev, u,v,w, derivs, u_from_right, v_from_right, w_from_right);
 		for(uint i=0; i<pts.size(); i++)
@@ -448,7 +454,7 @@ int LRSplineVolume::getElementContaining(double u, double v, double w) const {
 				return i;
 			}
 	}
-	for(uint i=0; i<lastElementEvaluation; ++i) {
+	for(int i=0; i<lastElementEvaluation; ++i) {
         Element* el = element_[i];
 		if(el->getParmin(0) <= u && el->getParmin(1) <= v && el->getParmin(2) <= w) 
 			if((u < el->getParmax(0) || (u == end_[0] && u <= el->getParmax(0))) && 

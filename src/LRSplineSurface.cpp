@@ -387,6 +387,8 @@ void LRSplineSurface::point(std::vector<std::vector<double> > &pts, double u, do
 
 	if(iEl == -1)
 		iEl = getElementContaining(u,v);
+	if(iEl == -1)
+		return;
 	for(Basisfunction* b : element_[iEl]->support() ) {
 		b->evaluate(basis_ev, u,v, derivs, u_from_right, v_from_right);
 		for(uint i=0; i<pts.size(); i++)
