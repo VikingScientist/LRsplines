@@ -1188,14 +1188,13 @@ void LRSplineVolume::split(int constDir, Basisfunction *b, double new_knot, int 
 }
 
 
-#if 0
-void LRSplineVolume::getGlobalKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const {
-	getGlobalUniqueKnotVector(knot_u, knot_v);
+void LRSplineVolume::getGlobalKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v, std::vector<double> &knot_w) const {
+	getGlobalUniqueKnotVector(knot_u, knot_v, knot_w);
 
 	// add in duplicates where apropriate
 	for(uint i=0; i<knot_u.size(); i++) {
 		for(uint j=0; j<meshrect_.size(); j++) {
-			if(!meshrect_[j]->is_spanning_u() && meshrect_[j]->const_par_==knot_u[i]) {
+			if(meshrect_[j]->constDirection() == 0 && meshrect_[j]->constParameter() == knot_u[i]) {
 				for(int m=1; m<meshrect_[j]->multiplicity_; m++) {
 					knot_u.insert(knot_u.begin()+i, knot_u[i]);
 					i++;
@@ -1206,7 +1205,7 @@ void LRSplineVolume::getGlobalKnotVector(std::vector<double> &knot_u, std::vecto
 	}
 	for(uint i=0; i<knot_v.size(); i++) {
 		for(uint j=0; j<meshrect_.size(); j++) {
-			if(meshrect_[j]->is_spanning_u() && meshrect_[j]->const_par_==knot_v[i]) {
+			if(meshrect_[j]->constDirection() == 1 && meshrect_[j]->constParameter() == knot_v[i]) {
 				for(int m=1; m<meshrect_[j]->multiplicity_; m++) {
 					knot_v.insert(knot_v.begin()+i, knot_v[i]);
 					i++;
@@ -1215,29 +1214,45 @@ void LRSplineVolume::getGlobalKnotVector(std::vector<double> &knot_u, std::vecto
 			}
 		}
 	}
+	for(uint i=0; i<knot_w.size(); i++) {
+		for(uint j=0; j<meshrect_.size(); j++) {
+			if(meshrect_[j]->constDirection() == 2 && meshrect_[j]->constParameter() == knot_w[i]) {
+				for(int m=1; m<meshrect_[j]->multiplicity_; m++) {
+					knot_w.insert(knot_w.begin()+i, knot_w[i]);
+					i++;
+				}
+				break;
+			}
+		}
+	}
 }
 
-void LRSplineVolume::getGlobalUniqueKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const {
+void LRSplineVolume::getGlobalUniqueKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v, std::vector<double> &knot_w) const {
 	knot_u.clear();
 	knot_v.clear();
-	// create a huge list of all line instances
+	knot_w.clear();
+	// create a huge list of all meshrectangle instances
 	for(uint i=0; i<meshrect_.size(); i++) {
-		if(meshrect_[i]->is_spanning_u())
-			knot_v.push_back(meshrect_[i]->const_par_);
+		if(meshrect_[i]->constDirection() == 0)
+			knot_u.push_back(meshrect_[i]->constParameter());
+		else if(meshrect_[i]->constDirection() == 1)
+			knot_v.push_back(meshrect_[i]->constParameter());
 		else
-			knot_u.push_back(meshrect_[i]->const_par_);
+			knot_w.push_back(meshrect_[i]->constParameter());
 	}
 
 	// sort them and remove duplicates
 	std::vector<double>::iterator it;
 	std::sort(knot_u.begin(), knot_u.end());
 	std::sort(knot_v.begin(), knot_v.end());
+	std::sort(knot_w.begin(), knot_w.end());
 	it = std::unique(knot_u.begin(), knot_u.end());
 	knot_u.resize(it-knot_u.begin());
 	it = std::unique(knot_v.begin(), knot_v.end());
 	knot_v.resize(it-knot_v.begin());
+	it = std::unique(knot_w.begin(), knot_w.end());
+	knot_w.resize(it-knot_w.begin());
 }
-#endif
 
 void LRSplineVolume::updateSupport(Basisfunction *f,
                                    std::vector<Element*>::iterator start,
@@ -1445,19 +1460,20 @@ void LRSplineVolume::getBezierExtraction(int iEl, std::vector<double> &extractMa
 	}
 }
 
-#if 0
+#ifdef HAS_BOOST
 bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("Linear independent)");
 #endif
 	// try and figure out this thing by the projection matrix C
 
-	std::vector<double> knots_u, knots_v;
-	getGlobalKnotVector(knots_u, knots_v);
+	std::vector<double> knots_u, knots_v, knots_w;
+	getGlobalKnotVector(knots_u, knots_v, knots_w);
 	int nmb_bas = basis_.size();
 	int n1 = knots_u.size() - order_[0];
 	int n2 = knots_v.size() - order_[1];
-	int fullDim = n1*n2;
+	int n3 = knots_w.size() - order_[2];
+	int fullDim = n1*n2*n3;
 	bool fullVerbose   = fullDim < 30  && nmb_bas < 50;
 	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
 
@@ -1466,34 +1482,50 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 	// scaling factor to ensure that all knots are integers (assuming all multiplum of smallest knot span)
 	double smallKnotU = DBL_MAX;
 	double smallKnotV = DBL_MAX;
+	double smallKnotW = DBL_MAX;
 	for(uint i=0; i<knots_u.size()-1; i++)
 		if(knots_u[i+1]-knots_u[i] < smallKnotU && knots_u[i+1] != knots_u[i])
 			smallKnotU = knots_u[i+1]-knots_u[i];
 	for(uint i=0; i<knots_v.size()-1; i++)
 		if(knots_v[i+1]-knots_v[i] < smallKnotV && knots_v[i+1] != knots_v[i])
 			smallKnotV = knots_v[i+1]-knots_v[i];
+	for(uint i=0; i<knots_w.size()-1; i++)
+		if(knots_w[i+1]-knots_w[i] < smallKnotW && knots_w[i+1] != knots_w[i])
+			smallKnotW = knots_w[i+1]-knots_w[i];
 
-	for (int i = 0; i < nmb_bas; ++i) {
-		int startU, startV;
-		std::vector<double> locKnotU(basis_[i]->knot_u_, basis_[i]->knot_u_ + basis_[i]->order_[0]+1);
-		std::vector<double> locKnotV(basis_[i]->knot_v_, basis_[i]->knot_v_ + basis_[i]->order_[1]+1);
+	HashSet_const_iterator<Basisfunction*> cit_begin = basis_.begin();
+	HashSet_const_iterator<Basisfunction*> cit_end   = basis_.end();
+	HashSet_const_iterator<Basisfunction*> it;
+	for(it=cit_begin; it != cit_end; ++it) {
+		Basisfunction *b = *it;
+		int startU, startV, startW;
+		std::vector<double> locKnotU((*b)[0].begin(), (*b)[0].end());
+		std::vector<double> locKnotV((*b)[1].begin(), (*b)[1].end());
+		std::vector<double> locKnotW((*b)[2].begin(), (*b)[2].end());
 		
 		for(startU=knots_u.size(); startU-->0; )
-			if(knots_u[startU] == basis_[i]->knot_u_[0]) break;
-		for(int j=0; j<basis_[i]->order_[0]; j++) {
-			if(knots_u[startU] == basis_[i]->knot_u_[j]) startU--;
+			if(knots_u[startU] == (*b)[0][0]) break;
+		for(int j=0; j<order_[0]; j++) {
+			if(knots_u[startU] == (*b)[0][j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
-			if(knots_v[startV] == basis_[i]->knot_v_[0]) break;
-		for(int j=0; j<basis_[i]->order_[1]; j++) {
-			if(knots_v[startV] == basis_[i]->knot_v_[j]) startV--;
+			if(knots_v[startV] == (*b)[1][0]) break;
+		for(int j=0; j<order_[1]; j++) {
+			if(knots_v[startV] == (*b)[1][j]) startV--;
 			else break;
 		}
 		startV++;
+		for(startW=knots_w.size(); startW-->0; )
+			if(knots_w[startW] == (*b)[2][0]) break;
+		for(int j=0; j<order_[2]; j++) {
+			if(knots_w[startW] == (*b)[2][j]) startW--;
+			else break;
+		}
+		startW++;
 
-		std::vector<boost::rational<long long> > rowU(1,1), rowV(1,1);
+		std::vector<boost::rational<long long> > rowU(1,1), rowV(1,1), rowW(1,1);
 		int curU = startU+1;
 		for(uint j=0; j<locKnotU.size()-1; j++, curU++) {
 			if(locKnotU[j+1] != knots_u[curU]) {
@@ -1538,10 +1570,33 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 				rowV= newRowV;
 			}
 		}
+		int curW = startW+1;
+		for(uint j=0; j<locKnotW.size()-1; j++, curW++) {
+			if(locKnotW[j+1] != knots_w[curW]) {
+				std::vector<boost::rational<long long> > newRowW(rowW.size()+1, boost::rational<long long>(0));
+				for(uint k=0; k<rowW.size(); k++) {
+					#define W(x) ((long long) (locKnotW[x+k]/smallKnotW + 0.5))
+					long long z = (long long) (knots_w[curW] / smallKnotW + 0.5);
+					int p = order_[2]-1;
+					if(z < W(0) || z > W(p+1)) {
+						newRowW[k] = rowW[k];
+						continue;
+					}
+					boost::rational<long long> alpha1 = (W(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - W(0),  W(p)  - W(0));
+					boost::rational<long long> alpha2 = (z    <= W(1)) ? 1 : boost::rational<long long>( W(p+1) - z   , W(p+1) - W(1));
+					newRowW[k]   += rowW[k]*alpha1;
+					newRowW[k+1] += rowW[k]*alpha2;
+					#undef W
+				}
+				locKnotW.insert(locKnotW.begin()+(j+1), knots_w[curW]);
+				rowW= newRowW;
+			}
+		}
 		std::vector<boost::rational<long long> > totalRow(fullDim, boost::rational<long long>(0));
 		for(uint i1=0; i1<rowU.size(); i1++)
 			for(uint i2=0; i2<rowV.size(); i2++)
-				totalRow[(startV+i2)*n1 + (startU+i1)] = rowV[i2]*rowU[i1];
+			    for(uint i3=0; i3<rowW.size(); i3++)
+				    totalRow[(startW+i3)*n1*n2 + (startV+i2)*n1 + (startU+i1)] = rowW[i3]*rowV[i2]*rowU[i1];
 
 		C.push_back(totalRow);
 	}
@@ -1616,15 +1671,17 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 		std::cout << std::endl;
 	}
 
-	int rank = (nmb_bas < n1*n2-zeroColumns) ? nmb_bas : n1*n2-zeroColumns;
+	int rank = (nmb_bas < fullDim - zeroColumns) ? nmb_bas : fullDim - zeroColumns;
 	if(verbose) {
-		std::cout << "Matrix size : " << nmb_bas << " x " << n1*n2 << std::endl;
+		std::cout << "Matrix size : " << nmb_bas << " x " << fullDim << std::endl;
 		std::cout << "Matrix rank : " << rank << std::endl;
 	}
 	
 	return rank == nmb_bas;
 }
+#endif
 
+#if 0
 void LRSplineVolume::getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("Linear independent)");

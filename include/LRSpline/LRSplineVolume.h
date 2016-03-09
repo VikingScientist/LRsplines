@@ -88,7 +88,7 @@ public:
 
 	// linear independence methods
 	bool isLinearIndepByOverloading(bool verbose) ;
-	bool isLinearIndepByMappingMatrix(bool verbose) const { return false; };
+	bool isLinearIndepByMappingMatrix(bool verbose) const ;
 	bool isLinearIndepByFloatingPointMappingMatrix(bool verbose) const ;
 #ifdef HAS_BOOST
 	void getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const ;
@@ -103,7 +103,7 @@ public:
 	void getGlobalKnotVector      (std::vector<double> &knot_u,
 	                               std::vector<double> &knot_v,
 	                               std::vector<double> &knot_w) const;
-	void getGlobalKnotUniqueVector(std::vector<double> &knot_u,
+	void getGlobalUniqueKnotVector(std::vector<double> &knot_u,
 	                               std::vector<double> &knot_v,
 	                               std::vector<double> &knot_w) const;
 	int nMeshRectangles()         const                { return meshrect_.size(); };
