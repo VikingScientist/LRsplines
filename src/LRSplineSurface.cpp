@@ -533,14 +533,14 @@ void LRSplineSurface::computeBasis (double param_u,
  * \details This is done by a linear search and with the number of elements equal to n, the complexity is O(n)
  ***************************************************************************************************************************/
 int LRSplineSurface::getElementContaining(double u, double v) const {
-	for(uint i=lastElementEvaluation; i<element_.size(); ++i)
+	for(int i=lastElementEvaluation; i<element_.size(); ++i)
 		if(element_[i]->umin() <= u && element_[i]->vmin() <= v) 
 			if((u < element_[i]->umax() || (u == end_[0] && u <= element_[i]->umax())) && 
 			   (v < element_[i]->vmax() || (v == end_[1] && v <= element_[i]->vmax()))) {
 				lastElementEvaluation = i;
 				return i;
 			}
-	for(uint i=0; i<lastElementEvaluation; ++i)
+	for(int i=0; i<lastElementEvaluation; ++i)
 		if(element_[i]->umin() <= u && element_[i]->vmin() <= v) 
 			if((u < element_[i]->umax() || (u == end_[0] && u <= element_[i]->umax())) && 
 			   (v < element_[i]->vmax() || (v == end_[1] && v <= element_[i]->vmax()))) {
@@ -1427,7 +1427,26 @@ bool LRSplineSurface::isLinearIndepByOverloading(bool verbose) {
 	return overloaded.size() == 0;
 }
 
-#ifdef HAS_BOOST
+// compute a^n mod p where p is a prime
+template <typename T>
+T modPower(T a, T p, T n) {
+	T result = 1;
+	T tmp    = a;
+	while(n>0) {
+		if(n % 2)
+			result = (result * tmp) % p;
+		tmp = (tmp * tmp) % p;
+		n /= 2;
+	}
+	return result;
+}
+
+// compute a^-1 mod p where p is a prime
+template <typename T>
+T modInverse(T a, T p) {
+	return modPower(a, p, p-2);
+}
+
 bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("Linear independent)");
@@ -1440,10 +1459,11 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 	int n1 = knots_u.size() - order_[0];
 	int n2 = knots_v.size() - order_[1];
 	int fullDim = n1*n2;
-	bool fullVerbose   = fullDim < 30  && nmb_bas < 50;
+	bool fullVerbose   = fullDim <  30 && nmb_bas <  50;
 	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
+	unsigned long long prime    = 0x7FFFFFFF;
 
-	std::vector<std::vector<boost::rational<long long> > > C;  // rational projection matrix 
+	std::vector<std::vector<unsigned long long> > C;  // rational projection matrix 
 
 	// scaling factor to ensure that all knots are integers (assuming all multiplum of smallest knot span)
 	double smallKnotU = DBL_MAX;
@@ -1455,12 +1475,9 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		if(knots_v[i+1]-knots_v[i] < smallKnotV && knots_v[i+1] != knots_v[i])
 			smallKnotV = knots_v[i+1]-knots_v[i];
 
-	// HashSet_iterator<Basisfunction*>       it_begin  = basis_.begin();
-	// HashSet_iterator<Basisfunction*>       it_end    = basis_.end();
 	HashSet_const_iterator<Basisfunction*> cit_begin = basis_.begin();
 	HashSet_const_iterator<Basisfunction*> cit_end   = basis_.end();
 	HashSet_const_iterator<Basisfunction*> it;
-	// for(Basisfunction *b : basis_) {
 	for(it=cit_begin; it != cit_end; ++it) {
 		Basisfunction *b = *it;
 		int startU, startV;
@@ -1482,23 +1499,25 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		}
 		startV++;
 
-		std::vector<boost::rational<long long> > rowU(1,1), rowV(1,1);
+		std::vector<unsigned long long> rowU(1,1), rowV(1,1);
 		int curU = startU+1;
 		for(uint j=0; j<locKnotU.size()-1; j++, curU++) {
 			if(locKnotU[j+1] != knots_u[curU]) {
-				std::vector<boost::rational<long long> > newRowU(rowU.size()+1, boost::rational<long long>(0));
+				std::vector<unsigned long long> newRowU(rowU.size()+1, 0);
 				for(uint k=0; k<rowU.size(); k++) {
-					#define U(x) ((long long) (locKnotU[x+k]/smallKnotU + 0.5))
-					long long z = (long long) (knots_u[curU] / smallKnotU + 0.5);
+					#define U(x) ((unsigned long long) (locKnotU[x+k]/smallKnotU + 0.5))
+					unsigned long long z = (unsigned long long) (knots_u[curU] / smallKnotU + 0.5);
 					int p = order_[0]-1;
 					if(z < U(0) || z > U(p+1)) {
 						newRowU[k] = rowU[k];
 						continue;
 					}
-					boost::rational<long long> alpha1 = (U(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - U(0),  U(p)  - U(0));
-					boost::rational<long long> alpha2 = (z    <= U(1)) ? 1 : boost::rational<long long>( U(p+1) - z   , U(p+1) - U(1));
-					newRowU[k]   += rowU[k]*alpha1;
-					newRowU[k+1] += rowU[k]*alpha2;
+					unsigned long long alpha1 = (U(p) <=  z  ) ? 1 : ((  z    - U(0)) * modInverse( U(p)  - U(0), prime)  % prime);
+					unsigned long long alpha2 = (z    <= U(1)) ? 1 : ((U(p+1) - z   ) * modInverse(U(p+1) - U(1), prime)  % prime);
+					newRowU[k]   += rowU[k] * alpha1;
+					newRowU[k+1] += rowU[k] * alpha2;
+					newRowU[k]   %= prime;
+					newRowU[k+1] %= prime;
 					#undef U
 				}
 				locKnotU.insert(locKnotU.begin()+(j+1), knots_u[curU]);
@@ -1508,29 +1527,31 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		int curV = startV+1;
 		for(uint j=0; j<locKnotV.size()-1; j++, curV++) {
 			if(locKnotV[j+1] != knots_v[curV]) {
-				std::vector<boost::rational<long long> > newRowV(rowV.size()+1, boost::rational<long long>(0));
+				std::vector<unsigned long long> newRowV(rowV.size()+1, 0);
 				for(uint k=0; k<rowV.size(); k++) {
-					#define V(x) ((long long) (locKnotV[x+k]/smallKnotV + 0.5))
-					long long z = (long long) (knots_v[curV] / smallKnotV + 0.5);
+					#define V(x) ((unsigned long long) (locKnotV[x+k]/smallKnotV + 0.5))
+					unsigned long long z = (unsigned long long) (knots_v[curV] / smallKnotV + 0.5);
 					int p = order_[1]-1;
 					if(z < V(0) || z > V(p+1)) {
 						newRowV[k] = rowV[k];
 						continue;
 					}
-					boost::rational<long long> alpha1 = (V(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - V(0),  V(p)  - V(0));
-					boost::rational<long long> alpha2 = (z    <= V(1)) ? 1 : boost::rational<long long>( V(p+1) - z   , V(p+1) - V(1));
-					newRowV[k]   += rowV[k]*alpha1;
-					newRowV[k+1] += rowV[k]*alpha2;
+					unsigned long long alpha1 = (V(p) <=  z  ) ? 1 : ((   z    - V(0)) * modInverse(  V(p)  - V(0), prime) % prime);
+					unsigned long long alpha2 = (z    <= V(1)) ? 1 : (( V(p+1) - z   ) * modInverse( V(p+1) - V(1), prime) % prime);
+					newRowV[k]   += rowV[k] * alpha1;
+					newRowV[k+1] += rowV[k] * alpha2;
+					newRowV[k]   %= prime;
+					newRowV[k+1] %= prime;
 					#undef V
 				}
 				locKnotV.insert(locKnotV.begin()+(j+1), knots_v[curV]);
 				rowV= newRowV;
 			}
 		}
-		std::vector<boost::rational<long long> > totalRow(fullDim, boost::rational<long long>(0));
+		std::vector<unsigned long long> totalRow(fullDim, 0);
 		for(uint i1=0; i1<rowU.size(); i1++)
 			for(uint i2=0; i2<rowV.size(); i2++)
-				totalRow[(startV+i2)*n1 + (startU+i1)] = rowV[i2]*rowU[i1];
+				totalRow[(startV+i2)*n1 + (startU+i1)] = rowV[i2] * rowU[i1] % prime;
 
 		C.push_back(totalRow);
 	}
@@ -1558,12 +1579,11 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 	// gauss-jordan elimination
 	int zeroColumns = 0;
 	for(uint i=0; i<C.size() && i+zeroColumns<C[i].size(); i++) {
-		boost::rational<long long> maxPivot = 0;
 		int maxI = -1;
 		for(uint j=i; j<C.size(); j++) {
-			if(abs(C[j][i+zeroColumns]) > maxPivot) {
-				maxPivot = abs(C[j][i+zeroColumns]);
+			if( C[j][i+zeroColumns] != 0) {
 				maxI = j;
+				break;
 			}
 		}
 		if(maxI == -1) {
@@ -1571,16 +1591,15 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 			zeroColumns++;
 			continue;
 		}
-		std::vector<boost::rational<long long> > tmp = C[i];
+		std::vector<unsigned long long> tmp = C[i];
 		C[i] = C[maxI];
 		C[maxI] = tmp;
 		for(uint j=i+1; j<C.size(); j++) {
-			// if(j==i) continue;
-			boost::rational<long long> scale =  C[j][i+zeroColumns] / C[i][i+zeroColumns];
-			if(scale != 0) {
-				// std::cout << scale << " x row(" << i << ") added to row " << j << std::endl;
-				for(uint k=i+zeroColumns; k<C[j].size(); k++)
-					C[j][k] -= C[i][k] * scale;
+			if(C[j][i+zeroColumns] == 0) continue;
+			unsigned long long scale =  C[j][i+zeroColumns] * modInverse(C[i][i+zeroColumns], prime) % prime;
+			for(uint k=i+zeroColumns; k<C[j].size(); k++) {
+				C[j][k] += prime - (C[i][k] * scale % prime);
+				C[j][k] %= prime;
 			}
 		}
 	}
@@ -1614,6 +1633,7 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 	return rank == nmb_bas;
 }
 
+#ifdef HAS_BOOST
 void LRSplineSurface::getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("Linear independent)");

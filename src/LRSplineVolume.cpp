@@ -1460,7 +1460,25 @@ void LRSplineVolume::getBezierExtraction(int iEl, std::vector<double> &extractMa
 	}
 }
 
-#ifdef HAS_BOOST
+// compute a^n mod p where p is a prime
+template <typename T>
+T modPower(T a, T p, T n) {
+	T result = 1;
+	T tmp    = a;
+	while(n>0) {
+		if(n % 2)
+			result = (result * tmp) % p;
+		tmp = (tmp * tmp) % p;
+		n /= 2;
+	}
+	return result;
+}
+
+// compute a^-1 mod p where p is a prime
+template <typename T>
+T modInverse(T a, T p) {
+	return modPower(a, p, p-2);
+}
 bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 #ifdef TIME_LRSPLINE
 	PROFILE("Linear independent)");
@@ -1474,10 +1492,11 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 	int n2 = knots_v.size() - order_[1];
 	int n3 = knots_w.size() - order_[2];
 	int fullDim = n1*n2*n3;
-	bool fullVerbose   = fullDim < 30  && nmb_bas < 50;
+	bool fullVerbose   = fullDim <  30 && nmb_bas <  50;
 	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
+	unsigned long long prime    = 0x7FFFFFFF;
 
-	std::vector<std::vector<boost::rational<long long> > > C;  // rational projection matrix 
+	std::vector<std::vector<unsigned long long> > C;  // rational projection matrix 
 
 	// scaling factor to ensure that all knots are integers (assuming all multiplum of smallest knot span)
 	double smallKnotU = DBL_MAX;
@@ -1525,23 +1544,25 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 		}
 		startW++;
 
-		std::vector<boost::rational<long long> > rowU(1,1), rowV(1,1), rowW(1,1);
+		std::vector<unsigned long long> rowU(1,1), rowV(1,1), rowW(1,1);
 		int curU = startU+1;
 		for(uint j=0; j<locKnotU.size()-1; j++, curU++) {
 			if(locKnotU[j+1] != knots_u[curU]) {
-				std::vector<boost::rational<long long> > newRowU(rowU.size()+1, boost::rational<long long>(0));
+				std::vector<unsigned long long> newRowU(rowU.size()+1, 0);
 				for(uint k=0; k<rowU.size(); k++) {
-					#define U(x) ((long long) (locKnotU[x+k]/smallKnotU + 0.5))
-					long long z = (long long) (knots_u[curU] / smallKnotU + 0.5);
+					#define U(x) ((unsigned long long) (locKnotU[x+k]/smallKnotU + 0.5))
+					unsigned long long z = (unsigned long long) (knots_u[curU] / smallKnotU + 0.5);
 					int p = order_[0]-1;
 					if(z < U(0) || z > U(p+1)) {
 						newRowU[k] = rowU[k];
 						continue;
 					}
-					boost::rational<long long> alpha1 = (U(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - U(0),  U(p)  - U(0));
-					boost::rational<long long> alpha2 = (z    <= U(1)) ? 1 : boost::rational<long long>( U(p+1) - z   , U(p+1) - U(1));
-					newRowU[k]   += rowU[k]*alpha1;
-					newRowU[k+1] += rowU[k]*alpha2;
+					unsigned long long alpha1 = (U(p) <=  z  ) ? 1 : ((  z    - U(0)) * modInverse( U(p)  - U(0), prime)  % prime);
+					unsigned long long alpha2 = (z    <= U(1)) ? 1 : ((U(p+1) - z   ) * modInverse(U(p+1) - U(1), prime)  % prime);
+					newRowU[k]   += rowU[k] * alpha1;
+					newRowU[k+1] += rowU[k] * alpha2;
+					newRowU[k]   %= prime;
+					newRowU[k+1] %= prime;
 					#undef U
 				}
 				locKnotU.insert(locKnotU.begin()+(j+1), knots_u[curU]);
@@ -1551,19 +1572,21 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 		int curV = startV+1;
 		for(uint j=0; j<locKnotV.size()-1; j++, curV++) {
 			if(locKnotV[j+1] != knots_v[curV]) {
-				std::vector<boost::rational<long long> > newRowV(rowV.size()+1, boost::rational<long long>(0));
+				std::vector<unsigned long long> newRowV(rowV.size()+1, 0);
 				for(uint k=0; k<rowV.size(); k++) {
-					#define V(x) ((long long) (locKnotV[x+k]/smallKnotV + 0.5))
-					long long z = (long long) (knots_v[curV] / smallKnotV + 0.5);
+					#define V(x) ((unsigned long long) (locKnotV[x+k]/smallKnotV + 0.5))
+					unsigned long long z = (unsigned long long) (knots_v[curV] / smallKnotV + 0.5);
 					int p = order_[1]-1;
 					if(z < V(0) || z > V(p+1)) {
 						newRowV[k] = rowV[k];
 						continue;
 					}
-					boost::rational<long long> alpha1 = (V(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - V(0),  V(p)  - V(0));
-					boost::rational<long long> alpha2 = (z    <= V(1)) ? 1 : boost::rational<long long>( V(p+1) - z   , V(p+1) - V(1));
-					newRowV[k]   += rowV[k]*alpha1;
-					newRowV[k+1] += rowV[k]*alpha2;
+					unsigned long long alpha1 = (V(p) <=  z  ) ? 1 : ((   z    - V(0)) * modInverse(  V(p)  - V(0), prime) % prime);
+					unsigned long long alpha2 = (z    <= V(1)) ? 1 : (( V(p+1) - z   ) * modInverse( V(p+1) - V(1), prime) % prime);
+					newRowV[k]   += rowV[k] * alpha1;
+					newRowV[k+1] += rowV[k] * alpha2;
+					newRowV[k]   %= prime;
+					newRowV[k+1] %= prime;
 					#undef V
 				}
 				locKnotV.insert(locKnotV.begin()+(j+1), knots_v[curV]);
@@ -1573,30 +1596,32 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 		int curW = startW+1;
 		for(uint j=0; j<locKnotW.size()-1; j++, curW++) {
 			if(locKnotW[j+1] != knots_w[curW]) {
-				std::vector<boost::rational<long long> > newRowW(rowW.size()+1, boost::rational<long long>(0));
+				std::vector<unsigned long long> newRowW(rowW.size()+1, 0);
 				for(uint k=0; k<rowW.size(); k++) {
-					#define W(x) ((long long) (locKnotW[x+k]/smallKnotW + 0.5))
-					long long z = (long long) (knots_w[curW] / smallKnotW + 0.5);
+					#define W(x) ((unsigned long long) (locKnotW[x+k]/smallKnotW + 0.5))
+					unsigned long long z = (unsigned long long) (knots_w[curW] / smallKnotW + 0.5);
 					int p = order_[2]-1;
 					if(z < W(0) || z > W(p+1)) {
 						newRowW[k] = rowW[k];
 						continue;
 					}
-					boost::rational<long long> alpha1 = (W(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - W(0),  W(p)  - W(0));
-					boost::rational<long long> alpha2 = (z    <= W(1)) ? 1 : boost::rational<long long>( W(p+1) - z   , W(p+1) - W(1));
-					newRowW[k]   += rowW[k]*alpha1;
-					newRowW[k+1] += rowW[k]*alpha2;
+					unsigned long long alpha1 = (W(p) <=  z  ) ? 1 : ((   z    - W(0)) * modInverse(  W(p)  - W(0), prime) % prime);
+					unsigned long long alpha2 = (z    <= W(1)) ? 1 : (( W(p+1) - z   ) * modInverse( W(p+1) - W(1), prime) % prime);
+					newRowW[k]   += rowW[k] * alpha1;
+					newRowW[k+1] += rowW[k] * alpha2;
+					newRowW[k]   %= prime;
+					newRowW[k+1] %= prime;
 					#undef W
 				}
 				locKnotW.insert(locKnotW.begin()+(j+1), knots_w[curW]);
 				rowW= newRowW;
 			}
 		}
-		std::vector<boost::rational<long long> > totalRow(fullDim, boost::rational<long long>(0));
+		std::vector<unsigned long long> totalRow(fullDim, 0);
 		for(uint i1=0; i1<rowU.size(); i1++)
 			for(uint i2=0; i2<rowV.size(); i2++)
-			    for(uint i3=0; i3<rowW.size(); i3++)
-				    totalRow[(startW+i3)*n1*n2 + (startV+i2)*n1 + (startU+i1)] = rowW[i3]*rowV[i2]*rowU[i1];
+				for(uint i3=0; i3<rowW.size(); i3++)
+					totalRow[(startW+i3)*n1*n2 + (startV+i2)*n1 + (startU+i1)] = rowW[i3] * rowV[i2] % prime * rowU[i1] % prime;
 
 		C.push_back(totalRow);
 	}
@@ -1624,12 +1649,11 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 	// gauss-jordan elimination
 	int zeroColumns = 0;
 	for(uint i=0; i<C.size() && i+zeroColumns<C[i].size(); i++) {
-		boost::rational<long long> maxPivot = 0;
 		int maxI = -1;
 		for(uint j=i; j<C.size(); j++) {
-			if(abs(C[j][i+zeroColumns]) > maxPivot) {
-				maxPivot = abs(C[j][i+zeroColumns]);
+			if( C[j][i+zeroColumns] != 0) {
 				maxI = j;
+				break;
 			}
 		}
 		if(maxI == -1) {
@@ -1637,16 +1661,15 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 			zeroColumns++;
 			continue;
 		}
-		std::vector<boost::rational<long long> > tmp = C[i];
+		std::vector<unsigned long long> tmp = C[i];
 		C[i] = C[maxI];
 		C[maxI] = tmp;
 		for(uint j=i+1; j<C.size(); j++) {
-			// if(j==i) continue;
-			boost::rational<long long> scale =  C[j][i+zeroColumns] / C[i][i+zeroColumns];
-			if(scale != 0) {
-				// std::cout << scale << " x row(" << i << ") added to row " << j << std::endl;
-				for(uint k=i+zeroColumns; k<C[j].size(); k++)
-					C[j][k] -= C[i][k] * scale;
+			if(C[j][i+zeroColumns] == 0) continue;
+			unsigned long long scale =  C[j][i+zeroColumns] * modInverse(C[i][i+zeroColumns], prime) % prime;
+			for(uint k=i+zeroColumns; k<C[j].size(); k++) {
+				C[j][k] += prime - (C[i][k] * scale % prime);
+				C[j][k] %= prime;
 			}
 		}
 	}
@@ -1671,15 +1694,14 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 		std::cout << std::endl;
 	}
 
-	int rank = (nmb_bas < fullDim - zeroColumns) ? nmb_bas : fullDim - zeroColumns;
+	int rank = (nmb_bas < n1*n2*n3-zeroColumns) ? nmb_bas : n1*n2*n3-zeroColumns;
 	if(verbose) {
-		std::cout << "Matrix size : " << nmb_bas << " x " << fullDim << std::endl;
+		std::cout << "Matrix size : " << nmb_bas << " x " << n1*n2*n3 << std::endl;
 		std::cout << "Matrix rank : " << rank << std::endl;
 	}
 	
 	return rank == nmb_bas;
 }
-#endif
 
 #if 0
 void LRSplineVolume::getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const {
