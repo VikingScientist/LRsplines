@@ -966,6 +966,11 @@ void LRSplineSurface::enforceMaxTjoints(std::vector<Meshline*> *newLines) {
 				m = insert_const_v_edge(left[bi], umin, umax, refKnotlineMult_);
 				if(newLines != NULL)
 					newLines->push_back(m->copy());
+				if(refStrat_ == LR_STRUCTURED_MESH) {
+					m = insert_const_u_edge((umin+umax)/2, vmin, vmax, refKnotlineMult_);
+					if(newLines != NULL)
+						newLines->push_back(m->copy());
+				}
 				someFix = true;
 				continue;
 			}
@@ -979,6 +984,11 @@ void LRSplineSurface::enforceMaxTjoints(std::vector<Meshline*> *newLines) {
 				m = insert_const_v_edge(right[bi], umin, umax, refKnotlineMult_);
 				if(newLines != NULL)
 					newLines->push_back(m->copy());
+				if(refStrat_ == LR_STRUCTURED_MESH) {
+					m = insert_const_u_edge((umin+umax)/2, vmin, vmax, refKnotlineMult_);
+					if(newLines != NULL)
+						newLines->push_back(m->copy());
+				}
 				someFix = true;
 				continue;
 			}
@@ -992,6 +1002,11 @@ void LRSplineSurface::enforceMaxTjoints(std::vector<Meshline*> *newLines) {
 				m = insert_const_u_edge(top[bi], vmin, vmax, refKnotlineMult_);
 				if(newLines != NULL)
 					newLines->push_back(m->copy());
+				if(refStrat_ == LR_STRUCTURED_MESH) {
+					m = insert_const_v_edge((vmin+vmax)/2, umin, umax, refKnotlineMult_);
+					if(newLines != NULL)
+						newLines->push_back(m->copy());
+				}
 				someFix = true;
 				continue;
 			}
@@ -1005,6 +1020,11 @@ void LRSplineSurface::enforceMaxTjoints(std::vector<Meshline*> *newLines) {
 				m = insert_const_u_edge(bottom[bi], vmin, vmax, refKnotlineMult_);
 				if(newLines != NULL)
 					newLines->push_back(m->copy());
+				if(refStrat_ == LR_STRUCTURED_MESH) {
+					m = insert_const_v_edge((vmin+vmax)/2, umin, umax, refKnotlineMult_);
+					if(newLines != NULL)
+						newLines->push_back(m->copy());
+				}
 				someFix = true;
 				continue;
 			}
