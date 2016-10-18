@@ -78,11 +78,11 @@ void LRSpline::getEdgeElements( std::vector<Element*> &edgeElements, parameterEd
 	}
 }
 
-bool LRSpline::setControlPoints(std::vector<double>& controlpoints) {
+bool LRSpline::setControlPoints(const std::vector<double>& controlpoints) {
 	if((int) controlpoints.size() != dim_*basis_.size())
 		return false;
 	
-	std::vector<double>::iterator newCP = controlpoints.begin();
+	std::vector<double>::const_iterator newCP = controlpoints.begin();
 
 	HashSet_iterator<Basisfunction*> bit;
 	for(bit=basis_.begin(); bit!=basis_.end(); ++bit) {
