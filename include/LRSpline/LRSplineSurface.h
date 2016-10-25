@@ -142,6 +142,14 @@ public:
 	void writePostscriptMeshWithControlPoints(std::ostream &out, int nu=2, int nv=2) const ;
 
 private:
+	// caching stuff
+	mutable std::vector<std::vector<int> > elementCache_;
+	mutable std::vector<double>            glob_knot_u_;
+	mutable std::vector<double>            glob_knot_v_;
+	mutable bool                           builtElementCache_ = false;
+
+	void createElementCache() const;
+
 	// initializeation methods (called from constructors)
 	void initMeta();
 	template <typename RandomIterator1,

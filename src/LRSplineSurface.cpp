@@ -526,6 +526,36 @@ void LRSplineSurface::computeBasis (double param_u,
 }
 
 /************************************************************************************************************************//**
+ * \brief Computes a cached lookup table for quick determination of element distribution. Allows getElementContaining()
+ *        to be ran in O(log(n)) time.
+ * \details This is done by creating a full tensor mesh (of elements) and storing the LR-elements from which each
+ *          sub-element came from.
+ ***************************************************************************************************************************/
+void LRSplineSurface::createElementCache() const {
+	generateIDs();
+	// find the set of all unique knots in each direction (this is our global mesh)
+	glob_knot_u_.clear();
+	glob_knot_v_.clear();
+	this->getGlobalUniqueKnotVector(glob_knot_u_, glob_knot_v_);
+
+	// create a tensor-mesh of elements given by an nxm matrix
+	elementCache_ = std::vector<std::vector<int> >(glob_knot_u_.size(), std::vector<int>(glob_knot_v_.size(), -1));
+
+	// store parent element (i.e. the actual LR element) for each sub-cell
+	for(Element *e : getAllElements()) {
+		// binary-search to look up indices
+		int i0 = std::lower_bound(glob_knot_u_.begin(), glob_knot_u_.end(), e->umin()) - glob_knot_u_.begin();
+		int i1 = std::lower_bound(glob_knot_u_.begin(), glob_knot_u_.end(), e->umax()) - glob_knot_u_.begin();
+		int j0 = std::lower_bound(glob_knot_v_.begin(), glob_knot_v_.end(), e->vmin()) - glob_knot_v_.begin();
+		int j1 = std::lower_bound(glob_knot_v_.begin(), glob_knot_v_.end(), e->vmax()) - glob_knot_v_.begin();
+		for(int i=i0; i<i1; i++)
+			for(int j=j0; j<j1; j++)
+				elementCache_[i][j] = e->getId();
+	}
+	builtElementCache_ = true;
+}
+
+/************************************************************************************************************************//**
  * \brief Get the element index of the element containing the parametric point (u,v)
  * \param u The u-coordinate 
  * \param v The v-coordinate
@@ -533,21 +563,21 @@ void LRSplineSurface::computeBasis (double param_u,
  * \details This is done by a linear search and with the number of elements equal to n, the complexity is O(n)
  ***************************************************************************************************************************/
 int LRSplineSurface::getElementContaining(double u, double v) const {
-	for(int i=lastElementEvaluation; i<element_.size(); ++i)
-		if(element_[i]->umin() <= u && element_[i]->vmin() <= v) 
-			if((u < element_[i]->umax() || (u == end_[0] && u <= element_[i]->umax())) && 
-			   (v < element_[i]->vmax() || (v == end_[1] && v <= element_[i]->vmax()))) {
-				lastElementEvaluation = i;
-				return i;
-			}
-	for(int i=0; i<lastElementEvaluation; ++i)
-		if(element_[i]->umin() <= u && element_[i]->vmin() <= v) 
-			if((u < element_[i]->umax() || (u == end_[0] && u <= element_[i]->umax())) && 
-			   (v < element_[i]->vmax() || (v == end_[1] && v <= element_[i]->vmax()))) {
-				lastElementEvaluation = i;
-				return i;
-			}
-	return -1;
+	// sanity check input
+	if(u < startparam(0) || u > endparam(0) || v < startparam(1) || v > endparam(1))
+		return -1;
+	// build cache if not already present
+	if(builtElementCache_ == false)
+		createElementCache();
+
+	// binary search for the right element
+	size_t i = std::upper_bound(glob_knot_u_.begin(), glob_knot_u_.end(), u) - glob_knot_u_.begin() - 1;
+	size_t j = std::upper_bound(glob_knot_v_.begin(), glob_knot_v_.end(), v) - glob_knot_v_.begin() - 1;
+
+	// special case endpoints since element definitions are defined to be [umin,umax) for all except last element: [umin,umax]
+	if(i == glob_knot_u_.size()-1) i--;
+	if(j == glob_knot_v_.size()-1) j--;
+	return elementCache_[i][j];
 }
 
 /************************************************************************************************************************//**
@@ -1200,6 +1230,9 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 			basis_.insert(b);
 	}
 	} // end profiler (step 2)
+
+  // clear cache since mesh is now changed
+  builtElementCache_ = false;
 
 	return newline;
 }
