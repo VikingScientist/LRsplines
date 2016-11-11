@@ -168,6 +168,7 @@ void LRSplineSurface::initMeta() {
 	selected_basis_red    = 1.0;
 	selected_basis_green  = 0.2;
 	selected_basis_blue   = 0.05;
+  builtElementCache_    = false;
 }
 
 /************************************************************************************************************************//**
