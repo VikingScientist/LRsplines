@@ -5,6 +5,7 @@
 #include "LRSpline/Profiler.h"
 
 #include <algorithm>
+#include <functional>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
