@@ -979,7 +979,11 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 		std::cerr << "Error: inserting meshrctangle " << *newRect << " outside parametric domain";
 		std::cerr << "(" << start_[0] << ", " << start_[1] << ", " << start_[2] << ") x ";
 		std::cerr << "(" <<   end_[0] << ", " <<   end_[1] << ", " <<   end_[2] << ") ";
-		return NULL;
+		exit(3239621);
+	}
+	if(newRect->multiplicity_ < 1) {
+		std::cerr << "LRSplineVolume::insert_line() requested mesh rectangle with multiplicity " << newRect->multiplicity_ << ". Needs non-negative values\n";
+		exit(5312174);
 	}
 	
 	std::vector<MeshRectangle*> newGuys;

@@ -1103,6 +1103,11 @@ Meshline* LRSplineSurface::insert_const_u_edge(double u, double start_v, double 
 }
 
 Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double start, double stop, int multiplicity) {
+	// error test input
+	if(multiplicity < 1) {
+		std::cerr << "LRSplineSurface::insert_line() requested line with multiplicity " << multiplicity << ". Needs non-negative values\n";
+		exit(99822173);
+	}
 	Meshline *newline;
 #ifdef TIME_LRSPLINE
 	PROFILE("insert_line()");
