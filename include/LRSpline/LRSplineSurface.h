@@ -10,6 +10,9 @@
 #ifdef HAS_BOOST
 #include <boost/rational.hpp>
 #endif
+#ifdef TIME_LRSPLINE
+#include "Profiler.h"
+#endif
 #include "LRSpline.h"
 #include "Basisfunction.h"
 #include "Meshline.h"
@@ -35,6 +38,9 @@ public:
 	          typename RandomIterator2,
 	          typename RandomIterator3>
 	LRSplineSurface(int n1, int n2, int order_u, int order_v, RandomIterator1 knot_u, RandomIterator2 knot_v, RandomIterator3 coef, int dim, bool rational=false) {
+#ifdef TIME_LRSPLINE
+	PROFILE("Constructor");
+#endif
 		initMeta();
 		initCore(n1, n2, order_u, order_v, knot_u, knot_v, coef, dim, rational);
 	}
@@ -169,43 +175,53 @@ private:
 		start_[1]  = knot_v[0];
 		end_[0]    = knot_u[n1+p1-1];
 		end_[1]    = knot_v[n2+p2-1];
-	
-		for(int j=0; j<n2; j++)
-			for(int i=0; i<n1; i++)
-				basis_.insert(new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim+rational), dim, order_u, order_v));
+
 		int unique_u=0;
 		int unique_v=0;
+		std::vector<int> elm_u; // element index of the knot vector (duplicate knots is multiple index in knot_u, single index in elmRows)
+		std::vector<int> elm_v;
 		for(int i=0; i<n1+p1; i++) {// const u, spanning v
 			int mult = 1;
+			elm_u.push_back(unique_u);
 			while(i+1<n1+p1 && knot_u[i]==knot_u[i+1]) {
 				i++;
 				mult++;
+				elm_u.push_back(unique_u);
 			}
 			unique_u++;
 			meshline_.push_back(new Meshline(false, knot_u[i], knot_v[0], knot_v[n2+p2-1], mult) );
 		}
 		for(int i=0; i<n2+p2; i++) {// const v, spanning u
 			int mult = 1;
+			elm_v.push_back(unique_v);
 			while(i+1<n2+p2 && knot_v[i]==knot_v[i+1]) {
 				i++;
 				mult++;
+				elm_v.push_back(unique_v);
 			}
 			unique_v++;
 			meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n1+p1-1], mult) );
 		}
+		std::vector<std::vector<Element*> > elmRows(unique_v-1);
 		for(int j=0; j<unique_v-1; j++) {
 			for(int i=0; i<unique_u-1; i++) {
 				double umin = meshline_[i]->const_par_;
 				double vmin = meshline_[unique_u + j]->const_par_;
 				double umax = meshline_[i+1]->const_par_;
 				double vmax = meshline_[unique_u + j+1]->const_par_;
-				element_.push_back(new Element(umin, vmin, umax, vmax));
+				Element* elm = new Element(umin, vmin, umax, vmax);
+				element_.push_back(elm);
+				elmRows[j].push_back(elm);
 			}
 		}
 
-		HashSet_iterator<Basisfunction*> it;
-		for(it=basis_.begin(); it!=basis_.end(); ++it)
-			updateSupport(*it);
+		for(int j=0; j<n2; j++)
+			for(int i=0; i<n1; i++) {
+				Basisfunction *b = new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim+rational), dim, order_u, order_v);
+				basis_.insert(b);
+				for(int k=elm_v[j]; k<elm_v[j+p2]; k++)
+					updateSupport(b, elmRows[k].begin() + elm_u[i], elmRows[k].begin() + elm_u[i+p1]);
+		}
 	}
 
 	void aPosterioriFixElements();

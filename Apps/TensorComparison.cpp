@@ -8,12 +8,16 @@
 #include <GoTools/trivariate/SplineVolume.h>
 #include "LRSpline/LRSplineSurface.h"
 #include "LRSpline/LRSplineVolume.h"
+#include "LRSpline/Profiler.h"
 
 using namespace Go;
 using namespace LR;
 using namespace std;
 
 int main(int argc, char **argv) {
+#ifdef TIME_LRSPLINE
+	Profiler prof(argv[0]);
+#endif
 
 	// set default parameter values
 	const double TOL = 1e-6;
