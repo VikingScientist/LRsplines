@@ -153,8 +153,6 @@ protected:
 	double                  maxAspectRatio_;
 
 	// caching stuff
-	mutable int lastElementEvaluation;
-
 	static std::vector<double> getUniformKnotVector(int n, int p) {
 		std::vector<double> result(n+p);
 		int k=0;

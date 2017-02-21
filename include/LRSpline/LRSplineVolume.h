@@ -8,6 +8,9 @@
 #ifdef HAS_BOOST
 	#include <boost/rational.hpp>
 #endif
+#ifdef TIME_LRSPLINE
+#include "Profiler.h"
+#endif
 #include "LRSpline.h"
 #include "HashSet.h"
 #include "Basisfunction.h"
@@ -36,6 +39,9 @@ public:
 	          typename RandomIterator3,
 	          typename RandomIterator4>
 	LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w, RandomIterator1 knot_u, RandomIterator2 knot_v, RandomIterator3 knot_w, RandomIterator4 coef, int dim, bool rational = false) {
+#ifdef TIME_LRSPLINE
+	PROFILE("Constructor");
+#endif
 		initMeta();
 		initCore(n1, n2, n3, order_u, order_v, order_w, knot_u, knot_v, knot_w, coef, dim, rational);
 	}
@@ -137,6 +143,15 @@ public:
 	MeshRectangle* insert_line(MeshRectangle *newRect) ;
 
 private:
+	// caching stuff
+	mutable std::vector<std::vector<std::vector<int> > > elementCache_;
+	mutable std::vector<double>            glob_knot_u_;
+	mutable std::vector<double>            glob_knot_v_;
+	mutable std::vector<double>            glob_knot_w_;
+	mutable bool                           builtElementCache_;
+
+	void createElementCache() const;
+
 	std::vector<MeshRectangle*> meshrect_;
 
 	void split(int constDir, Basisfunction *b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
@@ -160,24 +175,23 @@ private:
 		end_[0]    = knot_u[n1];
 		end_[1]    = knot_v[n2];
 		end_[2]    = knot_w[n3];
-	
-		for(int k=0; k<n3; k++)
-			for(int j=0; j<n2; j++)
-				for (int i = 0; i < n1; i++) {
-					RandomIterator1 ku = knot_u + i;
-					RandomIterator2 kv = knot_v + j;
-					RandomIterator3 kw = knot_w + k;
-					RandomIterator4 c = coef + (k*n1*n2 + j*n1 + i)*(dim + rational);
-					basis_.insert(new Basisfunction(ku, kv, kw, c , dim, order_u, order_v, order_w));
-		}
-		int unique_u=0;
-		int unique_v=0;
-		int unique_w=0;
+
+		int p1       = order_u;
+		int p2       = order_v;
+		int p3       = order_w;
+		int unique_u = 0;
+		int unique_v = 0;
+		int unique_w = 0;
+		std::vector<int> elm_u; // element index of the knot vector (duplicate knots is multiple index in knot_u, single index in elmRows)
+		std::vector<int> elm_v;
+		std::vector<int> elm_w;
 		for(int i=0; i<n1+order_u; i++) {// const u, spanning v,w
 			int mult = 1;
+			elm_u.push_back(unique_u);
 			while(i+1<n1+order_u && knot_u[i]==knot_u[i+1]) {
 				i++;
 				mult++;
+			  elm_u.push_back(unique_u);
 			}
 			unique_u++;
 			meshrect_.push_back(new MeshRectangle(knot_u[i], knot_v[0],  knot_w[0],
@@ -185,9 +199,11 @@ private:
 		}
 		for(int i=0; i<n2+order_v; i++) {// const v, spanning u,w
 			int mult = 1;
+			elm_v.push_back(unique_v);
 			while(i+1<n2+order_v && knot_v[i]==knot_v[i+1]) {
 				i++;
 				mult++;
+			  elm_v.push_back(unique_v);
 			}
 			unique_v++;
 			meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[i], knot_w[0],
@@ -195,14 +211,17 @@ private:
 		}
 		for(int i=0; i<n3+order_w; i++) {
 			int mult = 1;
+			elm_w.push_back(unique_w);
 			while(i+1<n3+order_w && knot_w[i]==knot_w[i+1]) {
 				i++;
 				mult++;
+			  elm_w.push_back(unique_w);
 			}
 			unique_w++;
 			meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[0],  knot_w[i],
 			                                      knot_u[n1], knot_v[n2], knot_w[i], mult));
 		}
+		std::vector<std::vector<std::vector<Element*> > > elmRows(unique_w-1, std::vector<std::vector<Element*> >(unique_v-1));
 		for(int k=0; k<unique_w-1; k++) {
 			for(int j=0; j<unique_v-1; j++) {
 				for(int i=0; i<unique_u-1; i++) {
@@ -214,15 +233,27 @@ private:
 					double wmax = meshrect_[unique_v + unique_u + k+1]->stop_[2];
 					double min[] = {umin, vmin, wmin};
 					double max[] = {umax, vmax, wmax};
-					element_.push_back(new Element(3, min, max));
+					Element *elm = new Element(3, min, max);
+					element_.push_back(elm);
+					elmRows[k][j].push_back(elm);
 				}
 			}
 		}
-	
-		for(Basisfunction* b : basis_)
-			updateSupport(b);
+
+		for(int k=0; k<n3; k++)
+			for(int j=0; j<n2; j++)
+				for(int i=0; i<n1; i++) {
+					RandomIterator1 ku = knot_u + i;
+					RandomIterator2 kv = knot_v + j;
+					RandomIterator3 kw = knot_w + k;
+					RandomIterator4 c = coef + (k*n1*n2 + j*n1 + i)*(dim + rational);
+					Basisfunction *b = new Basisfunction(ku, kv, kw, c , dim, order_u, order_v, order_w);
+					basis_.insert(b);
+					for(int k1=elm_w[k]; k1<elm_w[k+p3]; k1++)
+						for(int k2=elm_v[j]; k2<elm_v[j+p2]; k2++)
+							updateSupport(b, elmRows[k1][k2].begin() + elm_u[i], elmRows[k1][k2].begin() + elm_u[i+p1]);
+		}
 	}
-	
 
 };
 

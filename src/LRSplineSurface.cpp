@@ -562,7 +562,6 @@ void LRSplineSurface::createElementCache() const {
  * \param u The u-coordinate 
  * \param v The v-coordinate
  * \return The index of the element which contains (u,v)
- * \details This is done by a linear search and with the number of elements equal to n, the complexity is O(n)
  ***************************************************************************************************************************/
 int LRSplineSurface::getElementContaining(double u, double v) const {
 	// sanity check input
