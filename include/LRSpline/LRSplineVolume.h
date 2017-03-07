@@ -161,6 +161,18 @@ private:
 	          typename RandomIterator3,
 	          typename RandomIterator4>
 	void initCore(int n1, int n2, int n3, int order_u, int order_v, int order_w, RandomIterator1 knot_u, RandomIterator2 knot_v, RandomIterator3 knot_w, RandomIterator4 coef, int dim, bool rational=false) {
+		// sanity check input
+		if(n1 < order_u || 
+		   n2 < order_v ||
+		   n3 < order_w) {
+			std::cerr << "Error: n<p in LRSplineVolume constructor\n";
+			// really ought to throw exception here, but havent the framework
+			// for this up and running yet. Make it a zombie surface
+			double knot[4] = {0,0,1,1};
+			double cp[4] = {0,0,0,0};
+			initCore(2,2,2,2,2,2,knot,knot,knot,cp,1); // init dummy-state object
+			return;
+		}
 		order_.resize(3);
 		start_.resize(3);
 		end_.resize(3);

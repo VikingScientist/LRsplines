@@ -123,6 +123,18 @@ LRSplineVolume::LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v,
 	PROFILE("Constructor");
 #endif
 	initMeta();
+	// sanity check input
+	if(n1 < order_u || 
+	   n2 < order_v ||
+	   n3 < order_w) {
+		std::cerr << "Error: n<p in LRSplineVolume constructor\n";
+		// really ought to throw exception here, but havent the framework
+		// for this up and running yet. Make it a zombie surface
+		double knot[4] = {0,0,1,1};
+		double cp[4] = {0,0,0,0};
+		initCore(2,2,2,2,2,2,knot,knot,knot,cp,1); // init dummy-state object
+		return;
+	}
 
 	std::vector<double> knot_u = LRSpline::getUniformKnotVector(n1, order_u);
 	std::vector<double> knot_v = LRSpline::getUniformKnotVector(n2, order_v);
