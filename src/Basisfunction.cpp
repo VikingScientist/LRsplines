@@ -386,15 +386,16 @@ void Basisfunction::evaluate(std::vector<double> &results, const std::vector<dou
 				ans[i][j] = (knot[j] <  parPt[i] && parPt[i] <= knot[j+1]) ? 1 : 0;
 		}
 
-		diff[i].resize(derivs+1);
-		int diff_level = knot.size()-2;
+		int p          = knot.size()-2;
+		int diff_level = p;
+		diff[i].resize(derivs+1, std::vector<double>(1, 0));
 		for(uint n=1; n<knot.size()-1; n++, diff_level--) {
 			if(diff_level <= derivs) {
 				diff[i][diff_level].resize(diff_level+1);
 				for(int j=0; j<=diff_level; j++)
 					diff[i][diff_level][j] = ans[i][j];
 			}
-			for(int d = diff_level; d<= derivs; d++) {
+			for(int d = diff_level; d <= derivs && d <= p; d++) {
 				for(uint j=0; j<knot.size()-1-n; j++) {
 					diff[i][d][j]  = (knot[ j+n ]==knot[ j ]) ? 0 : (   n   )/(knot[j+n]  -knot[ j ])*diff[i][d][ j ];
 					diff[i][d][j] -= (knot[j+n+1]==knot[j+1]) ? 0 : (   n   )/(knot[j+n+1]-knot[j+1])*diff[i][d][j+1];
