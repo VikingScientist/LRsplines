@@ -1535,6 +1535,7 @@ T modPower(T a, T p, T n) {
 	return result;
 }
 
+
 // compute a^-1 mod p where p is a prime
 template <typename T>
 T modInverse(T a, T p) {

@@ -94,11 +94,9 @@ public:
 	bool isLinearIndepByOverloading(bool verbose) ;
 	bool isLinearIndepByFloatingPointMappingMatrix(bool verbose) const ;
 #ifdef HAS_BOOST
-	bool isLinearIndepByMappingMatrix(bool verbose) const ;
 	void getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const ;
-#else
-	bool isLinearIndepByMappingMatrix(bool verbose) const { return false; }
 #endif
+	bool isLinearIndepByMappingMatrix(bool verbose) const;
 
 	void updateSupport(Basisfunction *f) ;
 	void updateSupport(Basisfunction *f,
