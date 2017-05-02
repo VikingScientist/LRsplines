@@ -313,7 +313,15 @@ Go::SplineCurve* LRSplineSurface::edgeCurve(parameterEdge edge,
   std::sort(functions.begin(), functions.end(),
             [dir](const Basisfunction* a, const Basisfunction* b)
             {
-              return a->getGrevilleParameter()[dir] < b->getGrevilleParameter()[dir];
+              if (a->getGrevilleParameter()[dir] != b->getGrevilleParameter()[dir])
+                return a->getGrevilleParameter()[dir] < b->getGrevilleParameter()[dir];
+
+              size_t idx = 0;
+              for (auto& it : a->getknots(dir))
+                if (it != b->getknots(dir)[idx])
+                  return it < b->getknots(dir)[idx++];
+
+              return false;
             });
 
   std::vector<double> cpts;
