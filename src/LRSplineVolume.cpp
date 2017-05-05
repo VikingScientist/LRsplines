@@ -351,7 +351,8 @@ void LRSplineVolume::point(std::vector<std::vector<double> > &pts, double u, dou
 	std::vector<double> basis_ev;
 
 	// clear and resize output array (optimization may consider this an outside task)
-	pts.resize((derivs+1)*(derivs+2)*(2*derivs+6)/12);
+	pts.clear();
+	pts.resize((derivs+1)*(derivs+2)*(derivs+3)/6);
 	for(uint i=0; i<pts.size(); i++)
 		pts[i].resize(dim_, 0);
 
@@ -2152,7 +2153,7 @@ void LRSplineVolume::getDiagonalElements(std::vector<int> &result) const  {
 			result.push_back(i);
 }
 
-void LRSplineVolume::getDiagonalBasisfunctions(std::vector<Basisfunction*> &result) const  {
+void LRSplineVolume::getDiagonalBasisfunctions(std::vector<int> &result) const  {
 	result.clear();
 	for(Basisfunction *b : basis_) {
 		bool isDiag = true;
@@ -2160,7 +2161,7 @@ void LRSplineVolume::getDiagonalBasisfunctions(std::vector<Basisfunction*> &resu
 			if(b->getknots(0)[j] != b->getknots(1)[j] || b->getknots(0)[j] != b->getknots(2)[j])
 				isDiag = false;
 		if(isDiag)
-			result.push_back(b);
+			result.push_back(b->getId());
 	}
 }
 

@@ -125,7 +125,7 @@ public:
 
 	// assorted specialized functions
 	void getDiagonalElements(      std::vector<int> &result) const ;
-	void getDiagonalBasisfunctions(std::vector<Basisfunction*> &result) const ;
+	void getDiagonalBasisfunctions(std::vector<int> &result) const ;
 	void printElements(std::ostream &out) const;
 
 	// interpolate and approximate functions

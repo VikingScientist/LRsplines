@@ -113,9 +113,9 @@ int main(int argc, char **argv) {
 			}
 		} else if(scheme == 2) {
 			if(vol) {
-				// lrv->generateIDs();
-				// lrv->getDiagonalBasisfunctions(indices);
-				// lrv->refineBasisFunction(indices);
+				lrv->generateIDs();
+				lrv->getDiagonalBasisfunctions(indices);
+				lrv->refineBasisFunction(indices);
 			} else {
 				lrs->generateIDs();
 				lrs->getDiagonalBasisfunctions(indices);

@@ -392,6 +392,7 @@ void LRSplineSurface::point(std::vector<std::vector<double> > &pts, double u, do
 	std::vector<double> basis_ev;
 
 	// clear and resize output array (optimization may consider this an outside task)
+	pts.clear();
 	pts.resize((derivs+1)*(derivs+2)/2);
 	for(uint i=0; i<pts.size(); i++)
 		pts[i].resize(dim_, 0);
