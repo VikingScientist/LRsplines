@@ -145,6 +145,8 @@ public:
 
 	long hashCode() const ;
 
+	bool contains(const Basisfunction &other) const ;
+
 	// operator overloading
 	bool equals(const Basisfunction &other) const ;
 	bool operator==(const Basisfunction &other) const;

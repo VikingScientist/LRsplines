@@ -739,4 +739,16 @@ int Basisfunction::getOverloadCount() const {
 	return ans;
 }
 
+/************************************************************************************************************************//**
+ * \brief Returns true if the support of *other is completely contained in *this
+ ***************************************************************************************************************************/
+bool Basisfunction::contains(const Basisfunction &other) const {
+	for(uint i=0; i<knots_.size(); i++)
+		if(other[i][0]     < (*this)[i][0] ||
+		   other[i].back() > (*this)[i].back())
+			return false;
+	return true;
+}
+
+
 } // end namespace LR
