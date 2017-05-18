@@ -137,6 +137,7 @@ public:
 	double getParmax(int i)                  const { return knots_[i].back(); };
 	int    getOrder( int i)                  const { return knots_[i].size()-1;   };
 	std::vector<double>& getknots(int i)           { return knots_[i]; };
+	const std::vector<double>& getknots(int i) const { return knots_[i]; };
 	std::vector<double>::iterator cp()             { return controlpoint_.begin(); };
 	std::vector<double>::const_iterator cp() const { return controlpoint_.begin(); };
 	double cp(int i)                         const { return controlpoint_[i]; };
