@@ -168,6 +168,9 @@ ENDIF(HAS_BOOST)
 ADD_EXECUTABLE(drawLRmesh ${PROJECT_SOURCE_DIR}/Apps/drawLRmesh.cpp)
 TARGET_LINK_LIBRARIES(drawLRmesh LRSpline ${DEPLIBS})
 
+ADD_EXECUTABLE(drawLRmultipatch ${PROJECT_SOURCE_DIR}/Apps/drawLRmultipatch.cpp)
+TARGET_LINK_LIBRARIES(drawLRmultipatch LRSpline ${DEPLIBS})
+
 ADD_EXECUTABLE(BezierExtract ${PROJECT_SOURCE_DIR}/Apps/BezierExtract.cpp)
 TARGET_LINK_LIBRARIES(BezierExtract LRSpline ${DEPLIBS})
 
