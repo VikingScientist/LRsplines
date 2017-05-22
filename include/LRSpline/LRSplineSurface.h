@@ -128,6 +128,7 @@ public:
 	// fetch function spaces of different order/continuity
 	LRSplineSurface*              getRaiseOrderSpace(int raiseOrderU, int raiseOrderV) const;
 	std::vector<LRSplineSurface*> getDerivativeSpace() const ;
+  LRSplineSurface*              getDerivedBasis(int raise_p1, int raise_p2, size_t lower_k1, size_t lower_k2, int dim=1) const;
 	LRSplineSurface*              getPrimalSpace() const ;
 	bool setGlobalContinuity(int contU, int contV);
 	bool decreaseContinuity( int du,    int dv);

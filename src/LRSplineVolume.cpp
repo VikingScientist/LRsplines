@@ -2165,6 +2165,70 @@ void LRSplineVolume::getDiagonalBasisfunctions(std::vector<int> &result) const  
 	}
 }
 
+/************************************************************************************************************************//**
+ * \brief Gets the basis functions for mixed finite element codes by generating different polynomial degree and/or continutity
+ * \param raise_p1 polynomial degree to raise first parametric direction (possibly negative)
+ * \param raise_p2 polynomial degree to raise second parametric direction (possibly negative)
+ * \param raise_p3 polynomial degree to raise third parametric direction (possibly negative)
+ * \param lower_k1 lower continuity by this amount in first parametric direction 
+ * \param lower_k2 lower continuity by this amount in second parametric direction 
+ * \param lower_k3 lower continuity by this amount in third parametric direction 
+ * \details This generates a brand new LRSplineVolume objects which has different polynomial degree and continuity, but
+ *          meshlines in the same place. 
+ ***************************************************************************************************************************/
+LRSplineVolume* LRSplineVolume::getDerivedBasis(int raise_p1, int raise_p2, int raise_p3, size_t lower_k1, size_t lower_k2, size_t lower_k3, int dim) const {
+	// error test input
+	if((raise_p1 < 0 && ((size_t) -raise_p1)>lower_k1) ||
+	   (raise_p2 < 0 && ((size_t) -raise_p2)>lower_k2) ||
+	   (raise_p3 < 0 && ((size_t) -raise_p3)>lower_k3) ){
+	  std::cerr << "Error: getDerivedBasis undefined for raise_p < 0 and raise_p > lower_k" << std::endl;
+		return NULL;
+	}
+	int p1 = order_[0] + raise_p1;
+	int p2 = order_[1] + raise_p2;
+	int p3 = order_[2] + raise_p3;
+	std::vector<double> knotU(2*p1);
+	std::vector<double> knotV(2*p2);
+	std::vector<double> knotW(2*p3);
+	for(int i=0; i<p1; i++)
+		knotU[i] = start_[0];
+	for(int i=0; i<p1; i++)
+		knotU[i+p1] = end_[0];
+	for(int i=0; i<p2; i++)
+		knotV[i] = start_[1];
+	for(int i=0; i<p2; i++)
+		knotV[i+p2] = end_[1];
+	for(int i=0; i<p3; i++)
+		knotW[i] = start_[2];
+	for(int i=0; i<p3; i++)
+		knotW[i+p3] = end_[2];
+	int N = dim * p1*p2*p3;
+	std::vector<double> coef(N, 0.0);
+
+	LRSplineVolume *result = new LRSplineVolume(p1, p2, p3, p1, p2, p3, knotU.begin(), knotV.begin(), knotW.begin(), coef.begin(), dim, false);
+
+	for(MeshRectangle *m : meshrect_) {
+		// skip end-lines
+		if(m->constDirection()==0 && (fabs(m->constParameter()-start_[0])<DOUBLE_TOL || fabs(m->constParameter()-end_[0])<DOUBLE_TOL)) continue;
+		if(m->constDirection()==1 && (fabs(m->constParameter()-start_[1])<DOUBLE_TOL || fabs(m->constParameter()-end_[1])<DOUBLE_TOL)) continue;
+		if(m->constDirection()==2 && (fabs(m->constParameter()-start_[2])<DOUBLE_TOL || fabs(m->constParameter()-end_[2])<DOUBLE_TOL)) continue;
+
+		int dk;
+		if(m->constDirection() == 0)
+			dk = lower_k1 + raise_p1;
+		else if(m->constDirection() == 1)
+			dk = lower_k2 + raise_p2;
+		else if(m->constDirection() == 2)
+			dk = lower_k3 + raise_p3;
+
+		MeshRectangle *rect = m->copy();
+		rect->multiplicity_ += dk;
+		result->insert_line(rect);
+	}
+	return result;
+}
+
+
 
 void LRSplineVolume::read(std::istream &is) {
 	start_[0] =  DBL_MAX;

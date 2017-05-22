@@ -128,6 +128,9 @@ public:
 	void getDiagonalBasisfunctions(std::vector<int> &result) const ;
 	void printElements(std::ostream &out) const;
 
+	// fetch function spaces of different order/continuity
+  LRSplineVolume*  getDerivedBasis(int raise_p1, int raise_p2, int raise_p3, size_t lower_k1, size_t lower_k2, size_t lower_k3, int dim=1) const;
+
 	// interpolate and approximate functions
 	/*
 	void getLeastSquaresEdge(double (*f)(double, double),

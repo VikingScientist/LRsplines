@@ -2120,6 +2120,49 @@ std::vector<LRSplineSurface*> LRSplineSurface::getDerivativeSpace() const {
 }
 
 /************************************************************************************************************************//**
+ * \brief Gets the basis functions for mixed finite element codes by generating different polynomial degree and/or continutity
+ * \param raise_p1 polynomial degree to raise first parametric direction (possibly negative)
+ * \param raise_p2 polynomial degree to raise first parametric direction (possibly negative)
+ * \param lower_k1 lower continuity by this amount in first parametric direction 
+ * \param lower_k2 lower continuity by this amount in second parametric direction 
+ * \details This generates a brand new LRSplineSurface objects which has different polynomial degree and continuity, but
+ *          meshlines in the same place. 
+ ***************************************************************************************************************************/
+LRSplineSurface* LRSplineSurface::getDerivedBasis(int raise_p1, int raise_p2, size_t lower_k1, size_t lower_k2, int dim) const {
+	// error test input
+	if((raise_p1 < 0 && ((size_t) -raise_p1)>lower_k1) ||
+	   (raise_p2 < 0 && ((size_t) -raise_p2)>lower_k2) ){
+	  std::cerr << "Error: getDerivedBasis undefined for raise_p < 0 and raise_p > lower_k" << std::endl;
+		return NULL;
+	}
+	int p1 = order_[0] + raise_p1;
+	int p2 = order_[1] + raise_p2;
+	std::vector<double> knotU(2*p1);
+	std::vector<double> knotV(2*p2);
+	for(int i=0; i<p1; i++)
+		knotU[i] = start_[0];
+	for(int i=0; i<p1; i++)
+		knotU[i+p1] = end_[0];
+	for(int i=0; i<p2; i++)
+		knotV[i] = start_[1];
+	for(int i=0; i<p2; i++)
+		knotV[i+p2] = end_[1];
+	int N = dim * p1*p2;
+	std::vector<double> coef(N, 0.0);
+
+	LRSplineSurface *result = new LRSplineSurface(p1, p2, p1, p2, knotU.begin(), knotV.begin(), coef.begin(), dim, false);
+
+	for(Meshline *m : meshline_) {
+		// skip end-lines
+		if( m->span_u_line_ && (fabs(m->const_par_-start_[1])<DOUBLE_TOL || fabs(m->const_par_-end_[1])<DOUBLE_TOL)) continue;
+		if(!m->span_u_line_ && (fabs(m->const_par_-start_[0])<DOUBLE_TOL || fabs(m->const_par_-end_[0])<DOUBLE_TOL)) continue;
+		int dk = (m->span_u_line_) ? (lower_k2 + raise_p2) : (lower_k1 + raise_p1);
+		result->insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, m->multiplicity_ + dk);
+	}
+	return result;
+}
+
+/************************************************************************************************************************//**
  * \brief Gets the basis functions corresponding to the primal space derived from a dual space (control points must be set yourself)
  * \details This generates a brand new LRSplineSurface objects which has lower polynomial degree in both directions, and lower continuity, but
  *          is restricted to a minimum of C^0 continuity. The returned LRSpline may be used for the primal space, while *this corresponds to
