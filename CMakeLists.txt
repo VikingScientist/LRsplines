@@ -177,6 +177,9 @@ TARGET_LINK_LIBRARIES(BezierExtract LRSpline ${DEPLIBS})
 ADD_EXECUTABLE(refine ${PROJECT_SOURCE_DIR}/Apps/refine.cpp)
 TARGET_LINK_LIBRARIES(refine LRSpline ${DEPLIBS})
 
+ADD_EXECUTABLE(TestMatchingKnots ${PROJECT_SOURCE_DIR}/Apps/TestMatchingKnots.cpp)
+TARGET_LINK_LIBRARIES(TestMatchingKnots LRSpline ${DEPLIBS})
+
 # # Regression tests
 IF(HAS_BOOST)
   FILE(GLOB_RECURSE REGRESESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/RefinementUnchanged/*.reg")
