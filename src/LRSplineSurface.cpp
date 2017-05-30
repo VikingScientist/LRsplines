@@ -902,6 +902,85 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 			delete newLines[i][j];
 }
 
+/************************************************************************************************************************//**
+ * \brief Fetches list of knots that appear on a given parametric edge of the patch (used for merging multipatch models).
+ * \param edge       which of the 4 parameter edges: NORTH, SOUTH, EAST or WEST 
+ * \param normalized set to true if the returned knots should lie in the range (0,1)
+ * \returns          sorted list of mesh-lines that end on this edge
+ ***************************************************************************************************************************/
+std::vector<double> LRSplineSurface::getEdgeKnots(parameterEdge edge, bool normalized) const {
+	std::vector<Element*> edgEl;
+	this->getEdgeElements(edgEl, edge);
+	std::vector<double> results;
+	int pardim = edge==WEST || edge==EAST; // 0 for running u-edge, 1 for running v-edge
+	for(auto el : edgEl)
+		results.push_back(el->getParmin( pardim ) );
+	results.push_back(this->endparam( pardim ));
+	std::sort(results.begin(), results.end());
+	if(normalized) {
+		double u0 = this->startparam( pardim );
+		double u1 = this->endparam(   pardim );
+		for(uint i=0; i<results.size(); i++) {
+			results[i] = (results[i] - u0) / (u1-u0);
+		}
+	}
+	return results;
+}
+
+/************************************************************************************************************************//**
+ * \brief Creates matching discretization (mesh) across patch boundaries so they can be stiched together
+ * \param edge      which of the 4 parameter edges (NORTH/SOUTH/EAST/WEST) that should be refined
+ * \param knots     list of normalized knots (range (0,1)) that should appear on the  boundary edge of this patch
+ * \param isotropic if additional refinements should be done in an isotropic fashion (equal refinement in u- and v-direction,
+ *                  i.e.function refinement)
+ * \returns true if any new refinements were introduced
+ * \details This will refine this patche so it will have conforming mesh on the interface between this patch and another. It will
+ *          not manipulate the control-points of the basis functions, and it is left to the user to make sure that these coincide
+ *          if the mesh is to match in the physical space, and not just in the parametric space.
+ *          See also: getEdgeKnots() 
+ ***************************************************************************************************************************/
+bool LRSplineSurface::matchParametricEdge(parameterEdge edge, std::vector<double> knots, bool isotropic) {
+	bool didRefine = false;
+
+	// get interface edges
+	std::vector<Element*> el, el_tmp;
+	this->getEdgeElements( el_tmp, edge);
+
+	// since refinements will change or delete elements, we make a copy of the element lists
+	for(auto e : el_tmp)
+		el.push_back(e->copy());
+	
+	// sort elements 
+	int pardir = (edge==SOUTH  || edge==NORTH) ? 0 : 1;
+	std::sort(el.begin(), el.end(), [pardir](const Element* a, const Element* b) {return a->getParmin(pardir) < b->getParmin(pardir);});
+
+	// sort requested knots
+	std::sort(knots.begin(), knots.end());
+
+	// loop over elements and insert lines where needed
+	int i=0;
+	double u0 = this->startparam(pardir);
+	double u1 = this->endparam(pardir);
+	for(auto e : el) {
+		double u = knots[i]*(u1-u0) + u0;
+		while(fabs(u - e->getParmin(pardir) ) < DOUBLE_TOL) {
+			i++;
+			u = knots[i]*(u1-u0) + u0;
+		}
+		while(u < e->getParmax(pardir) - DOUBLE_TOL) {
+			didRefine = true;
+			this->insert_line(1-pardir, u, e->getParmin(1-pardir), e->getParmax(1-pardir), refKnotlineMult_);
+			if(isotropic) {
+				double v =  (e->getParmin(1-pardir) + e->getParmax(1-pardir)) / 2.0;
+				this->insert_line(pardir, v, e->getParmin(pardir), e->getParmax(pardir), refKnotlineMult_);
+			}
+			i++;
+			u = knots[i]*(u1-u0) + u0;
+		}
+	}
+	return didRefine;
+}
+
 
 void LRSplineSurface::aPosterioriFixes()  {
 	std::vector<Meshline*> *newLines = NULL;
