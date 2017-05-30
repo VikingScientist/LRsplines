@@ -78,6 +78,7 @@ public:
 	void refineElement(int index);
 	void refineElement(const std::vector<int> &indices);
 	void refineByDimensionIncrease(const std::vector<double> &error, double beta);
+  bool matchParametricEdge(parameterEdge edge, std::vector<double> knots, bool isotropic=false);
 
 	// (private) refinement functions
 	Meshline* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
@@ -119,6 +120,7 @@ public:
 	const std::vector<Meshline*> getAllMeshlines() const           { return meshline_;    };
 
 	// assorted specialized functions
+	std::vector<double> getEdgeKnots(parameterEdge edge, bool normalized=false) const;
 	double makeIntegerKnots();
 	void getSupportElements(       std::vector<int> &result, const std::vector<int> &basisfunctions) const ;
 	void getDiagonalElements(      std::vector<int> &result) const ;
