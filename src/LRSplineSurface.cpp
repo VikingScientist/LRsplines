@@ -904,7 +904,7 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 
 /************************************************************************************************************************//**
  * \brief Fetches list of knots that appear on a given parametric edge of the patch (used for merging multipatch models).
- * \param edge       which of the 4 parameter edges: NORTH, SOUTH, EAST or WEST 
+ * \param edge       which of the 4 parameter edges: NORTH, SOUTH, EAST or WEST
  * \param normalized set to true if the returned knots should lie in the range (0,1)
  * \returns          sorted list of mesh-lines that end on this edge
  ***************************************************************************************************************************/
@@ -937,7 +937,7 @@ std::vector<double> LRSplineSurface::getEdgeKnots(parameterEdge edge, bool norma
  * \details This will refine this patche so it will have conforming mesh on the interface between this patch and another. It will
  *          not manipulate the control-points of the basis functions, and it is left to the user to make sure that these coincide
  *          if the mesh is to match in the physical space, and not just in the parametric space.
- *          See also: getEdgeKnots() 
+ *          See also: getEdgeKnots()
  ***************************************************************************************************************************/
 bool LRSplineSurface::matchParametricEdge(parameterEdge edge, std::vector<double> knots, bool isotropic) {
 	bool didRefine = false;
@@ -949,8 +949,8 @@ bool LRSplineSurface::matchParametricEdge(parameterEdge edge, std::vector<double
 	// since refinements will change or delete elements, we make a copy of the element lists
 	for(auto e : el_tmp)
 		el.push_back(e->copy());
-	
-	// sort elements 
+
+	// sort elements
 	int pardir = (edge==SOUTH  || edge==NORTH) ? 0 : 1;
 	std::sort(el.begin(), el.end(), [pardir](const Element* a, const Element* b) {return a->getParmin(pardir) < b->getParmin(pardir);});
 
