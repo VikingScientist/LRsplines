@@ -31,7 +31,7 @@ public:
 	LRSplineVolume();
 #ifdef HAS_GOTOOLS
 	LRSplineVolume(Go::SplineVolume *surf);
-#endif 
+#endif
 	LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w);
 	LRSplineVolume(int n1, int n2, int n3, int order_u, int order_v, int order_w, double *knot_u, double *knot_v, double *knot_w);
 	template <typename RandomIterator1,
@@ -69,7 +69,7 @@ public:
 	                   int derivs=0,
 	                   int iEl=-1 ) const;
 	int getElementContaining(double u, double v, double w) const;
-	// TODO: get rid of the iEl argument in evaluation signatures - it's too easy to mess it up (especially with derivatives at multiple-knot boundaries). 
+	// TODO: get rid of the iEl argument in evaluation signatures - it's too easy to mess it up (especially with derivatives at multiple-knot boundaries).
 	//       Try and sort the Elements after all refinements and binary search for the containing point in logarithmic time
 
 	// refinement functions
@@ -104,7 +104,7 @@ public:
 	void updateSupport(Basisfunction *f,
 	                   std::vector<Element*>::iterator start,
 	                   std::vector<Element*>::iterator end ) ;
-	
+
 	// common get methods
 	void getGlobalKnotVector      (std::vector<double> &knot_u,
 	                               std::vector<double> &knot_v,
@@ -165,7 +165,7 @@ private:
 	          typename RandomIterator4>
 	void initCore(int n1, int n2, int n3, int order_u, int order_v, int order_w, RandomIterator1 knot_u, RandomIterator2 knot_v, RandomIterator3 knot_w, RandomIterator4 coef, int dim, bool rational=false) {
 		// sanity check input
-		if(n1 < order_u || 
+		if(n1 < order_u ||
 		   n2 < order_v ||
 		   n3 < order_w) {
 			std::cerr << "Error: n<p in LRSplineVolume constructor\n";

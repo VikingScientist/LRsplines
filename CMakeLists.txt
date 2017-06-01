@@ -43,7 +43,7 @@ CHECK_CXX_SOURCE_COMPILES("
                           #include <map>
                           #include <list>
                           int main(void)
-                          { 
+                          {
                             std::map<int, std::list<int> > loop;
                             loop.insert(std::make_pair(1,std::list<int>(1)));
                             std::map<int, std::list<int >>::iterator it = loop.begin();
@@ -75,7 +75,7 @@ IF(GoTools_FOUND)
   FIND_PACKAGE(GoTrivariate REQUIRED)
   OPTION(HAS_GOTOOLS "Link library with GoTools" ON)
   SET(INCLUDES ${INCLUDES}
-               ${GoTools_INCLUDE_DIRS} 
+               ${GoTools_INCLUDE_DIRS}
                ${GoTrivariate_INCLUDE_DIRS})
   SET(DEPLIBS ${DEPLIBS}
               ${GoTrivariate_LIBRARIES}

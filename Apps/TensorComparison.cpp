@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 	parameters << "   -p   = { " << p1 << ", " << p2 << ", " << p3 << " }\n";
 	parameters << "   -n   = { " << n1 << ", " << n2 << ", " << n3 << " }\n";
 	parameters << "   -vol = { " << ((vol)?"true":"false") << " }\n";
-	
+
 	// read input
 	for(int i=1; i<argc; i++) {
 		if(strcmp(argv[i], "-p1") == 0)
@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
 	int k=0;
 	for(int i=0; i<nCP; i++) // 839 as a generator over Z_853 gives a period of 425. Should suffice
 		cp[k++] = (i*839 % 853) / 853.0 + 0.1;  // rational weights also random and thus we need >0
-	
+
 
 	bool oneFail = false;
 	if(!vol) {
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
 				ss.point(ss_pts, u,v, 2);
 
 				bool correct = true;
-				for(int i=0; i<6; i++)  
+				for(int i=0; i<6; i++)
 					for(int d=0; d<dim; d++)
 						if( fabs(lr_pts[i][d]-ss_pts[i][d]) > TOL ) // absolute error
 							correct = false;
@@ -186,7 +186,7 @@ int main(int argc, char **argv) {
 					sv.point(sv_pts, u,v,w,2);
 
 					bool correct = true;
-					for(int i=0; i<10; i++)  
+					for(int i=0; i<10; i++)
 						for(int d=0; d<dim; d++)
 							if( fabs(lr_pts[i][d]-sv_pts[i][d]) > TOL ) // absolute error
 								correct = false;

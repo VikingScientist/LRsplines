@@ -26,7 +26,7 @@ public:
  	* \brief General constructor
  	* \param dim The dimension of the element (i.e. 2 for surfaces, 3 for volumes)
  	* \param lowerLeft Template iterator to the lower left corner (for instance std::vector<double>::begin() or double*)
- 	* \param upperRight Template iterator to the upper right corner 
+ 	* \param upperRight Template iterator to the upper right corner
  	***************************************************************************************************************************/
 	template <typename RandomIterator1,
 	          typename RandomIterator2>
@@ -53,9 +53,9 @@ public:
 	double umax()           const { return max[0]; };
 	double vmax()           const { return max[1]; };
 	double wmax()           const { return max[2]; };
-	//! \brief Returns the parametric area of the element 
+	//! \brief Returns the parametric area of the element
 	double area()           const { return (max[1]-min[1])*(max[0]-min[0]);                  };
-	//! \brief Returns the parametric volume of the element 
+	//! \brief Returns the parametric volume of the element
 	double volume()         const { return (max[2]-min[2])*(max[1]-min[1])*(max[0]-min[0]);  };
 	HashSet_iterator<Basisfunction*> supportBegin()                 { return support_.begin(); };
 	HashSet_iterator<Basisfunction*> supportEnd()                   { return support_.end();   };
@@ -87,14 +87,14 @@ public:
 
 private:
 	std::vector<double> min;  // lower left corner in typical 2 or 3 dimensions
-	std::vector<double> max;  // upper right corner 
+	std::vector<double> max;  // upper right corner
 	int id_;
 
 	HashSet<Basisfunction*> support_;
 	std::vector<int> support_ids_; // temporary storage for the read() method only
 
 	int overloadCount ;
-	
+
 };
 
 } // end namespace LR

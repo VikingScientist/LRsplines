@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 		cout << "Usage: " << argv[0] << " <inputfile>\n";
 		exit(1);
 	}
-	
+
 	ifstream inputfile;
 	inputfile.open(argv[1]);
 	if(!inputfile.is_open()) {

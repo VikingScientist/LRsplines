@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 	                  "   -dim <n>  dimension of the controlpoints\n" \
 	                  "   -vol      enforce trivariate volumetric test case\n" \
 	                  "   -help     display (this) help screen\n");
-	
+
 	// read input
 	for(int i=1; i<argc; i++) {
 		if(strcmp(argv[i], "-p1") == 0)
@@ -83,12 +83,12 @@ int main(int argc, char **argv) {
 		exit(2);
 	}
 
-		
+
 	// read the surface, or make one up if none specified
 	LRSplineSurface *lrs = NULL;
 	LRSplineVolume  *lrv = NULL;
 	if(inputFileName == NULL) {
-		// make a uniform integer knot vector 
+		// make a uniform integer knot vector
 		std::vector<double> knot_u(n1 + p1);
 		std::vector<double> knot_v(n2 + p2);
 		std::vector<double> knot_w(n3 + p3);
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
 			knot_v[i] = (i<p2) ? 0 : (i>n2) ? n2-p2+1 : i-p2+1;
 		for(int i=0; i<p3+n3; i++)
 			knot_w[i] = (i<p3) ? 0 : (i>n3) ? n3-p3+1 : i-p3+1;
-	
+
 		// create a list of random control points (all between 0.1 and 1.1)
 		int nCP  = (vol) ? n1*n2*n3 : n1*n2;
 		nCP     *= (dim+rat);
@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
 	lrfile.precision(16);
 	if(vol) lrfile << *lrv << endl;
 	else    lrfile << *lrs << endl;
-	
+
 	lrfile.close();
 
 	// test reading from file

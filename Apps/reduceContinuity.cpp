@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 		cout << "Usage: " << argv[0] << " <inputfile>\n";
 		exit(1);
 	}
-	
+
 	ifstream inputfile;
 	inputfile.open(argv[1]);
 	if(!inputfile.is_open()) {
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 	for(Meshline *m : lr.getAllMeshlines()) {
 		if(m->span_u_line_)
 			lr.insert_const_v_edge(m->const_par_, m->start_, m->stop_, p2-1);
-		else 
+		else
 			lr.insert_const_u_edge(m->const_par_, m->start_, m->stop_, p1-1);
 	}
 

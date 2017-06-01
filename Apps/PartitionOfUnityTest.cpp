@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 	                  "   -n2  <n> number of basis functions in second parametric direction\n" \
 	                  "   -dim <n> dimension of the controlpoints\n" \
 	                  "   -help    display (this) help information\n");
-	
+
 	// read input
 	for(int i=1; i<argc; i++) {
 		if(strcmp(argv[i], "-p1") == 0)
@@ -69,11 +69,11 @@ int main(int argc, char **argv) {
 
 	// create a list of random control points (all between 0.1 and 1.1)
 	int k=0;
-	for(int j=0; j<n2; j++) 
-		for(int i=0; i<n1; i++) 
+	for(int j=0; j<n2; j++)
+		for(int i=0; i<n1; i++)
 			for(int d=0; d<dim+rat; d++)
 				cp[k++] = ((i*2+j*3+d*5) % 13) / 13.0 + 0.1;  // rational weights also random and thus we need >0
-		
+
 	// make the LR B-spline surface
 	LRSplineSurface lr(n1, n2, p1, p2, knot_u.begin(), knot_v.begin(), cp.begin(), dim, rat);
 
@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
 	vector<double> par_v_values;
 	for(double u=0; u<=n1-p1+1; u+=0.5) {
 		for(double v=0; v<=n2-p2+1; v+=0.5) {
-			
+
 			vector<vector<double> > lr_basis;
 			lr.computeBasis(u,v, lr_basis, 2);
 			double sum         = 0;

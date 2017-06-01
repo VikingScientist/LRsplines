@@ -46,7 +46,7 @@ public:
 	}
 	virtual ~LRSplineSurface();
 	LRSplineSurface* copy() const;
-		
+
 	// surface evaluation
 #ifdef HAS_GOTOOLS
 	virtual void point(Go::Point &pt, double u, double v, int iEl=-1) const;
@@ -69,7 +69,7 @@ public:
 	                   int derivs=0,
 	                   int iEl=-1 ) const;
 	int getElementContaining(double u, double v) const;
-	// TODO: get rid of the iEl argument in evaluation signatures - it's too easy to mess it up (especially with derivatives at multiple-knot boundaries). 
+	// TODO: get rid of the iEl argument in evaluation signatures - it's too easy to mess it up (especially with derivatives at multiple-knot boundaries).
 	//       Try and sort the Elements after all refinements and binary search for the containing point in logarithmic time
 
 	// refinement functions
@@ -103,7 +103,7 @@ public:
 	void updateSupport(Basisfunction *f,
 	                   std::vector<Element*>::iterator start,
 	                   std::vector<Element*>::iterator end ) ;
-	
+
 	// common get methods
 	void getGlobalKnotVector      (std::vector<double> &knot_u, std::vector<double> &knot_v) const;
 	void getGlobalUniqueKnotVector(std::vector<double> &knot_u, std::vector<double> &knot_v) const;
@@ -164,7 +164,7 @@ private:
 	          typename RandomIterator3>
 	void initCore(int n1, int n2, int order_u, int order_v, RandomIterator1 knot_u, RandomIterator2 knot_v, RandomIterator3 coef, int dim, bool rational=false) {
 		// sanity check input
-		if(n1 < order_u || 
+		if(n1 < order_u ||
 		   n2 < order_v) {
 			std::cerr << "Error: n<p in LRSplineSurface constructor\n";
 			// really ought to throw exception here, but havent the framework
@@ -239,7 +239,7 @@ private:
 	void aPosterioriFixElements();
 	void split(bool insert_in_u, Basisfunction* b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
 	Meshline* insert_line(bool const_u, double const_par, double start, double stop, int multiplicity);
-	
+
 	std::vector<Meshline*> meshline_;
 
 	// plotting parameters

@@ -22,7 +22,7 @@ namespace LR {
 	typedef boost::shared_ptr<LR::Basisfunction> BasisPointer;
 	typedef boost::shared_ptr<LR::MeshRectangle> MeshRectPointer;
 	typedef boost::shared_ptr<LR::Meshline>      MeshlinePointer;
-#else 
+#else
 	typedef std::shared_ptr<LR::Element>         ElementPointer;
 	typedef std::shared_ptr<LR::Basisfunction>   BasisPointer;
 	typedef std::shared_ptr<LR::MeshRectangle>   MeshRectPointer;

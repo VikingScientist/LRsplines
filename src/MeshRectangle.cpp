@@ -43,9 +43,9 @@ MeshRectangle::MeshRectangle(double start_u,
 	start_[0]     = start_u;
 	start_[1]     = start_v;
 	start_[2]     = start_w;
-	stop_[0]      = stop_u; 
-	stop_[1]      = stop_v; 
-	stop_[2]      = stop_w; 
+	stop_[0]      = stop_u;
+	stop_[1]      = stop_v;
+	stop_[2]      = stop_w;
 	multiplicity_ =  multiplicity;
 	constDir_     = -1;
 
@@ -62,7 +62,7 @@ MeshRectangle::~MeshRectangle() {
 
 MeshRectangle* MeshRectangle::copy() const {
 	 MeshRectangle *returnvalue     = new MeshRectangle();
-	 
+
 	 returnvalue->start_        = this->start_; // apperently vector::operator=() takes a deep copy
 	 returnvalue->stop_         = this->stop_ ;
 	 returnvalue->multiplicity_ = this->multiplicity_;
@@ -154,7 +154,7 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 
 
 	// for both variable indices... i=0 corresponds to checking everything left-right (direction v1),
-	// i=1 is for checking everything up-down (direction v2). 
+	// i=1 is for checking everything up-down (direction v2).
 	for(int i=0; i<2; i++) {
 		int j = 1-i; // 0 or 1
 		/*
@@ -169,7 +169,7 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 		if((stop_[v[i]]  == rect->start_[v[i]] ||
 		    start_[v[i]] == rect->stop_[v[i]]  )) {
 
-			if(start_[v[j]] == rect->start_[v[j]]  && 
+			if(start_[v[j]] == rect->start_[v[j]]  &&
 			   stop_[v[j]]  == rect->stop_[v[j]]  ) {
 				double min = std::min(start_[v[i]], rect->start_[v[i]]);
 				double max = std::max(stop_[v[i]],  rect->stop_[v[i]] );
@@ -185,18 +185,18 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 					return 5;
 			/*
 		 	*    ADD ELONGATED RECT
-		 	* y3 +-------+                
+		 	* y3 +-------+
 		 	* y2 |       +------+         +-------+------+
-		 	*    |       |      |   =>    |              | 
+		 	*    |       |      |   =>    |              |
 		 	* y1 +-------+      |         +-------+------+
 		 	*            |      |                new one
-		 	* y0         +------+               
+		 	* y0         +------+
 			*   x0      x1     x3
 		 	*/
 
-			} else if((start_[v[j]] < rect->start_[v[j]]   && 
+			} else if((start_[v[j]] < rect->start_[v[j]]   &&
 			           stop_[v[j]]  < rect->stop_[v[j]] ) ||
-			          (start_[v[j]] > rect->start_[v[j]]   && 
+			          (start_[v[j]] > rect->start_[v[j]]   &&
 			          stop_[v[j]]  > rect->stop_[v[j]]  )) {
 				double x0 = std::min(rect->start_[v[i]], start_[v[i]]);
 				double x3 = std::max(rect->stop_[v[i]],  stop_[v[i]] );
@@ -260,13 +260,13 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 
 	/*
 	 *     DO NOTHING
-	 *          +--+               +--+          +----+      
+	 *          +--+               +--+          +----+
 	 *          |  |               |  |          |    |
 	 *     +----+--+----+     +----+--+     +----+----+
 	 *     |    |  |    |     |    |  |     |    |    |
 	 *     +----+--+----+     +----+--+     |    |    |
-	 *          |  |               |  |     +----+----+ 
-	 *          +--+               +--+     
+	 *          |  |               |  |     +----+----+
+	 *          +--+               +--+
 	 *        note that this is after fixes above
 	 */
 	if((rect->stop_[v1]  >=       stop_[v1]   &&
@@ -284,7 +284,7 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 	 *  y3  +-------+                        +--+
 	 *      |       |                        |  |
 	 *  y2  |    +--+----+           y2 +----+--+----+
-	 *      |    |  |    |      =>      |    |  |    | 
+	 *      |    |  |    |      =>      |    |  |    |
 	 *  y1  +----+--+    |           y1 +----+--+----+
 	 *           |       |                   |  |
 	 *  y0       +-------+                   +--+
@@ -332,7 +332,7 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 	}
 	if(addThisToNewGuys) {
 		// std::cout << "Moved: " << *this << std::endl;
-		if(addUniqueRect(newGuys, this)) 
+		if(addUniqueRect(newGuys, this))
 			return 3;
 		else
 			return 6;
@@ -345,13 +345,13 @@ bool MeshRectangle::splits(Element *el) const {
 		std::cerr << "MeshRectangle::splits(Element*) - constDir_ not set on meshrectangle\n";
 		exit(3421);
 	}
-	
+
 	int c1 = constDir_; // constant index
 	int v1 = (c1+1)%3;  // first variable index
 	int v2 = (c1+2)%3;  // second variable index
 
-	if(el->getParmin(c1) < start_[c1]  && start_[c1] < el->getParmax(c1) && 
-	   start_[v1] <= el->getParmin(v1) && el->getParmax(v1) <= stop_[v1] && 
+	if(el->getParmin(c1) < start_[c1]  && start_[c1] < el->getParmax(c1) &&
+	   start_[v1] <= el->getParmin(v1) && el->getParmax(v1) <= stop_[v1] &&
 	   start_[v2] <= el->getParmin(v2) && el->getParmax(v2) <= stop_[v2])
 		return true;
 
@@ -363,13 +363,13 @@ bool MeshRectangle::splits(Basisfunction *basis) const {
 		std::cerr << "MeshRectangle::splits(Basisfunction*) - constDir_ not set on meshrectangle\n";
 		exit(3421);
 	}
-	
+
 	int c1 = constDir_; // constant index
 	int v1 = (c1+1)%3;  // first variable index
 	int v2 = (c1+2)%3;  // second variable index
 
-	if(basis->getParmin(c1) < start_[c1]  && start_[c1] < basis->getParmax(c1) && 
-	   start_[v1] <= basis->getParmin(v1) && basis->getParmax(v1) <= stop_[v1] && 
+	if(basis->getParmin(c1) < start_[c1]  && start_[c1] < basis->getParmax(c1) &&
+	   start_[v1] <= basis->getParmin(v1) && basis->getParmax(v1) <= stop_[v1] &&
 	   start_[v2] <= basis->getParmin(v2) && basis->getParmax(v2) <= stop_[v2])
 		return true;
 

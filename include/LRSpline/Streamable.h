@@ -9,7 +9,7 @@ class Streamable {
 public:
 	Streamable() {};
 	virtual ~Streamable() {};
-	
+
 	virtual void read(std::istream& is)        = 0;
 	virtual void write(std::ostream& os) const = 0;
 
