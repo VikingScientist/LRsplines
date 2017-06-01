@@ -29,7 +29,7 @@ public:
 	// constructors and destructors
 	LRSplineSurface();
 #ifdef HAS_GOTOOLS
-	LRSplineSurface(Go::SplineSurface *surf);
+	explicit LRSplineSurface(Go::SplineSurface *surf);
 #endif
 	LRSplineSurface(int n1, int n2, int order_u, int order_v);
 	LRSplineSurface(int n1, int n2, int order_u, int order_v, double *knot_u, double *knot_v);
