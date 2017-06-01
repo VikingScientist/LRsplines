@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
   for(auto d : knots)
     cout << d << endl;
   // manually reverse knots (0,1) -> (1,0)
-  for(int i=0; i<knots.size(); i++)
+  for(size_t i=0; i<knots.size(); i++)
     knots[i] = 1-knots[i];
 
   // match on other side
