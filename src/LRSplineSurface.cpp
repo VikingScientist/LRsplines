@@ -82,7 +82,7 @@ LRSplineSurface::LRSplineSurface(Go::SplineSurface *surf) {
  * \param knot_u The first knot vector consisting of n1+order_u elements
  * \param knot_v The second knot vector consisting of n2+order_v elements
  * \param coef Pointer to a list of n1*n2 control points describing the surface
- * \param dim The number of components of the control points, 2 for plane geometries, 3 for surfaces in 3D space 
+ * \param dim The number of components of the control points, 2 for plane geometries, 3 for surfaces in 3D space
  * \param rational True if this is a NURBS surface. If so, the last component of the control points is treated as the weight
  ***************************************************************************************************************************/
 /*
@@ -136,7 +136,7 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v) {
 #endif
 	initMeta();
 	// sanity check input
-	if(n1 < order_u || 
+	if(n1 < order_u ||
 	   n2 < order_v) {
 		std::cerr << "Error: n<p in LRSplineSurface constructor\n";
 		// really ought to throw exception here, but havent the framework
@@ -159,7 +159,7 @@ LRSplineSurface::LRSplineSurface(int n1, int n2, int order_u, int order_v) {
 			coef[k++] = grev_u[i];
 			coef[k++] = grev_v[j];
 	}
-	
+
 	// generate the uniform knot vector
 	initCore(n1, n2, order_u, order_v, knot_u.begin(), knot_v.begin(), coef.begin(), 2, false);
 }
@@ -186,7 +186,7 @@ void LRSplineSurface::initMeta() {
 
 /************************************************************************************************************************//**
  * \brief Destructor. Frees up all memory consumed by this LRSplineSurface
- * \details This deletes all Basisfunction, Element and Meshline used by this class. All pointers to these objects are 
+ * \details This deletes all Basisfunction, Element and Meshline used by this class. All pointers to these objects are
  *          rendered invalid
  ***************************************************************************************************************************/
 LRSplineSurface::~LRSplineSurface() {
@@ -210,22 +210,22 @@ LRSplineSurface* LRSplineSurface::copy() const {
 
 	// flat list to make it quicker to update pointers from Basisfunction to Element and back again
 	LRSplineSurface *returnvalue = new LR::LRSplineSurface();
-	
+
 	for(Basisfunction* b : basis_) {
 		Basisfunction *newB = b->copy();
 		returnvalue -> basis_.insert(newB);
 		basisVector.push_back(newB);
 	}
-	
+
 	for(Element *e : element_) {
 		Element* newEl = e->copy();
 		returnvalue -> element_.push_back(newEl);
 		newEl->updateBasisPointers(basisVector);
 	}
-	
+
 	for(Meshline *m : meshline_)
 		returnvalue -> meshline_.push_back(m->copy());
-	
+
 	returnvalue->rational_         = this->rational_;
 	returnvalue->dim_              = this->dim_;
 	returnvalue->order_[0]          = this->order_[0];
@@ -238,7 +238,7 @@ LRSplineSurface* LRSplineSurface::copy() const {
 	returnvalue->doCloseGaps_      = this->doCloseGaps_;
 	returnvalue->doAspectRatioFix_ = this->doAspectRatioFix_;
 	returnvalue->maxAspectRatio_   = this->maxAspectRatio_;
-	
+
 	return returnvalue;
 }
 
@@ -250,8 +250,8 @@ LRSplineSurface* LRSplineSurface::copy() const {
  * \param u The u-coordinate on which to evaluate the surface
  * \param v The v-coordinate on which to evaluate the surface
  * \param iEl The element index which this point is contained in. If used will speed up computational efficiency
- * \param u_from_right True if first coordinate should be evaluated in the limit from the right 
- * \param v_from_right True if second coordinate should be evaluated in the limit from the right 
+ * \param u_from_right True if first coordinate should be evaluated in the limit from the right
+ * \param v_from_right True if second coordinate should be evaluated in the limit from the right
  ***************************************************************************************************************************/
 void LRSplineSurface::point(Go::Point &pt, double u, double v, int iEl, bool u_from_right, bool v_from_right) const {
 	std::vector<std::vector<double> > res;
@@ -339,7 +339,7 @@ Go::SplineCurve* LRSplineSurface::edgeCurve(parameterEdge edge,
   return new Go::SplineCurve(Go::BsplineBasis(order(dir), knots.begin(), knots.end()),
                              cpts.begin(), functions.front()->dim(), false);
 }
-#endif 
+#endif
 
 /************************************************************************************************************************//**
  * \brief Evaluate the surface at a point (u,v)
@@ -347,8 +347,8 @@ Go::SplineCurve* LRSplineSurface::edgeCurve(parameterEdge edge,
  * \param u The u-coordinate on which to evaluate the surface
  * \param v The v-coordinate on which to evaluate the surface
  * \param iEl The element index which this point is contained in. If used will speed up computational efficiency
- * \param u_from_right True if first coordinate should be evaluated in the limit from the right 
- * \param v_from_right True if second coordinate should be evaluated in the limit from the right 
+ * \param u_from_right True if first coordinate should be evaluated in the limit from the right
+ * \param v_from_right True if second coordinate should be evaluated in the limit from the right
  ***************************************************************************************************************************/
 void LRSplineSurface::point(std::vector<double> &pt, double u, double v, int iEl, bool u_from_right, bool v_from_right) const {
 	std::vector<std::vector<double> > res;
@@ -404,7 +404,7 @@ void LRSplineSurface::point(std::vector<std::vector<double> > &pts, double u, do
 	pts.resize((derivs+1)*(derivs+2)/2);
 	for(uint i=0; i<pts.size(); i++)
 		pts[i].resize(dim_, 0);
-	if(u < start_[0] || end_[0] < u || 
+	if(u < start_[0] || end_[0] < u ||
 	   v < start_[1] || end_[1] < v)
 		return;
 
@@ -444,10 +444,10 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 
 	int i=0;
 	//element_[i]->write(std::cout);
-	
+
 	for(it=itStart; it!=itStop; ++it, ++i) {
 		(*it)->evaluate(values, param_u, param_v, 2, param_u!=end_[0], param_v!=end_[1]);
-	
+
 		result.basisValues[i]    = values[0];
 		result.basisDerivs_u[i]  = values[1];
 		result.basisDerivs_v[i]  = values[2];
@@ -477,11 +477,11 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->constSupportEnd();
 	int nPts= (iEl<0) ? basis_.size()  : element_[iEl]->nBasisFunctions();
 	result.prepareDerivs(param_u, param_v, 0, -1, nPts);
-	
+
 	int i=0;
 	for(it=itStart; it!=itStop; ++it, ++i) {
 		(*it)->evaluate(values, param_u, param_v, 1, param_u!=end_[0], param_v!=end_[1]);
-		
+
 		result.basisValues[i]   = values[0];
 		result.basisDerivs_u[i] = values[1];
 		result.basisDerivs_v[i] = values[2];
@@ -540,7 +540,7 @@ void LRSplineSurface::computeBasis (double param_u,
 	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->constSupportBegin();
 	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->constSupportEnd();
 	int nPts= (iEl<0) ? basis_.size()  : element_[iEl]->nBasisFunctions();
-	
+
 	result.resize(nPts);
 	int i=0;
 	for(it=itStart; it!=itStop; ++it, ++i)
@@ -580,7 +580,7 @@ void LRSplineSurface::createElementCache() const {
 
 /************************************************************************************************************************//**
  * \brief Get the element index of the element containing the parametric point (u,v)
- * \param u The u-coordinate 
+ * \param u The u-coordinate
  * \param v The v-coordinate
  * \return The index of the element which contains (u,v)
  ***************************************************************************************************************************/
@@ -605,7 +605,7 @@ int LRSplineSurface::getElementContaining(double u, double v) const {
 /************************************************************************************************************************//**
  * \brief Used in refinement, get the minimum span meshlines that will split at least one Basisfunction on this element
  * \param iEl The element to refine
- * \param[out] lines If the width/height ratio of the element is large, one Meshline is added to the list, if not then two 
+ * \param[out] lines If the width/height ratio of the element is large, one Meshline is added to the list, if not then two
  *                   lines will be added to the list
  * \details The minimum span picks the Basisfunction with the smallest parametric support and uses this as a length measure.
  *          If several Basisfunction have equally small support, it will pick the one centered the most around the given element
@@ -676,10 +676,10 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 		}
 	}
 
-	if(!only_insert_span_v_line) 
+	if(!only_insert_span_v_line)
 		lines.push_back(new Meshline(true, (e->vmin() + e->vmax())/2.0, umin, umax, 1));
-		
-	if(!only_insert_span_u_line) 
+
+	if(!only_insert_span_u_line)
 		lines.push_back(new Meshline(false, (e->umin() + e->umax())/2.0, vmin, vmax, 1));
 
 }
@@ -687,7 +687,7 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 /************************************************************************************************************************//**
  * \brief Used in refinement, get the full span meshlines that will split all Basisfunction on this element
  * \param iEl The element to refine
- * \param[out] lines If the width/height ratio of the element is large, one Meshline is added to the list, if not then two 
+ * \param[out] lines If the width/height ratio of the element is large, one Meshline is added to the list, if not then two
  *                   lines will be added to the list
  * \details The fullspan will iterate over all Basisfunction with support on this element, and use the union of their support
  *          when deciding the Meshline length.
@@ -707,10 +707,10 @@ void LRSplineSurface::getFullspanLines(int iEl, std::vector<Meshline*>& lines) {
 		vmin = (vmin > (*b).getParmin(1)) ? (*b).getParmin(1) : vmin;
 		vmax = (vmax < (*b).getParmax(1)) ? (*b).getParmax(1) : vmax;
 	}
-	if(!only_insert_span_v_line) 
+	if(!only_insert_span_v_line)
 		lines.push_back(new Meshline(true, (e->vmin() + e->vmax())/2.0, umin, umax, 1));
-		
-	if(!only_insert_span_u_line) 
+
+	if(!only_insert_span_u_line)
 		lines.push_back(new Meshline(false, (e->umin() + e->umax())/2.0, vmin, vmax, 1));
 }
 
@@ -757,7 +757,7 @@ void LRSplineSurface::getStructMeshLines(Basisfunction *b, std::vector<Meshline*
 }
 
 /************************************************************************************************************************//**
- * \brief Refine one Basisfunction 
+ * \brief Refine one Basisfunction
  * \param index The Basisfunction to refine
  * \details This will refine a basisfunction in accordance with the structured mesh rules
  ***************************************************************************************************************************/
@@ -767,10 +767,10 @@ void LRSplineSurface::refineBasisFunction(int index) {
 }
 
 /************************************************************************************************************************//**
- * \brief Refine several Basisfunction 
+ * \brief Refine several Basisfunction
  * \param indices The Basisfunction to refine
  * \details This will refine a basisfunction in accordance with the structured mesh rules. Note that the length of all lines
- *          will be precomputed before any of them are inserted. This means that you will get a different result from calling 
+ *          will be precomputed before any of them are inserted. This means that you will get a different result from calling
  *          this function, rather than calling refineBasisFunction(int) several times.
  ***************************************************************************************************************************/
 void LRSplineSurface::refineBasisFunction(const std::vector<int> &indices) {
@@ -799,7 +799,7 @@ void LRSplineSurface::refineBasisFunction(const std::vector<int> &indices) {
 	aPosterioriFixes();
 
 	/* exit cleanly by deleting all temporary new lines */
-	for(uint i=0; i<newLines.size(); i++) 
+	for(uint i=0; i<newLines.size(); i++)
 		delete newLines[i];
 }
 
@@ -841,7 +841,7 @@ void LRSplineSurface::refineElement(const std::vector<int> &indices) {
 	aPosterioriFixes();
 
 	/* exit cleanly by deleting all temporary new lines */
-	for(uint i=0; i<newLines.size(); i++) 
+	for(uint i=0; i<newLines.size(); i++)
 		delete newLines[i];
 }
 
@@ -860,7 +860,7 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 			i++;
 		}
 	} else {
-		for(uint i=0; i<element_.size(); i++) 
+		for(uint i=0; i<element_.size(); i++)
 			errors.push_back(IndexDouble(errPerElement[i], i));
 	}
 
@@ -872,7 +872,7 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 	for(uint i=0; i<errors.size(); i++) {
 		if(refStrat_ == LR_MINSPAN)
 			getMinspanLines(errors[i].second, newLines[i]);
-		else if(refStrat_ == LR_FULLSPAN) 
+		else if(refStrat_ == LR_FULLSPAN)
 			getFullspanLines(errors[i].second, newLines[i]);
 		else if(refStrat_ == LR_STRUCTURED_MESH) {
 			Basisfunction *b = getBasisfunction(errors[i].second);
@@ -897,10 +897,11 @@ void LRSplineSurface::refineByDimensionIncrease(const std::vector<double> &errPe
 	aPosterioriFixes();
 
 	/* exit cleanly by deleting all temporary new lines */
-	for(uint i=0; i<newLines.size(); i++) 
-		for(uint j=0; j<newLines[i].size(); j++) 
+	for(uint i=0; i<newLines.size(); i++)
+		for(uint j=0; j<newLines[i].size(); j++)
 			delete newLines[i][j];
 }
+
 
 void LRSplineSurface::aPosterioriFixes()  {
 	std::vector<Meshline*> *newLines = NULL;
@@ -1097,12 +1098,12 @@ void LRSplineSurface::enforceMaxAspectRatio(std::vector<Meshline*>* newLines) {
 			bool insert_const_v =  vmax-vmin > maxAspectRatio_*(umax-umin);
 			if( insert_const_u || insert_const_v ) {
 				std::vector<Meshline*> splitLines; // should always contain exactly one meshline on function return
-				if(refStrat_ == LR_MINSPAN) 
+				if(refStrat_ == LR_MINSPAN)
 					getMinspanLines(i, splitLines);
 				else
 					getFullspanLines(i, splitLines);
 
-				
+
 				Meshline *m, *msplit;
 				msplit = splitLines.front();
 
@@ -1142,14 +1143,14 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 		// if newline overlaps any existing ones (may be multiple existing ones)
 		// let newline be the entire length of all merged and delete the unused ones
 
-		if(meshline_[i]->is_spanning_u() != const_u && fabs(meshline_[i]->const_par_-const_par)<DOUBLE_TOL && 
+		if(meshline_[i]->is_spanning_u() != const_u && fabs(meshline_[i]->const_par_-const_par)<DOUBLE_TOL &&
 		   meshline_[i]->start_ <= stop && meshline_[i]->stop_ >= start)  { // meshline_[i] overlaps with newline
 
-			if(meshline_[i]->start_ <= start && 
+			if(meshline_[i]->start_ <= start &&
 			   meshline_[i]->stop_  >= stop ) { // newline completely contained in meshline_[i]
-			   
+
 				if(meshline_[i]->multiplicity_ < newline->multiplicity_) { // increasing multiplicity
-					if(meshline_[i]->start_ == start && 
+					if(meshline_[i]->start_ == start &&
 					   meshline_[i]->stop_  == stop ) { // increasing the mult of the entire line
 
 						// keeping newline, getting rid of the old line
@@ -1157,7 +1158,7 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 						meshline_.erase(meshline_.begin() + i);
 						i--;
 
-					} else { // increasing multiplicity of partial line 
+					} else { // increasing multiplicity of partial line
 						// do nothing. Keep the entire length meshline_[i], and add newline
 
 					}
@@ -1191,7 +1192,7 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 					delete meshline_[i];
 					meshline_.erase(meshline_.begin() + i);
 					i--;
-				} 
+				}
 
 			}
 		}
@@ -1399,7 +1400,7 @@ void LRSplineSurface::updateSupport(Basisfunction *f,
 #endif
 	std::vector<Element*>::iterator it;
 	for(it=start; it!=end; it++)
-		if(f->addSupport(*it)) // this tests for overlapping as well as updating  
+		if(f->addSupport(*it)) // this tests for overlapping as well as updating
 			(*it)->addSupportFunction(f);
 }
 
@@ -1419,7 +1420,7 @@ bool LRSplineSurface::isLinearIndepByOverloading(bool verbose) {
 	for(Basisfunction *b : basis_)
 		if(b->isOverloaded())
 			overloaded.push_back(b);
-	
+
 	int lastOverloadCount = overloaded.size();
 	int iterationCount = 0 ;
 	do {
@@ -1432,7 +1433,7 @@ bool LRSplineSurface::isLinearIndepByOverloading(bool verbose) {
 		singleElms.clear();
 		multipleElms.clear();
 		for(uint i=0; i<overloaded.size(); i++)
-			for(Element* e : overloaded[i]->support()) 
+			for(Element* e : overloaded[i]->support())
 				e->incrementOverloadCount();
 		for(uint i=0; i<element_.size(); i++) {
 			if(element_[i]->getOverloadCount() > 1)
@@ -1469,7 +1470,7 @@ bool LRSplineSurface::isLinearIndepByOverloading(bool verbose) {
 			setElementColor(0.9, 0.3, 0.15);
 			writePostscriptElements(out, 2,2,true,  &multipleElms);
 			out.close();
-		
+
 			sprintf(filename, "functions_%03d.eps", iterationCount);
 			out.open(filename);
 			setBasisColor(0.6, 0.6, 0.6);
@@ -1523,7 +1524,7 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
 	unsigned long long prime    = 0x7FFFFFFF;
 
-	std::vector<std::vector<unsigned long long> > C;  // rational projection matrix 
+	std::vector<std::vector<unsigned long long> > C;  // rational projection matrix
 
 	// scaling factor to ensure that all knots are integers (assuming all multiplum of smallest knot span)
 	double smallKnotU = DBL_MAX;
@@ -1543,7 +1544,7 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		int startU, startV;
 		std::vector<double> locKnotU((*b)[0].begin(), (*b)[0].end());
 		std::vector<double> locKnotV((*b)[1].begin(), (*b)[1].end());
-		
+
 		for(startU=knots_u.size(); startU-->0; )
 			if(knots_u[startU] == (*b)[0][0]) break;
 		for(int j=0; j<order_[0]; j++) {
@@ -1635,7 +1636,7 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		}
 		std::cout << std::endl;
 	}
-	
+
 	// gauss-jordan elimination
 	int zeroColumns = 0;
 	for(uint i=0; i<C.size() && i+zeroColumns<C[i].size(); i++) {
@@ -1689,7 +1690,7 @@ bool LRSplineSurface::isLinearIndepByMappingMatrix(bool verbose) const {
 		std::cout << "Matrix size : " << nmb_bas << " x " << n1*n2 << std::endl;
 		std::cout << "Matrix rank : " << rank << std::endl;
 	}
-	
+
 	return rank == nmb_bas;
 }
 
@@ -1728,7 +1729,7 @@ void LRSplineSurface::getNullSpace(std::vector<std::vector<boost::rational<long 
 		int startU, startV;
 		std::vector<double> locKnotU((*b)[0].begin(), (*b)[0].end());
 		std::vector<double> locKnotV((*b)[1].begin(), (*b)[1].end());
-		
+
 		for(startU=knots_u.size(); startU-->0; )
 			if(knots_u[startU] == (*(b))[0][0]) break;
 		for(int j=0; j<order_[0]; j++) {
@@ -1868,13 +1869,13 @@ bool LRSplineSurface::isLinearIndepByFloatingPointMappingMatrix(bool verbose) co
 	bool fullVerbose   = fullDim < 30  && nmb_bas < 50;
 	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
 
-	std::vector<std::vector<double > > C;  // rational projection matrix 
+	std::vector<std::vector<double > > C;  // rational projection matrix
 
 	for(Basisfunction *b : basis_)  {
 		int startU, startV;
 		std::vector<double> locKnotU((*b)[0].begin(), (*b)[0].end());
 		std::vector<double> locKnotV((*b)[1].begin(), (*b)[1].end());
-		
+
 		for(startU=knots_u.size(); startU-->0; )
 			if(knots_u[startU] == (*b)[0][0]) break;
 		for(int j=0; j<order_[0]; j++) {
@@ -2020,7 +2021,7 @@ bool LRSplineSurface::isLinearIndepByFloatingPointMappingMatrix(bool verbose) co
 		std::cout << "Matrix size : " << nmb_bas << " x " << n1*n2 << std::endl;
 		std::cout << "Matrix rank : " << rank << std::endl;
 	}
-	
+
 	return rank == nmb_bas;
 }
 
@@ -2047,7 +2048,7 @@ double LRSplineSurface::makeIntegerKnots() {
 		m->stop_      = floor(m->stop_     /scale + 0.5);
 	}
 
-	// scale all element values 
+	// scale all element values
 	Element *e;
 	for(uint i=0; i<element_.size(); i++) {
 		e = element_[i];
@@ -2064,7 +2065,7 @@ double LRSplineSurface::makeIntegerKnots() {
 		for(int j=0; j<order_[1]+1; j++)
 			(*b)[1][j] = floor((*b)[1][j]/scale + 0.5);
 	}
-	
+
 	// scale all LRSplineSurface values
 	start_[0] = floor(start_[0]/scale + 0.5);
 	start_[1] = floor(start_[1]/scale + 0.5);
@@ -2080,7 +2081,7 @@ double LRSplineSurface::makeIntegerKnots() {
  * \param diffV Derivative space for differentiation wrt v
  * \details This generates two brand new LRSplineSurface objects which has lower polynomial degree, and lower continuity, but
  *          meshlines in the same place. For d/du space, all constant-v meshlines have reduced continuity by 1 and the polynomial
- *          degree in u-direction is reduced by 1, while v-direction remains unchanged. 
+ *          degree in u-direction is reduced by 1, while v-direction remains unchanged.
  ***************************************************************************************************************************/
 std::vector<LRSplineSurface*> LRSplineSurface::getDerivativeSpace() const {
 	int p1 = order_[0];
@@ -2123,10 +2124,10 @@ std::vector<LRSplineSurface*> LRSplineSurface::getDerivativeSpace() const {
  * \brief Gets the basis functions for mixed finite element codes by generating different polynomial degree and/or continutity
  * \param raise_p1 polynomial degree to raise first parametric direction (possibly negative)
  * \param raise_p2 polynomial degree to raise first parametric direction (possibly negative)
- * \param lower_k1 lower continuity by this amount in first parametric direction 
- * \param lower_k2 lower continuity by this amount in second parametric direction 
+ * \param lower_k1 lower continuity by this amount in first parametric direction
+ * \param lower_k2 lower continuity by this amount in second parametric direction
  * \details This generates a brand new LRSplineSurface objects which has different polynomial degree and continuity, but
- *          meshlines in the same place. 
+ *          meshlines in the same place.
  ***************************************************************************************************************************/
 LRSplineSurface* LRSplineSurface::getDerivedBasis(int raise_p1, int raise_p2, size_t lower_k1, size_t lower_k2, int dim) const {
 	// error test input
@@ -2305,7 +2306,7 @@ void LRSplineSurface::getSupportElements(std::vector<int> &result, const std::ve
 
 void LRSplineSurface::getDiagonalElements(std::vector<int> &result) const  {
 	result.clear();
-	for(uint i=0; i<element_.size(); i++) 
+	for(uint i=0; i<element_.size(); i++)
 		if(element_[i]->umin() == element_[i]->vmin())
 			result.push_back(i);
 }
@@ -2368,7 +2369,7 @@ void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoin
 			} else {
 				break;
 			}
-		      
+
 			std::vector<double> newRowU(rowU.size()+1, 0);
 			for(uint k=0; k<rowU.size(); k++) {
 				#define U(x) ( knotU[x+k] )
@@ -2385,7 +2386,7 @@ void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoin
 			knotU.insert(knotU.begin()+newI, z);
 			rowU = newRowU;
 		}
-	
+
 		min = el->vmin();
 		max = el->vmax();
 		while(knotV[++startV] < min);
@@ -2402,7 +2403,7 @@ void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoin
 			} else {
 				break;
 			}
-		      
+
 			std::vector<double> newRowV(rowV.size()+1, 0);
 			for(uint k=0; k<rowV.size(); k++) {
 				#define V(x) ( knotV[x+k] )
@@ -2419,7 +2420,7 @@ void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoin
 			knotV.insert(knotV.begin()+newI, z);
 			rowV = newRowV;
 		}
-		
+
 		int ip = 0;
 		for(int v=startV; v<startV+order_[1]; v++)
 			for(int u=startU; u<startU+order_[0]; u++)
@@ -2447,7 +2448,7 @@ void LRSplineSurface::getBezierExtraction(int iEl, std::vector<double> &extractM
 			row[d].push_back(1);
 		}
 
-		
+
 		for(int d=0; d<2; d++) {
 
 			double min = el->getParmin(d);
@@ -2466,7 +2467,7 @@ void LRSplineSurface::getBezierExtraction(int iEl, std::vector<double> &extractM
 				} else {
 					break;
 				}
-				  
+
 				std::vector<double> newRow(row[d].size()+1, 0);
 				for(uint k=0; k<row[d].size(); k++) {
 					#define U(x) ( knot[d][x+k] )
@@ -2483,9 +2484,9 @@ void LRSplineSurface::getBezierExtraction(int iEl, std::vector<double> &extractM
 				knot[d].insert(knot[d].begin()+newI, z);
 				row[d] = newRow;
 			}
-	
+
 		}
-		
+
 		int colI = 0;
 		for(int v=start[1]; v<start[1]+order_[1]; v++)
 			for(int u=start[0]; u<start[0]+order_[0]; u++, colI++)
@@ -2506,7 +2507,7 @@ void LRSplineSurface::setBasisColor(double r, double g, double b)  {
 	basis_blue  = b;
 }
 
-void LRSplineSurface::setSelectedBasisColor(double r, double g, double b) { 
+void LRSplineSurface::setSelectedBasisColor(double r, double g, double b) {
 	selected_basis_red   = r;
 	selected_basis_green = g;
 	selected_basis_blue  = b;
@@ -2519,7 +2520,7 @@ void LRSplineSurface::read(std::istream &is) {
 	end_[1]   = -DBL_MAX;
 
 	// first get rid of comments and spaces
-	ws(is); 
+	ws(is);
 	char firstChar;
 	char buffer[1024];
 	firstChar = is.peek();
@@ -2538,7 +2539,7 @@ void LRSplineSurface::read(std::istream &is) {
 	is >> nElements;   ws(is);
 	is >> dim_;        ws(is);
 	is >> rational_;   ws(is);
-	
+
 	meshline_.resize(nMeshlines);
 	element_.resize(nElements);
 	std::vector<Basisfunction*> basisVector(nBasis);
@@ -2606,10 +2607,10 @@ void LRSplineSurface::write(std::ostream &os) const {
 	os << rational_ << "\n";
 
 	os << "# Basis functions:\n";
-	for(Basisfunction* b : basis_) 
+	for(Basisfunction* b : basis_)
 		os << *b << std::endl;
 	os << "# Mesh lines:\n";
-	for(Meshline* m : meshline_)  
+	for(Meshline* m : meshline_)
 		os << *m << std::endl;
 	os << "# Elements:\n";
 	for(Element* e : element_)
@@ -2640,7 +2641,7 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, std::ve
 	int dy = end_[1] - start_[1];
 	double scale = (dx>dy) ? 1000.0/dx : 1000.0/dy;
 	// set the duplicate-knot-line (dkl) display width
-	double dkl_range = (min_span_u>min_span_v) ? min_span_v*scale/6.0 : min_span_u*scale/6.0; 
+	double dkl_range = (min_span_u>min_span_v) ? min_span_v*scale/6.0 : min_span_u*scale/6.0;
 	int xmin = (start_[0] - dx/30.0)*scale;
 	int ymin = (start_[1] - dy/30.0)*scale;
 	int xmax = (end_[0]   + dx/30.0)*scale + dkl_range;
@@ -2741,7 +2742,7 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 	out << "%%CreationDate: " << date << std::endl;
 	out << "%%Origin: 0 0\n";
 	out << "%%BoundingBox: " << xmin << " " << ymin << " " << xmax << " " << ymax << std::endl;
-	
+
 	// Fill diagonal elements when refining
 	if(colorElements != NULL) {
 		out << element_red   << " ";
@@ -2811,7 +2812,7 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 		point(corner[1], element_[iEl]->umin(), element_[iEl]->vmax(), iEl);
 		point(corner[2], element_[iEl]->umax(), element_[iEl]->vmax(), iEl);
 		point(corner[3], element_[iEl]->umax(), element_[iEl]->vmin(), iEl);
-		
+
 		if(colorDiag && element_[iEl]->umin() == element_[iEl]->vmin()) {
 			out << ".5 setgray\n";
 			if(element_[iEl]->umin() == element_[iEl]->vmin()) {
@@ -2886,7 +2887,7 @@ void LRSplineSurface::writePostscriptMeshWithControlPoints(std::ostream &out, in
 	double scale = (dx>dy) ? 1000.0/dx : 1000.0/dy;
 
 	double circleSize = 15.0;
-	
+
 	// create the ellipse function
 	out << "/ellipse {\n";
 	out << "/endangle exch def\n";
@@ -2960,7 +2961,7 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 
 	double scaleSize = (max_du > max_dv) ? 1.0/max_du : 1.0/max_dv;
 	scaleSize *= 20.0;
-	
+
 	// create the ellipse function
 	out << "/ellipse {\n";
 	out << "/endangle exch def\n";

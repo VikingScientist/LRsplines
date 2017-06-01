@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
 	                  "   -vol        enforce a volumetric test case\n"\
 	                  "   -scheme <n> refinement scheme (0=FULLSPAN, 1=MINSPAN, 2=STRUCT)\n" \
 	                  "   -help    display (this) help information\n");
-	
+
 	// read input
 	for(int i=1; i<argc; i++) {
 		if(strcmp(argv[i], "-p") == 0)
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
 			out.open(filename);
 			if(scheme < 2)
 				lrs->writePostscriptElements(out, 2,2, true, &diagElms);
-			else 
+			else
 				lrs->writePostscriptElements(out, 2,2, true);
 			out.close();
 
@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
 			else
 				lrs->writePostscriptFunctionSpace(out);
 			out.close();
-			
+
 			out.open("dof.m", ios::app);
 			out << lrs->nBasisFunctions() << endl;
 			out.close();
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
 			out.close();
 		}
 	}
-	
+
 	vector<int> overloadedBasis;
 	vector<int> overloadedElements;
 	vector<int> multipleOverloadedElements;
@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
 	}
 	avgElementToBasis /= nElements;
 	avgSquareElementToBasis /= nElements;
-	
+
 	cout << "Some statistics: " << endl;
 	cout << "-------------------------------------------------------------" << endl;
 	cout << "Number of basisfunctions: " << nBasis           << endl;
@@ -264,13 +264,13 @@ int main(int argc, char **argv) {
 			meshfile.close();
 			cout << " mesh to mesh.eps and";
 		}
-		
+
 		ofstream lrfile;
 		lrfile.open("diagonal.lr");
 		if(vol) lrfile << *lrv << endl;
 		else    lrfile << *lrs << endl;
 		lrfile.close();
-		
+
 		cout << " diagonal.lr\n";
 	}
 }

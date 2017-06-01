@@ -47,7 +47,7 @@ public:
 	// common get methods
 
 	//! \brief returns the number of B-splines (basisfunctions) in this LR-spline object
-	int nBasisFunctions()    const { return basis_.size()  ; }; 
+	int nBasisFunctions()    const { return basis_.size()  ; };
 	//! \brief returns the number of elements
 	int nElements()          const { return element_.size(); };
 	//! \brief returns the number of components that the control points have (spatial dimension)
@@ -63,7 +63,7 @@ public:
 	//! \brief should always return false as rational LR splines is not yet implemented
 	bool rational()          const { return rational_      ; };
 
-	
+
 	// more funky get methods
 	void getEdgeFunctions(std::vector<Basisfunction*> &edgeFunctions, parameterEdge edge, int depth=1) const;
 	void getEdgeElements( std::vector<Element*>       &edgeElements,  parameterEdge edge             ) const;
@@ -86,7 +86,7 @@ public:
 	Basisfunction* getBasisfunction(int iBasis) {
 		if(iBasis<0 || iBasis>=basis_.size())
 			return NULL;
-		HashSet_iterator<Basisfunction*> it=basis_.begin(); 
+		HashSet_iterator<Basisfunction*> it=basis_.begin();
 		for(int i=0; i<iBasis; i++)
 			++it;
 		return *it;
@@ -94,7 +94,7 @@ public:
 	const Basisfunction* getBasisfunction(int iBasis) const {
 		if(iBasis<0 || iBasis>=basis_.size())
 			return NULL;
-		HashSet_const_iterator<Basisfunction*> it=basis_.begin(); 
+		HashSet_const_iterator<Basisfunction*> it=basis_.begin();
 		for(int i=0; i<iBasis; i++)
 			++it;
 		return *it;
@@ -179,7 +179,7 @@ protected:
 		}
 		return result;
 	}
-	
+
 };
 
 

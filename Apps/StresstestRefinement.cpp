@@ -20,9 +20,9 @@ int main(int argc, char **argv) {
 #endif
 
 	/* UNIFORM refinement
-	 * inserts global meshlines in a tensor product way, just stored within a 
+	 * inserts global meshlines in a tensor product way, just stored within a
 	 * LRSplineSurface object
-	 * 
+	 *
 	 * CORNER refinement
 	 * splits the bottom left corner by introducing 3 new corner functions for
 	 * each successively inserted cross. The knotlines are distributed uniformely
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 	                  "   -help      display (this) help screen\n"\
 	                  " <refine inputfile>\n"\
 	                  "   inputfile describing meshline insertions\n");
-	
+
 	// read input
 	for(int i=1; i<argc; i++) {
 		if(strcmp(argv[i], "-p1") == 0)
@@ -135,13 +135,13 @@ int main(int argc, char **argv) {
 	int k=0;
 	for(int i=0; i<nCP; i++) // 839 as a generator over Z_853 gives a period of 425. Should suffice
 		cp[k++] = (i*839 % 853) / 853.0 + 0.1;  // rational weights also random and thus we need >0
-		
+
 	// make two identical surfaces
 	LRSplineVolume  *lv=nullptr;
 	LRSplineSurface *lr=nullptr;
 	if(vol)
 		lv = new LRSplineVolume(n1, n2, n3, p1, p2, p3, knot_u.begin(), knot_v.begin(), knot_w.begin(), cp.begin(), dim, rat);
-	else                         
+	else
 		lr = new LRSplineSurface(n1, n2, p1, p2, knot_u.begin(), knot_v.begin(), cp.begin(), dim, rat);
 
 	// perform the actual refinement
@@ -293,7 +293,7 @@ int main(int argc, char **argv) {
 	}
 	avgElementToBasis       /= nElements;
 	avgSquareElementToBasis /= nElements;
-	
+
 	cout << "Some statistics: " << endl;
 	cout << "-------------------------------------------------------------" << endl;
 	cout << "Min number of Basisfuntion -> Element: " << minBasisToElement << endl;
@@ -309,7 +309,7 @@ int main(int argc, char **argv) {
 	cout << "Number of unique hashcodes           : " << basis.uniqueHashCodes() ;
 	cout <<                                      " (" << hashCodePercentage*100 << " %)"  << endl;
 
-	
+
 	if(dumpFile) {
 		cout << endl;
 		cout << "Written";
@@ -320,13 +320,13 @@ int main(int argc, char **argv) {
 			meshfile.close();
 			cout << " mesh to mesh.eps and";
 		}
-		
+
 		ofstream lrfile;
 		lrfile.open("stresstest.lr");
 		if(vol) lrfile << *lv << endl;
 		else    lrfile << *lr << endl;
 		lrfile.close();
-		
+
 		cout << " stresstest.lr\n";
 	}
 }

@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
 	parameters << "   -n   = { " << n1 << ", " << n2 << ", " << n3 << " }\n";
 	parameters << "   -it  = { " << it << " }\n";
 	parameters << "   -vol = { " << ((vol)?"true":"false") << " }\n";
-	
+
 	// read input
 	for(int i=1; i<argc; i++) {
 		if(strcmp(argv[i], "-p1") == 0) {
@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
 		int k=0;
 		for(int i=0; i<nCP; i++) // 839 as a generator over Z_853 gives a period of 425. Should suffice
 			cp[k++] = (i*839 % 853) / 853.0 + 0.1;  // rational weights also random and thus we need >0
-			
+
 		// make two spline objects
 		if(vol) {
 			lrv = new LRSplineVolume(n1, n2, n3, p1, p2, p3, knot_u.begin(), knot_v.begin(), knot_w.begin(), cp.begin(), dim, rat);

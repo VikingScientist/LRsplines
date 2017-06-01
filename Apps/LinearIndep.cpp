@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 	                  "   <highest error element index #1>\n"\
 	                  "   <highest error element index #2>\n"\
 	                  "                  ...              \n");
-	
+
 	// read input
 	for(int i=1; i<argc; i++) {
 		if(strcmp(argv[i], "-dumpfile") == 0)
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
 		LRSplineSurface *lr_original = NULL;
 		if(one_by_one)
 			lr_original = lr->copy();
-			
+
 		cout << setprecision(16);
 		vector<Meshline*> *newLines = new vector<Meshline*>();
 		// lr->refine(sorted_list, beta, mult, strat, symmetry, newLines);
@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
 			newLines->at(i)->writeMore(cout);
 			cout << endl;
 		}
-		
+
 		if(one_by_one) {
 			cout << "Inserting meshlines one by one...\n";
 			for(unsigned int i=0; i<newLines->size(); i++) {
@@ -194,10 +194,10 @@ int main(int argc, char **argv) {
 					lr_original->insert_const_v_edge(m->const_par_, m->start_, m->stop_, m->multiplicity_);
 				else
 					lr_original->insert_const_u_edge(m->const_par_, m->start_, m->stop_, m->multiplicity_);
-				
+
 				if(floatingPointCheck)
 					isLinearIndep = lr_original->isLinearIndepByFloatingPointMappingMatrix(false);
-				else if(overload) 
+				else if(overload)
 					isLinearIndep = lr_original->isLinearIndepByOverloading(false);
 #ifdef HAS_BOOST
 				else
@@ -216,10 +216,10 @@ int main(int argc, char **argv) {
 	if(!one_by_one) {
 		if(floatingPointCheck)
 			isLinearIndep = lr->isLinearIndepByFloatingPointMappingMatrix(verbose);
-		else if(overload) 
+		else if(overload)
 			isLinearIndep = lr->isLinearIndepByOverloading(verbose);
 #ifdef HAS_BOOST
-		else 
+		else
 			isLinearIndep = lr->isLinearIndepByMappingMatrix(verbose);
 #endif
 	}
@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
 		controlmesh.open("controlmesh.eps");
 		lr->writePostscriptMeshWithControlPoints(controlmesh, 10, 10);
 		controlmesh.close();
-	
+
 		ofstream lrfile;
 		lrfile.open("lrspline.txt");
 		lrfile << *lr << endl;

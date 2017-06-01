@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
 	int p         = 3;
 	int N         = 3;
 	int m         = 1;
-	int scheme    = 0;  
+	int scheme    = 0;
 	double R      = 0.5;   // radius of refinement layer
 	double eps    = 0.005; // layer width parameter
 	string parameters(" parameters: \n" \
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 	                  "   -m      <n> knot multiplicity\n" \
 	                  "   -scheme <n> refinement scheme (0=FULLSPAN, 1=MINSPAN, 2=STRUCTURED)\n" \
 	                  "   -help    display (this) help information\n");
-	
+
 	// read input
 	for(int i=1; i<argc; i++) {
 		if(strcmp(argv[i], "-p") == 0)
@@ -156,8 +156,8 @@ int main(int argc, char **argv) {
 		values.push_back(lrValues);
 		geometries.push_back(lrGeom);
 	}
-	
-	
+
+
 	// write results to file
 	ofstream lrfile;
 	lrfile.open("waterfall_geom.lr");

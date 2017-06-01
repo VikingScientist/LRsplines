@@ -33,7 +33,7 @@ Meshline::~Meshline() {
 
 Meshline* Meshline::copy() {
 	 Meshline *returnvalue     = new Meshline();
-	 
+
 	 returnvalue->span_u_line_ = this->span_u_line_;
 	 returnvalue->const_par_   = this->const_par_;
 	 returnvalue->start_       = this->start_;
@@ -119,7 +119,7 @@ bool Meshline::operator==(const Meshline &other) const {
 	       start_        == other.start_ &&
 	       stop_         == other.stop_ &&
 	       multiplicity_ == other.multiplicity_;
-	
+
 }
 
 // convenience macro for reading formated input
@@ -157,14 +157,14 @@ void Meshline::read(std::istream &is) {
 #undef ASSERT_NEXT_CHAR
 
 void Meshline::write(std::ostream &os) const {
-	if(span_u_line_) 
+	if(span_u_line_)
 		os <<  "[" << start_ << ", " << stop_ << "] x " << const_par_ << " (" << multiplicity_ << ")";
 	else // span-v line
 		os << const_par_ << " x [" << start_ << ", " << stop_ << "] (" << multiplicity_ << ")";
 }
 
 void Meshline::writeMore(std::ostream &os) const {
-	if(span_u_line_) 
+	if(span_u_line_)
 		os <<  "[" << start_ << ", " << stop_ << "] x " << const_par_ << " (" << multiplicity_ << ")";
 	else // span-v line
 		os << const_par_ << " x [" << start_ << ", " << stop_ << "] (" << multiplicity_ << ")";

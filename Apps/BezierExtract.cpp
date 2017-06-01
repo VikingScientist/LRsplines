@@ -26,12 +26,12 @@ int main(int argc, char **argv) {
 			filename = argv[i];
 		}
 	}
-	
+
 	if(filename.length() == 0) {
 		cout << "Usage: " << argv[0] << " [-el <n>] <inputfile>\n";
 		exit(1);
 	}
-	
+
 	// read lr file
 	ifstream inputfile;
 	inputfile.open(filename.c_str());
@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 	int comp = 1;
 	for(int i=0; i<3; i++)
 		comp *= lr.order(i);
-	
+
 	vector<double> cp;
 	if(el < 0) {
 		for(int i=0; i<lr.nElements(); i++) {

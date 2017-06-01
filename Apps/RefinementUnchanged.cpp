@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
 	              "     <numb. inserted lines>\n"\
 	              "     <is_const_u> <const_par> <start> <stop> <mult>                    (Surface only)\n"\
 	              "     <constParDir> <constPar> <start1> <stop1> <start2> <stop2> <mult> (Volume only)\n";
-	
+
 	// read input
 	for(int i=1; i<argc; i++) {
 		if(strcmp(argv[i], "-p1") == 0)
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
 #ifdef HAS_GOTOOLS
 	Go::SplineSurface   *ss=nullptr;
 	Go::SplineVolume    *sv=nullptr;
-#else 
+#else
 	LRSplineSurface *ss=nullptr;
 	LRSplineVolume  *sv=nullptr;
 #endif
@@ -181,19 +181,19 @@ int main(int argc, char **argv) {
 		int k=0;
 		for(int i=0; i<nCP; i++) // 839 as a generator over Z_853 gives a period of 425. Should suffice
 			cp[k++] = (i*839 % 853) / 853.0 + 0.1;  // rational weights also random and thus we need >0
-			
+
 		// make two spline objects (using GoTools for reference if available)
 		if(vol) {
 #ifdef HAS_GOTOOLS
 			sv  = new Go::SplineVolume(n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
-#else 
+#else
 			sv  = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
 #endif
 			lrv = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
 		} else {
 #ifdef HAS_GOTOOLS
 			ss  = new Go::SplineSurface(n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
-#else 
+#else
 			ss  = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
 #endif
 			lrs = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
 	vector<double> endPar2;
 	vector<int> multiplicity;
 	if(nDiagonals==-1) {
-		// read input-file 
+		// read input-file
 		ifstream inputFile;
 		inputFile.open(inputFileName);
 		if( inputFile.is_open() ) {
@@ -322,7 +322,7 @@ int main(int argc, char **argv) {
 			lrs->refineElement(diagonalElements);
 		}
 	}
-	
+
 
 	// compare function values on edges, knots and in between the knots
 	// as well as all derivatives (up to first derivatives)
@@ -359,7 +359,7 @@ int main(int argc, char **argv) {
 					ss->point(ss_pts, u,v, 1);
 
 					bool correct = true;
-					for(int i=0; i<3; i++)  
+					for(int i=0; i<3; i++)
 						for(int d=0; d<dim; d++)
 							if( fabs(lr_pts[i][d]-ss_pts[i][d]) > TOL ) // relative error
 								correct = false;
@@ -387,7 +387,7 @@ int main(int argc, char **argv) {
 					cout << "sum ("  << u << ", " << v << ") minus one = " << sum-1.0 << endl;
 					cout << "sum diff u = " << sum_diff_u << endl;
 					cout << "sum diff v = " << sum_diff_v << endl;
-					
+
 					correct = !(fabs(sum-1.0) > TOL || fabs(sum_diff_u) > TOL || fabs(sum_diff_v) > TOL);
 					assert_POF.push_back(correct);
 				}
@@ -455,7 +455,7 @@ int main(int argc, char **argv) {
 						sv->point( ss_pts, u,v,w, 1);
 
 						bool correct = true;
-						for(int i=0; i<3; i++)  
+						for(int i=0; i<3; i++)
 							for(int d=0; d<dim; d++)
 								if( fabs(lr_pts[i][d]-ss_pts[i][d]) > TOL ) // relative error
 									correct = false;
@@ -489,7 +489,7 @@ int main(int argc, char **argv) {
 						cout << "sum diff u = " << sum_diff_u << endl;
 						cout << "sum diff v = " << sum_diff_v << endl;
 						cout << "sum diff w = " << sum_diff_w << endl;
-						
+
 						correct = !(fabs(sum-1.0)    > TOL ||
 						            fabs(sum_diff_u) > TOL ||
 						            fabs(sum_diff_v) > TOL ||
@@ -505,7 +505,7 @@ int main(int argc, char **argv) {
 		} else {
 			// messed up because the mapping matrix is not operational yet. Will fix in due time
 			doActualLinTest = true;
-			doActualLinTest = false; 
+			doActualLinTest = false;
 			// linearIndep = lrv->isLinearIndepByMappingMatrix(true);
 		}
 		cout << endl;
@@ -556,8 +556,8 @@ int main(int argc, char **argv) {
 	cout << "  number of basis functions: " << nBasis     << endl;
 	cout << "  number of mesh lines     : " << nMeshlines << endl;
 	cout << "  number of elements       : " << nElements  << endl;
-	
-	
+
+
 	if(dumpFile) {
 		cout << endl;
 		cout << "Written ";
@@ -585,7 +585,7 @@ int main(int argc, char **argv) {
 			cout << "mesh.eps, functions.eps, domain.eps, controlmesh.eps and ";
 		}
 		cout << "RefUnchagned.lr\n";
-	
+
 		ofstream lrfile;
 		lrfile.open("RefUnchagned.lr");
 		if(vol) lrfile << *lrv << endl;

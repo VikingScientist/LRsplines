@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
 	              "     <insert all meshlines at once>\n"\
 	              "     <x> <y>        (Surface only)\n"\
 	              "     <x> <y> <z>    (Volume only)\n";
-	
+
 	// read input
 	for(int i=1; i<argc; i++) {
 		if(strcmp(argv[i], "-p1") == 0)
@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
 		int k=0;
 		for(int i=0; i<nCP; i++) // 839 as a generator over Z_853 gives a period of 425. Should suffice
 			cp[k++] = (i*839 % 853) / 853.0 + 0.1;  // rational weights also random and thus we need >0
-			
+
 		// make two spline objects
 		if(vol) {
 			lrv = new LRSplineVolume(n1, n2, n3, p1, p2, p3, knot_u.begin(), knot_v.begin(), knot_w.begin(), cp.begin(), dim, rat);
@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
 		for(uint i=0; i<parPt.size(); i++) {
 			if(vol)
 				elIndex.push_back(lrv->getElementContaining(parPt[i][0], parPt[i][1], parPt[i][2]) );
-			else 
+			else
 				elIndex.push_back(lrs->getElementContaining(parPt[i][0], parPt[i][1]) );
 		}
 		if(vol) lrv->refineElement(elIndex);
@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
 	else if(!vol && !quiet)
 		cout << *lrs << endl;
 
-	
+
 	// ---------------- Print topology information   -----------------
 	int nBasis;
 	int nMeshlines;
@@ -228,8 +228,8 @@ int main(int argc, char **argv) {
 	cout << "  number of basis functions: " << nBasis     << endl;
 	cout << "  number of mesh lines     : " << nMeshlines << endl;
 	cout << "  number of elements       : " << nElements  << endl;
-	
-	
+
+
 	// ---------------- Dump detailed debug files    -----------------
 	if(dumpFile) {
 		cout << endl;
@@ -258,7 +258,7 @@ int main(int argc, char **argv) {
 			cout << "mesh.eps, functions.eps, domain.eps, controlmesh.eps and ";
 		}
 		cout << "RefUnchagned.lr\n";
-	
+
 		ofstream lrfile;
 		lrfile.open("RefUnchagned.lr");
 		if(vol) lrfile << *lrv << endl;

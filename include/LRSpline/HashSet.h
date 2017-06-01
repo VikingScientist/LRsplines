@@ -26,7 +26,7 @@ class HashSet_iterator
 		//! \brief Default constructor
 		HashSet_iterator() {
 		}
-		
+
 		//! \brief Default constructor
 		//! \param majorIter iterator position in the hashcode map
 		//! \param subIter   iterator position in the linked list for non-unique hash codes
@@ -37,12 +37,12 @@ class HashSet_iterator
 			this->majorEnd  = majorEnd;
 		}
 
-		//! \brief Dereferencing the iterator returns an object of class <T> 
+		//! \brief Dereferencing the iterator returns an object of class <T>
 		T& operator*() const {
 			return *subIter;
 		}
 
-		//! \brief Dereferencing the iterator returns an object of class <T> 
+		//! \brief Dereferencing the iterator returns an object of class <T>
 		T* operator->() const {
 			return &(*subIter);
 		}
@@ -80,7 +80,7 @@ class HashSet_iterator
 };
 
 /*!
-	\brief const version of the HashSet iterator 
+	\brief const version of the HashSet iterator
 */
 template<typename T>
 class HashSet_const_iterator
@@ -96,7 +96,7 @@ class HashSet_const_iterator
 		//! \brief Default constructor
 		HashSet_const_iterator() {
 		}
-		
+
 		//! \brief Default constructor
 		//! \param majorIter iterator position in the hashcode map
 		//! \param subIter   iterator position in the linked list for non-unique hash codes
@@ -107,12 +107,12 @@ class HashSet_const_iterator
 			this->majorEnd  = majorEnd;
 		}
 
-		//! \brief Dereferencing the iterator returns an object of class <T> 
+		//! \brief Dereferencing the iterator returns an object of class <T>
 		const T& operator*() const {
 			return *subIter;
 		}
 
-		//! \brief Dereferencing the iterator returns an object of class <T> 
+		//! \brief Dereferencing the iterator returns an object of class <T>
 		const T* operator->() const {
 			return &(*subIter);
 		}
@@ -190,16 +190,16 @@ typedef typename std::map<long, std::list<T> >::const_iterator citer;
 typedef typename std::list<T>::iterator                        list_iter;
 
 public:
-	
+
 	//! \brief Default constructor
 	//! \details Creates an empty container
 
 	HashSet() {
 		numb      = 0;
 	}
-	
+
 	//! \brief Default copy constructor
-	//! \details Creates a copy of the HashSet. 
+	//! \details Creates a copy of the HashSet.
 	HashSet(const HashSet<T> &other) {
 		data = other.data;
 		numb = other.numb;
@@ -246,7 +246,7 @@ public:
 				return 1;
 			}
 		}
-		
+
 		return 0;
 	}
 
@@ -261,7 +261,7 @@ public:
 		for(list_iter lit = it->second.begin(); lit != it->second.end(); lit++)
 			if(obj->equals(**lit))
 				return HashSet_iterator<T>(it, lit, data.end());
-		
+
 		return end();
 	}
 
@@ -269,8 +269,8 @@ public:
 	T pop() {
 		if(numb == 0)
 			return NULL;
-		
-		iter it = data.begin(); 
+
+		iter it = data.begin();
 		T ans   = it->second.front();
 		it->second.pop_front();
 		if(it->second.size() == 0)

@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 		scheme = 0;
 	if(scheme > 2)
 		scheme = 2;
-	
+
 	// read input file
 	ifstream inputfile;
 	inputfile.open(filename.c_str());
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
 		}
 #endif
 	}
-	
+
 	// setup refinement parameters
 	lr->setRefMultiplicity(m);
 	if(scheme == 0)

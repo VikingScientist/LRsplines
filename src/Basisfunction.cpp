@@ -40,7 +40,7 @@ Basisfunction::~Basisfunction() {
 #ifdef HAS_GOTOOLS
 /************************************************************************************************************************//**
  * \brief Get parametric greville parameter for this B-spline
- * \returns The internal knot average 
+ * \returns The internal knot average
  ***************************************************************************************************************************/
 Go::Point Basisfunction::getGrevilleParameter() const {
 	Go::Point ans(2);
@@ -68,7 +68,7 @@ void Basisfunction::getControlPoint(Go::Point &pt) const {
 
 /************************************************************************************************************************//**
  * \brief Get parametric greville parameter for this B-spline
- * \returns The internal knot average 
+ * \returns The internal knot average
  ***************************************************************************************************************************/
 void Basisfunction::getGrevilleParameter(std::vector<double> &pt) const {
 	pt.resize(knots_.size());
@@ -107,7 +107,7 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 	for(uint i=0; i<knots_[0].size()-1; i++) {
 		if(u_from_right)
 			ans_u[i] = (knots_[0][i] <= u && u <  knots_[0][i+1]) ? 1 : 0;
-		else 
+		else
 			ans_u[i] = (knots_[0][i] <  u && u <= knots_[0][i+1]) ? 1 : 0;
 	}
 
@@ -147,11 +147,11 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 			ans_u[j] += (knots_[0][j+n+1]==knots_[0][j+1]) ? 0 : (knots_[0][j+n+1]-u)/(knots_[0][j+n+1]-knots_[0][j+1])*ans_u[j+1];
 		}
 	}
-					   
+
 	for(uint i=0; i<knots_[1].size()-1; i++) {
 		if(v_from_right)
 			ans_v[i] = (knots_[1][i] <= v && v <  knots_[1][i+1]) ? 1 : 0;
-		else 
+		else
 			ans_v[i] = (knots_[1][i] <  v && v <= knots_[1][i+1]) ? 1 : 0;
 	}
 
@@ -168,7 +168,7 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 				diff_v[d][j] -= (knots_[1][j+n+1]==knots_[1][j+1]) ? 0 : (   n   )/(knots_[1][j+n+1]-knots_[1][j+1])*diff_v[d][j+1];
 			}
 		}
-	
+
 		for(uint j=0; j<knots_[1].size()-1-n; j++) {
 			ans_v[j]  = (knots_[1][ j+n ]==knots_[1][ j ]) ? 0 : (  v-knots_[1][j]  )/(knots_[1][j+n]  -knots_[1][ j ])*ans_v[ j ];
 			ans_v[j] += (knots_[1][j+n+1]==knots_[1][j+1]) ? 0 : (knots_[1][j+n+1]-v)/(knots_[1][j+n+1]-knots_[1][j+1])*ans_v[j+1];
@@ -182,7 +182,7 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 	for(int totDeriv=0; totDeriv<=derivs; totDeriv++)
 		for(int vDeriv=0; vDeriv<=totDeriv; vDeriv++)
 			results[ip++] = diff_u[totDeriv-vDeriv][0] * diff_v[vDeriv][0] * weight_;
-	
+
 	// clean up memory allocations
 	for(int i=1; i<derivs+1; i++) {
 		delete[] diff_u[i];
@@ -190,7 +190,7 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 	}
 	delete[] diff_u;
 	delete[] diff_v;
-	
+
 }
 
 double Basisfunction::evaluate(double u, double v, bool u_from_right, bool v_from_right) const {
@@ -205,7 +205,7 @@ double Basisfunction::evaluate(double u, double v, bool u_from_right, bool v_fro
 	for(uint i=0; i<knots_[0].size()-1; i++) {
 		if(u_from_right)
 			ans_u[i] = (knots_[0][i] <= u && u <  knots_[0][i+1]) ? 1 : 0;
-		else 
+		else
 			ans_u[i] = (knots_[0][i] <  u && u <= knots_[0][i+1]) ? 1 : 0;
 	}
 	for(uint n=1; n<knots_[0].size()-1; n++)
@@ -213,11 +213,11 @@ double Basisfunction::evaluate(double u, double v, bool u_from_right, bool v_fro
 			ans_u[j]  = (knots_[0][ j+n ]==knots_[0][ j ]) ? 0 : (  u-knots_[0][j]  )/(knots_[0][j+n]  -knots_[0][ j ])*ans_u[ j ];
 			ans_u[j] += (knots_[0][j+n+1]==knots_[0][j+1]) ? 0 : (knots_[0][j+n+1]-u)/(knots_[0][j+n+1]-knots_[0][j+1])*ans_u[j+1];
 	}
-					   
+
 	for(uint i=0; i<knots_[1].size()-1; i++) {
 		if(v_from_right)
 			ans_v[i] = (knots_[1][i] <= v && v <  knots_[1][i+1]) ? 1 : 0;
-		else 
+		else
 			ans_v[i] = (knots_[1][i] <  v && v <= knots_[1][i+1]) ? 1 : 0;
 	}
 	for(uint n=1; n<knots_[1].size()-1; n++)
@@ -232,8 +232,8 @@ double Basisfunction::evaluate(double u, double v, bool u_from_right, bool v_fro
 
 /************************************************************************************************************************//**
  * \brief evaluates a bivariate B-spline
- * \param u Parametric evaluation point 
- * \param v Parametric evaluation point 
+ * \param u Parametric evaluation point
+ * \param v Parametric evaluation point
  * \param u_from_right Evaluate first parametric coordinate in the limit from the right
  * \param v_from_right Evaluate second parametric coordinate in the limit from the right
  * \return The B-spline evaluated at the chosen parametric coordinate
@@ -252,9 +252,9 @@ double Basisfunction::evaluate(double u, double v, bool u_from_right, bool v_fro
 
 /************************************************************************************************************************//**
  * \brief evaluates a trivariate B-spline
- * \param u Parametric evaluation point 
- * \param v Parametric evaluation point 
- * \param w Parametric evaluation point 
+ * \param u Parametric evaluation point
+ * \param v Parametric evaluation point
+ * \param w Parametric evaluation point
  * \param u_from_right Evaluate first parametric coordinate in the limit from the right
  * \param v_from_right Evaluate second parametric coordinate in the limit from the right
  * \param w_from_right Evaluate third parametric coordinate in the limit from the right
@@ -278,8 +278,8 @@ double Basisfunction::evaluate(double u, double v, double w, bool u_from_right, 
  * \brief evaluates a bivariate B-spline
  * \param results [out] Vector of all results. Upon function return contains (derivs+1)*(derivs+2)/2 evaluations of the B-spline
  *                      itself and all possible cross-derivatives up to order derivs. These are ordered as 1,dx,dy,d2x,dxdy,d2y,...
- * \param u Parametric evaluation point 
- * \param v Parametric evaluation point 
+ * \param u Parametric evaluation point
+ * \param v Parametric evaluation point
  * \param derivs Number of derivatives requested
  * \param u_from_right Evaluate first parametric coordinate in the limit from the right
  * \param v_from_right Evaluate second parametric coordinate in the limit from the right
@@ -298,9 +298,9 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
  * \brief evaluates a trivariate B-spline
  * \param results [out] Vector of all results. Upon function return contains (derivs+1)*(derivs+2)*(2*derivs+6)/12 evaluations of the B-spline
  *                      itself and all possible cross-derivatives up to order derivs. These are ordered as 1,dx,dy,d2x,dxdy,dxdz,d2y,...
- * \param u Parametric evaluation point 
- * \param v Parametric evaluation point 
- * \param w Parametric evaluation point 
+ * \param u Parametric evaluation point
+ * \param v Parametric evaluation point
+ * \param w Parametric evaluation point
  * \param derivs Number of derivatives requested
  * \param u_from_right Evaluate first parametric coordinate in the limit from the right
  * \param v_from_right Evaluate second parametric coordinate in the limit from the right
@@ -344,11 +344,11 @@ void collectResults(std::vector<double>::iterator &result,
 /************************************************************************************************************************//**
  * \brief evaluates a general B-spline (currently only bivariate and trivariate supported - small fix to extend, but not now)
  * \param results [out] Vector of all results
- * \param parPt Parametric evaluation point 
+ * \param parPt Parametric evaluation point
  * \param derivs Number of derivatives requested
  * \param from_right Vector of same size as parPt stating if any of the parametric directions should be evaluated in the limit from
  *                   the right
- * 
+ *
  * Upon function return, results contains either (derivs+1)*(derivs+2)/2 (bivariate) or (derivs+1)*(derivs+2)*(2*derivs+6)/12 (trivariate)
  * evaluation points. These are all derivatives and organized as follows:
  * Bivariate splines up to second order: 1,dx,dy,d2x,dxdy,d2y,...
@@ -409,7 +409,7 @@ void Basisfunction::evaluate(std::vector<double> &results, const std::vector<dou
 
 		i++;
 	}
-			
+
 	// collect results
 	for(i=0; i<dim; i++)
 		diff[i][0] = ans[i];
@@ -514,9 +514,9 @@ std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 
 	for(Element* e : support_) {
 		for(Basisfunction* b : e->support()) {
-			if( ((b->getParmin(0) <  this->getParmin(0) && b->getParmax(0) >= this->getParmax(0)) || 
+			if( ((b->getParmin(0) <  this->getParmin(0) && b->getParmax(0) >= this->getParmax(0)) ||
 			     (b->getParmin(0) <= this->getParmin(0) && b->getParmax(0) >  this->getParmax(0))) &&  // extend left OR right of the u-directions
-			    ((b->getParmin(1) <  this->getParmin(1) && b->getParmax(1) >= this->getParmax(1)) || 
+			    ((b->getParmin(1) <  this->getParmin(1) && b->getParmax(1) >= this->getParmax(1)) ||
 			     (b->getParmin(1) <= this->getParmin(1) && b->getParmax(1) >  this->getParmax(1))) &&  // AND extend up OR down in the v-direction
 			    min_du >= b->getParmax(0)-b->getParmin(0) &&
 			    min_dv >= b->getParmax(1)-b->getParmin(1)  ) { // AND less support than the last best guy
@@ -530,14 +530,14 @@ std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 	if(smallestGuy == NULL) {
 		for(Element* e : support_) {
 			for(Basisfunction* b : e->support()) {
-				if(  b->getParmin(0) <= this->getParmin(0)    && 
-				     b->getParmax(0) >= this->getParmax(0)    && 
-				     b->getParmin(1) <= this->getParmin(1)    && 
+				if(  b->getParmin(0) <= this->getParmin(0)    &&
+				     b->getParmax(0) >= this->getParmax(0)    &&
+				     b->getParmin(1) <= this->getParmin(1)    &&
 				     b->getParmax(1) >= this->getParmax(1)    &&  // Cover *this' support
-				    (b->getParmin(0) <  this->getParmin(0) || 
-				     b->getParmax(0) >  this->getParmax(0) || 
+				    (b->getParmin(0) <  this->getParmin(0) ||
+				     b->getParmax(0) >  this->getParmax(0) ||
 				     b->getParmin(1) <  this->getParmin(1) ||    // Extend at least one direction
-				     b->getParmax(1) >  this->getParmax(1) )  && 
+				     b->getParmax(1) >  this->getParmax(1) )  &&
 					min_du >= b->getParmax(0)-b->getParmin(0) &&
 					min_dv >= b->getParmax(1)-b->getParmin(1)  ) { // smaller support than the last best option
 
@@ -647,11 +647,11 @@ void Basisfunction::operator+=(const Basisfunction &other) {
 Basisfunction* Basisfunction::copy() const {
 
 	std::vector<int> order;
-	for(uint i=0; i<knots_.size(); i++) 
+	for(uint i=0; i<knots_.size(); i++)
 		order.push_back(knots_[i].size()-1);
     Basisfunction *returnValue = new Basisfunction(controlpoint_.size(), knots_.size(), order);
 
-	for(uint i=0; i<knots_.size(); i++) 
+	for(uint i=0; i<knots_.size(); i++)
 		std::copy(knots_[i].begin(), knots_[i].end(), returnValue->knots_[i].begin());
 
 	std::copy(controlpoint_.begin(), controlpoint_.end(), returnValue->controlpoint_.begin());
@@ -723,7 +723,7 @@ void Basisfunction::write(std::ostream &os) const {
  * \brief Returns true if all supported elements are considered overloaded (i.e. has more than (p+1)*(p+1) supported B-splines)
  ***************************************************************************************************************************/
 bool Basisfunction::isOverloaded()  const {
-	for(uint i=0; i<support_.size(); i++) 
+	for(uint i=0; i<support_.size(); i++)
 		if(! support_[i]->isOverloaded() )
 			return false;
 	return true;
@@ -734,7 +734,7 @@ bool Basisfunction::isOverloaded()  const {
  ***************************************************************************************************************************/
 int Basisfunction::getOverloadCount() const {
 	int ans = INT_MAX;
-	for(uint i=0; i<support_.size(); i++) 
+	for(uint i=0; i<support_.size(); i++)
 		ans = (ans < support_[i]->getOverloadCount()) ? ans : support_[i]->getOverloadCount();
 	return ans;
 }

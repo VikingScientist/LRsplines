@@ -67,14 +67,14 @@ void Element::addSupportFunction(Basisfunction *f) {
  ***************************************************************************************************************************/
 Element* Element::copy() {
 	Element *returnvalue = new Element();
-	
+
 	returnvalue->id_          = this->id_;
-	returnvalue->min          = this->min;    // it seems that the default vector operator= thing takes a deep copy 
+	returnvalue->min          = this->min;    // it seems that the default vector operator= thing takes a deep copy
 	returnvalue->max          = this->max;
 
 	for(Basisfunction* b : support_)
 		returnvalue->support_ids_.push_back(b->getId());
-	
+
 	return returnvalue;
 }
 
@@ -89,7 +89,7 @@ Element* Element::split(int splitDim, double par_value) {
 	Element *newElement = NULL;
 	if(par_value >= max[splitDim] || par_value <= min[splitDim])
 		return NULL;
-		
+
 	std::vector<double> newMin(min.begin(), min.end());
 	std::vector<double> newMax(max.begin(), max.end());
 
@@ -131,7 +131,7 @@ void Element::updateBasisPointers(std::vector<Basisfunction*> &basis) {
 
 /************************************************************************************************************************//**
  * \brief Reads formatted input from input stream
- * \param is The input stream to read from 
+ * \param is The input stream to read from
  ***************************************************************************************************************************/
 // convenience macro for reading formated input
 #define ASSERT_NEXT_CHAR(c) {ws(is); nextChar = is.get(); if(nextChar!=c) { std::cerr << "Error parsing element\n"; exit(326); } ws(is); }
@@ -186,10 +186,10 @@ void Element::read(std::istream &is) {
 void Element::write(std::ostream &os) const {
 	os << id_ << " [" << min.size() << "] : ";
 	os << "(" << min[0];
-	for(uint i=1; i<min.size(); i++) 
+	for(uint i=1; i<min.size(); i++)
 		os << ", " << min[i] ;
 	os << ") x (" << max[0];
-	for(uint i=1; i<max.size(); i++) 
+	for(uint i=1; i<max.size(); i++)
 		os << ", " << max[i] ;
 	os << ")";
 	os << "    {";
