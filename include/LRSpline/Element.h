@@ -20,7 +20,7 @@ class Element : public Streamable {
 
 public:
 	Element();
-	Element(int dim);
+	explicit Element(int dim);
 	Element(double start_u, double start_v, double stop_u, double stop_v);
 	/************************************************************************************************************************//**
  	* \brief General constructor
@@ -35,6 +35,8 @@ public:
 		max.resize(dim);
 		std::copy(lowerLeft,  lowerLeft  + dim, min.begin());
 		std::copy(upperRight, upperRight + dim, max.begin());
+    id_           = -1;
+    overloadCount = 0;
 	}
 	Element(std::vector<double> &lowerLeft, std::vector<double> &upperRight);
 	void removeSupportFunction(Basisfunction *f);
