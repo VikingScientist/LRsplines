@@ -31,6 +31,9 @@ SOUTH_EAST = 6,    // 000110
 NORTH_WEST = 9,    // 001001
 NORTH_EAST = 10};  // 001010
 
+inline parameterEdge operator|(parameterEdge a, parameterEdge b)
+{return static_cast<parameterEdge>(static_cast<int>(a) | static_cast<int>(b));}
+
 typedef enum parameterEdge parameterEdge;
 
 class Element;
