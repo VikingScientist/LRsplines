@@ -78,6 +78,7 @@ public:
 	void refineBasisFunction(int index);
 	void refineBasisFunction(const std::vector<int> &indices);
 	void refineByDimensionIncrease(const std::vector<double> &error, double beta);
+  bool matchParametricEdge(parameterEdge edge, std::vector<Meshline*> lines, bool isotropic=false);
 
 	// (private) refinement functions
 	void getFullspanRects(  int iEl,    std::vector<MeshRectangle*>& rects);
@@ -124,6 +125,7 @@ public:
 	void getBezierExtraction(int iEl, std::vector<double> &extractMatrix) const;
 
 	// assorted specialized functions
+	std::vector<Meshline*> getEdgeKnots(parameterEdge edge, bool normalized=false) const;
 	void getDiagonalElements(      std::vector<int> &result) const ;
 	void getDiagonalBasisfunctions(std::vector<int> &result) const ;
 	void printElements(std::ostream &out) const;
