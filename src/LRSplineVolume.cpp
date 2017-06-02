@@ -1,6 +1,7 @@
 #include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/Basisfunction.h"
 #include "LRSpline/MeshRectangle.h"
+#include "LRSpline/Meshline.h"
 #include "LRSpline/Element.h"
 #include "LRSpline/Profiler.h"
 
@@ -822,6 +823,175 @@ void LRSplineVolume::refineByDimensionIncrease(const std::vector<double> &errPer
 
 	/* do a posteriori fixes to ensure a proper mesh */
 	// aPosterioriFixes();
+}
+
+std::vector<Meshline*> LRSplineVolume::getEdgeKnots(parameterEdge edge, bool normalized) const {
+	std::vector<Meshline*> results;
+
+	// fetch global patch size
+	double u0 = this->startparam(0);
+	double u1 = this->endparam(0);
+	double v0 = this->startparam(1);
+	double v1 = this->endparam(1);
+	double w0 = this->startparam(2);
+	double w1 = this->endparam(2);
+
+	for(auto rect : this->getAllMeshRectangles()) {
+		if(edge == WEST && fabs(rect->start_[0] - u0) < DOUBLE_TOL  ||
+		   edge == EAST && fabs(rect->stop_[0]  - u1) < DOUBLE_TOL) {
+			if(rect->constDirection() == 1)
+				results.push_back(new Meshline(false, rect->start_[1], rect->start_[2], rect->stop_[2], rect->multiplicity_));
+			else if(rect->constDirection() == 2)
+				results.push_back(new Meshline(true, rect->start_[2], rect->start_[1], rect->stop_[1], rect->multiplicity_));
+
+		} else if(edge == SOUTH && fabs(rect->start_[1] - v0) < DOUBLE_TOL  ||
+		          edge == NORTH && fabs(rect->stop_[1]  - v1) < DOUBLE_TOL) {
+			if(rect->constDirection() == 0)
+				results.push_back(new Meshline(false, rect->start_[0], rect->start_[2], rect->stop_[2], rect->multiplicity_));
+			else if(rect->constDirection() == 2)
+				results.push_back(new Meshline(true, rect->start_[2], rect->start_[0], rect->stop_[0], rect->multiplicity_));
+
+		} else if(edge == BOTTOM && fabs(rect->start_[2] - w0) < DOUBLE_TOL  ||
+		          edge == TOP    && fabs(rect->stop_[2]  - w1) < DOUBLE_TOL) {
+			if(rect->constDirection() == 0)
+				results.push_back(new Meshline(false, rect->start_[0], rect->start_[1], rect->stop_[1], rect->multiplicity_));
+			else if(rect->constDirection() == 1)
+				results.push_back(new Meshline(true, rect->start_[1], rect->start_[0], rect->stop_[0], rect->multiplicity_));
+		}
+	}
+
+	if(normalized) {
+		for(auto r : results) {
+			switch(edge) {
+				case WEST:
+				case EAST:
+					if(r->span_u_line_) {
+						r->start_ = (r->start_ - v0 ) / (v1-v0);
+						r->stop_  = (r->stop_  - v0 ) / (v1-v0);
+					} else {
+						r->start_ = (r->start_ - w0 ) / (w1-w0);
+						r->stop_  = (r->stop_  - w0 ) / (w1-w0);
+					}
+					r->const_par_ = (r->const_par_ - u0 ) / (u1-u0);
+					break;
+				case NORTH:
+				case SOUTH:
+					if(r->span_u_line_) {
+						r->start_ = (r->start_ - u0 ) / (u1-u0);
+						r->stop_  = (r->stop_  - u0 ) / (u1-u0);
+					} else {
+						r->start_ = (r->start_ - w0 ) / (w1-w0);
+						r->stop_  = (r->stop_  - w0 ) / (w1-w0);
+					}
+					r->const_par_ = (r->const_par_ - v0 ) / (v1-v0);
+					break;
+				case TOP:
+				case BOTTOM:
+					if(r->span_u_line_) {
+						r->start_ = (r->start_ - u0 ) / (u1-u0);
+						r->stop_  = (r->stop_  - u0 ) / (u1-u0);
+					} else {
+						r->start_ = (r->start_ - v0 ) / (v1-v0);
+						r->stop_  = (r->stop_  - v0 ) / (v1-v0);
+					}
+					r->const_par_ = (r->const_par_ - w0 ) / (w1-w0);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	return results;
+}
+
+/************************************************************************************************************************//**
+ * \brief Creates matching discretization (mesh) across patch boundaries so they can be stiched together
+ * \param edge      which of the 4 parameter edges (NORTH/SOUTH/EAST/WEST) that should be refined
+ * \param knots     list of normalized knots (range (0,1)) that should appear on the  boundary edge of this patch
+ * \param isotropic if additional refinements should be done in an isotropic fashion (equal refinement in u- and v-direction,
+ *                  i.e.function refinement)
+ * \returns true if any new refinements were introduced
+ * \details This will refine this patche so it will have conforming mesh on the interface between this patch and another. It will
+ *          not manipulate the control-points of the basis functions, and it is left to the user to make sure that these coincide
+ *          if the mesh is to match in the physical space, and not just in the parametric space.
+ *          See also: getEdgeKnots()
+ ***************************************************************************************************************************/
+bool LRSplineVolume::matchParametricEdge(parameterEdge edge, std::vector<Meshline*> lines, bool isotropic) {
+	bool didRefine = false;
+
+	// get interface edges
+	std::vector<Element*> el, el_tmp;
+	this->getEdgeElements( el_tmp, edge);
+
+	// since refinements will change or delete elements, we make a copy of the element lists
+	for(auto e : el_tmp)
+		el.push_back(e->copy());
+
+	// fetch local (u,v)-coordinates for this edge
+	int u,v,w;
+	switch(edge) {
+		case WEST:
+		case EAST:
+			u = 1; // first running direction
+			v = 2; // second running
+			w = 0; // const direction
+			break;
+		case NORTH:
+		case SOUTH:
+			u = 0; // first running direction
+			v = 2; // second running
+			w = 1; // const direction
+			break;
+		case TOP:
+		case BOTTOM:
+			u = 0; // first running direction
+			v = 1; // second running
+			w = 2; // const direction
+			break;
+	}
+
+	// loop over elements and insert lines where needed
+	for(auto e : el) {      // for all boundary elements
+		// create a 2D-version of this element that only lives on the boundary
+		Element edgEl(e->getParmin(u), e->getParmin(v), e->getParmax(u), e->getParmax(v));
+		for(auto m : lines) { // for all requested meshlines
+			if(m->splits(&edgEl)) {
+				didRefine = true;
+				double u0[3], u1[3];
+				if(m->is_spanning_u()) {
+					u0[u] = e->getParmin(u) * (this->endparam(u) - this->startparam(u)) + this->startparam(u);
+					u0[v] = m->const_par_   * (this->endparam(v) - this->startparam(v)) + this->startparam(v);
+					u0[w] = e->getParmin(w) * (this->endparam(w) - this->startparam(w)) + this->startparam(w);
+
+					u1[u] = e->getParmax(u) * (this->endparam(u) - this->startparam(u)) + this->startparam(u);
+					u1[v] = m->const_par_   * (this->endparam(v) - this->startparam(v)) + this->startparam(v);
+					u1[w] = e->getParmax(w) * (this->endparam(w) - this->startparam(w)) + this->startparam(w);
+				} else {
+					u0[u] = m->const_par_   * (this->endparam(u) - this->startparam(u)) + this->startparam(u);
+					u0[v] = e->getParmin(v) * (this->endparam(v) - this->startparam(v)) + this->startparam(v);
+					u0[w] = e->getParmin(w) * (this->endparam(w) - this->startparam(w)) + this->startparam(w);
+
+					u1[u] = m->const_par_   * (this->endparam(u) - this->startparam(u)) + this->startparam(u);
+					u1[v] = e->getParmax(v) * (this->endparam(v) - this->startparam(v)) + this->startparam(v);
+					u1[w] = e->getParmax(w) * (this->endparam(w) - this->startparam(w)) + this->startparam(w);
+				}
+				this->insert_line(new MeshRectangle(u0[0], u0[1], u0[2], u1[0], u1[1], u1[2], m->multiplicity_));
+				if(isotropic) {
+					// one of these mesh rectangles is probably the one above, but the insertion logic will detect this and disregard it
+					this->insert_line(new MeshRectangle( e->umin()             ,  e->vmin()             , (e->wmin()+e->wmax())/2,
+					                                     e->umax()             ,  e->vmax()             , (e->wmin()+e->wmax())/2,
+					                                    m->multiplicity_));
+					this->insert_line(new MeshRectangle( e->umin()             , (e->vmin()+e->vmax())/2,  e->wmin()             ,
+					                                     e->umax()             , (e->vmin()+e->vmax())/2,  e->wmax()             ,
+					                                    m->multiplicity_));
+					this->insert_line(new MeshRectangle((e->umin()+e->umax())/2,  e->vmin()             ,  e->wmin()             ,
+					                                    (e->umin()+e->umax())/2,  e->vmax()             ,  e->wmax()             ,
+					                                    m->multiplicity_));
+				}
+			}
+		}
+	}
+	return didRefine;
 }
 
 #if 0
