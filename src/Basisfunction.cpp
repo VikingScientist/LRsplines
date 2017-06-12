@@ -749,5 +749,34 @@ bool Basisfunction::contains(const Basisfunction &other) const {
 	return true;
 }
 
+/************************************************************************************************************************//**
+ * \brief flip two parametric coordinate directions
+ ***************************************************************************************************************************/
+void Basisfunction::flip(int dir1, int dir2) {
+	std::vector<double> tmp = knots_[dir1];
+	knots_[dir1] = knots_[dir2];
+	knots_[dir2] = tmp;
+}
+
+/************************************************************************************************************************//**
+ * \brief reverse one parametric direction. Need global range (parmin, parmax) for scaling 
+ ***************************************************************************************************************************/
+void Basisfunction::reverse(int pardir, double parmin, double parmax) {
+	std::vector<double> tmp(knots_[pardir]);
+	int n = tmp.size();
+	for(int i=0; i<n; i++) {
+		knots_[pardir][n-i-1] = (parmax - tmp[i]) / (parmax-parmin) * (parmax-parmin) + parmin;
+	}
+}
+
+/************************************************************************************************************************//**
+ * \brief (used when iterating over all functions), scales knot vectors so they globally fit into range (0,1)
+ ***************************************************************************************************************************/
+void Basisfunction::normalize(int pardir, double parmin, double parmax) {
+	for(int i=0; i<knots_[pardir].size(); i++) {
+		knots_[pardir][i] = (knots_[pardir][i] - parmin) / (parmax-parmin) * (parmax-parmin) + parmin;
+	}
+}
+
 
 } // end namespace LR

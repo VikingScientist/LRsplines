@@ -11,7 +11,6 @@
 namespace LR {
 
 class Element;
-class Meshline;
 
 /************************************************************************************************************************//**
  * \brief Basisfunction class to store the individual B-splines which make up the LR B-spline space
@@ -157,6 +156,10 @@ public:
 	// IO-functions
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
+
+	void flip(int dir1=0, int dir2=1);
+	void reverse(int pardir, double parmin=0.0, double parmax=1.0);
+	void normalize(int pardir, double parmin, double parmax);
 
 private:
 

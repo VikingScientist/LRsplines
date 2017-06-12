@@ -78,7 +78,9 @@ public:
 	void refineElement(int index);
 	void refineElement(const std::vector<int> &indices);
 	void refineByDimensionIncrease(const std::vector<double> &error, double beta);
-  bool matchParametricEdge(parameterEdge edge, std::vector<double> knots, bool isotropic=false);
+	bool matchParametricEdge(parameterEdge edge, std::vector<double> knots, bool isotropic=false);
+	void matchParametricEdge(parameterEdge edge, const std::vector<Basisfunction*> &functions);
+	bool matchParametricEdge(parameterEdge edge, LRSplineSurface *other, parameterEdge otherEdge, bool reverse);
 
 	// (private) refinement functions
 	Meshline* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
@@ -90,6 +92,7 @@ public:
 	void closeGaps(            std::vector<Meshline*>* newLines=NULL);
 	void enforceMaxTjoints(    std::vector<Meshline*>* newLines=NULL);
 	void enforceMaxAspectRatio(std::vector<Meshline*>* newLines=NULL);
+	void enforceIsotropic(     std::vector<Meshline*>* newLines=NULL);
 
 	// linear independence methods
 	bool isLinearIndepByOverloading(bool verbose) ;
@@ -258,4 +261,3 @@ private:
 } // end namespace LR
 
 #endif
-

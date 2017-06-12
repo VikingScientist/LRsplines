@@ -906,92 +906,167 @@ std::vector<Meshline*> LRSplineVolume::getEdgeKnots(parameterEdge edge, bool nor
 
 /************************************************************************************************************************//**
  * \brief Creates matching discretization (mesh) across patch boundaries so they can be stiched together
- * \param edge      which of the 4 parameter edges (NORTH/SOUTH/EAST/WEST) that should be refined
- * \param knots     list of normalized knots (range (0,1)) that should appear on the  boundary edge of this patch
- * \param isotropic if additional refinements should be done in an isotropic fashion (equal refinement in u- and v-direction,
- *                  i.e.function refinement)
- * \returns true if any new refinements were introduced
+ * \param edge      which of the 8 parameter edges (NORTH/SOUTH/EAST/WEST/TOP/BOTTOM) that should be refined
+ * \param functions list of normalized functions (knot vectors in range (0,1)) that should appear on the boundary edge of this patch
  * \details This will refine this patche so it will have conforming mesh on the interface between this patch and another. It will
  *          not manipulate the control-points of the basis functions, and it is left to the user to make sure that these coincide
  *          if the mesh is to match in the physical space, and not just in the parametric space.
- *          See also: getEdgeKnots()
  ***************************************************************************************************************************/
-bool LRSplineVolume::matchParametricEdge(parameterEdge edge, std::vector<Meshline*> lines, bool isotropic) {
-	bool didRefine = false;
-
-	// get interface edges
-	std::vector<Element*> el, el_tmp;
-	this->getEdgeElements( el_tmp, edge);
-
-	// since refinements will change or delete elements, we make a copy of the element lists
-	for(auto e : el_tmp)
-		el.push_back(e->copy());
-
-	// fetch local (u,v)-coordinates for this edge
-	int u,v,w;
-	switch(edge) {
-		case WEST:
-		case EAST:
-			u = 1; // first running direction
-			v = 2; // second running
-			w = 0; // const direction
-			break;
-		case NORTH:
-		case SOUTH:
-			u = 0; // first running direction
-			v = 2; // second running
-			w = 1; // const direction
-			break;
-		case TOP:
-		case BOTTOM:
-			u = 0; // first running direction
-			v = 1; // second running
-			w = 2; // const direction
-			break;
-	}
-
-	// loop over elements and insert lines where needed
-	for(auto e : el) {      // for all boundary elements
-		// create a 2D-version of this element that only lives on the boundary
-		Element edgEl(e->getParmin(u), e->getParmin(v), e->getParmax(u), e->getParmax(v));
-		for(auto m : lines) { // for all requested meshlines
-			if(m->splits(&edgEl)) {
-				didRefine = true;
-				double u0[3], u1[3];
-				if(m->is_spanning_u()) {
-					u0[u] = e->getParmin(u) * (this->endparam(u) - this->startparam(u)) + this->startparam(u);
-					u0[v] = m->const_par_   * (this->endparam(v) - this->startparam(v)) + this->startparam(v);
-					u0[w] = e->getParmin(w) * (this->endparam(w) - this->startparam(w)) + this->startparam(w);
-
-					u1[u] = e->getParmax(u) * (this->endparam(u) - this->startparam(u)) + this->startparam(u);
-					u1[v] = m->const_par_   * (this->endparam(v) - this->startparam(v)) + this->startparam(v);
-					u1[w] = e->getParmax(w) * (this->endparam(w) - this->startparam(w)) + this->startparam(w);
+void LRSplineVolume::matchParametricEdge(parameterEdge edge, const std::vector<Basisfunction*> &functions) {
+	double u0 = this->startparam(0);
+	double u1 = this->endparam(0);
+	double v0 = this->startparam(1);
+	double v1 = this->endparam(1);
+	double w0 = this->startparam(2);
+	double w1 = this->endparam(2);
+	for(auto b : functions) {
+		for(int d=0; d<3; d++) {
+			int mult = 1;
+			auto knots = b->getknots(d);
+			for(int i=0; i<knots.size(); i++) {
+				if( i==knots.size()-1 || fabs(knots[i+1] - knots[i])>DOUBLE_TOL) {
+					if(d==0) {
+						this->insert_line(new MeshRectangle((u1+u0)*knots[i]+u0, (v1-v0)*b->getParmin(1)+v0, (w1-w0)*b->getParmin(2)+w0,
+						                                    (u1+u0)*knots[i]+u0, (v1-v0)*b->getParmax(1)+v0, (w1-w0)*b->getParmax(2)+w0, mult));
+					} else if(d==1) {
+						this->insert_line(new MeshRectangle((u1+u0)*b->getParmin(0)+u0, (v1-v0)*knots[i]+v0, (w1-w0)*b->getParmin(2)+w0,
+						                                    (u1+u0)*b->getParmax(0)+u0, (v1-v0)*knots[i]+v0, (w1-w0)*b->getParmax(2)+w0, mult));
+					} else {
+						this->insert_line(new MeshRectangle((u1+u0)*b->getParmin(0)+u0, (v1-v0)*b->getParmin(1)+v0, (w1-w0)*knots[i]+w0,
+						                                    (u1+u0)*b->getParmax(0)+u0, (v1-v0)*b->getParmax(1)+v0, (w1-w0)*knots[i]+w0, mult));
+					}
+					mult = 1;
 				} else {
-					u0[u] = m->const_par_   * (this->endparam(u) - this->startparam(u)) + this->startparam(u);
-					u0[v] = e->getParmin(v) * (this->endparam(v) - this->startparam(v)) + this->startparam(v);
-					u0[w] = e->getParmin(w) * (this->endparam(w) - this->startparam(w)) + this->startparam(w);
-
-					u1[u] = m->const_par_   * (this->endparam(u) - this->startparam(u)) + this->startparam(u);
-					u1[v] = e->getParmax(v) * (this->endparam(v) - this->startparam(v)) + this->startparam(v);
-					u1[w] = e->getParmax(w) * (this->endparam(w) - this->startparam(w)) + this->startparam(w);
-				}
-				this->insert_line(new MeshRectangle(u0[0], u0[1], u0[2], u1[0], u1[1], u1[2], m->multiplicity_));
-				if(isotropic) {
-					// one of these mesh rectangles is probably the one above, but the insertion logic will detect this and disregard it
-					this->insert_line(new MeshRectangle( e->umin()             ,  e->vmin()             , (e->wmin()+e->wmax())/2,
-					                                     e->umax()             ,  e->vmax()             , (e->wmin()+e->wmax())/2,
-					                                    m->multiplicity_));
-					this->insert_line(new MeshRectangle( e->umin()             , (e->vmin()+e->vmax())/2,  e->wmin()             ,
-					                                     e->umax()             , (e->vmin()+e->vmax())/2,  e->wmax()             ,
-					                                    m->multiplicity_));
-					this->insert_line(new MeshRectangle((e->umin()+e->umax())/2,  e->vmin()             ,  e->wmin()             ,
-					                                    (e->umin()+e->umax())/2,  e->vmax()             ,  e->wmax()             ,
-					                                    m->multiplicity_));
+					mult++;
 				}
 			}
 		}
 	}
-	return didRefine;
+	aPosterioriFixElements();
+}
+
+/************************************************************************************************************************//**
+ * \brief Creates matching discretization (mesh) across patch boundaries so they can be stiched together in a C0-fashion
+ * \param edge      which of the 4 parameter edges (NORTH/SOUTH/EAST/WEST) on the master patch (this patch) that should be matched
+ * \param other     pointer to the other patch that is to be matched
+ * \param otherEdge which of the 4 parameter edges on the slave patch that should be matched
+ * \returns true if any new refinements were introduced
+ * \details This will refine this patche so it will have conforming mesh on the interface between this patch and another. It will
+ *          not manipulate the control-points of the basis functions, and it is left to the user to make sure that these coincide
+ *          if the mesh is to match in the physical space, and not just in the parametric space.
+ ***************************************************************************************************************************/
+bool LRSplineVolume::matchParametricEdge(parameterEdge edge, LRSplineVolume *other, parameterEdge otherEdge, bool reverse_u, bool reverse_v, bool flip_uv) {
+	int n1 = this->nBasisFunctions();
+	int n2 = other->nBasisFunctions();
+	std::vector<Basisfunction*> fun1, fun2, normalized1, normalized2;
+	this->getEdgeFunctions(fun1, edge);
+	other->getEdgeFunctions(fun2, otherEdge);
+
+	// NOTE: normalizing is non-trivial when the matching boundaries are of different cross-parametric sizes. I.e. this example here:
+	/*
+	 *   +------+ +-----------------+  ^
+	 *   |      | |                 |  |
+	 *   |  #1  | |       #2        |  2
+	 *   |      | |                 |  |
+	 *   +------+ +-----------------+  v
+	 *
+	 *   <- 2 --> <------- 4 ------->
+	 *
+	 * Rescaling the functions of patch #2 in the u-direction to (0,1) may match a different scaling of patch #1 scaled in its u-direction
+	 * Note that we DO need to match the u-components of the basifunctions even if this is a v-direction edge that is being matched!
+	 */
+
+	// make a pre-processed rescaled set of basisfunctions which will be passed to the other LRSplineSurface patch
+	int thismax  = (     edge==EAST ||      edge==NORTH ||      edge==TOP);
+	int othermax = (otherEdge==EAST || otherEdge==NORTH || otherEdge==TOP);
+
+	// fetch local (u,v)-coordinates for this edge
+	int u1,v1,w1,u2,v2,w2;
+	switch(edge) {
+		case WEST:
+		case EAST:
+			u1 = 1; // first running direction
+			v1 = 2; // second running
+			w1 = 0; // const direction
+			break;
+		case NORTH:
+		case SOUTH:
+			u1 = 0; // first running direction
+			v1 = 2; // second running
+			w1 = 1; // const direction
+			break;
+		case TOP:
+		case BOTTOM:
+			u1 = 0; // first running direction
+			v1 = 1; // second running
+			w1 = 2; // const direction
+			break;
+	}
+	switch(otherEdge) {
+		case WEST:
+		case EAST:
+			u2 = 1;
+			v2 = 2;
+			w2 = 0;
+			break;
+		case NORTH:
+		case SOUTH:
+			u2 = 0;
+			v2 = 2;
+			w2 = 1;
+			break;
+		case TOP:
+		case BOTTOM:
+			u2 = 0;
+			v2 = 1;
+			w2 = 2;
+			break;
+	}
+
+	for(auto b : fun1) {
+		normalized1.push_back(b->copy());
+		normalized1.back()->normalize(0, this->startparam(0), this->endparam(0));
+		normalized1.back()->normalize(1, this->startparam(1), this->endparam(1));
+		normalized1.back()->normalize(2, this->startparam(2), this->endparam(2));
+		if(flip_uv)
+			normalized1.back()->flip(u1,v1);
+		if(reverse_u)
+			normalized1.back()->reverse(u1);
+		if(reverse_v)
+			normalized1.back()->reverse(v1);
+		if(thismax != othermax)
+			normalized1.back()->reverse(w1);
+		normalized1.back()->flip(u1,u2);
+		normalized1.back()->flip(v1,v2);
+	}
+
+	// make a pre-processed rescaled set of basisfunctions that will be passed from the other patch and onto this
+	for(auto b : fun2) {
+		normalized2.push_back(b->copy());
+		normalized2.back()->normalize(0, other->startparam(0), other->endparam(0));
+		normalized2.back()->normalize(1, other->startparam(1), other->endparam(1));
+		normalized2.back()->normalize(2, other->startparam(2), other->endparam(2));
+		if(flip_uv)
+			normalized2.back()->flip(u2,v2);
+		if(reverse_u)
+			normalized2.back()->reverse(u2);
+		if(reverse_v)
+			normalized2.back()->reverse(v2);
+		if(thismax != othermax)
+			normalized2.back()->reverse(w2);
+		normalized2.back()->flip(v1,v2);
+		normalized2.back()->flip(u1,u2);
+	}
+
+	// refine patch #1
+	this->matchParametricEdge(edge, normalized2);
+
+	// refine patch #2
+	other->matchParametricEdge(otherEdge, normalized1);
+
+	// check if any change has happened:
+	return (this->nBasisFunctions() != n1 || other->nBasisFunctions() != n2);
+
 }
 
 #if 0
@@ -1192,6 +1267,70 @@ void LRSplineVolume::enforceMaxAspectRatio(std::vector<MeshRectangle*>* newLines
 }
 #endif
 
+/************************************************************************************************************************//**
+ * \brief Enforces all elements to be of equal size in all 3 directions
+ * \return true if some elements were bisected
+ * \details This is a rather specialized function and will only work in certain scenarios. The intended use is when 2:1-elements
+ *          sneak into the mesh (for instance by using LRSplineSurface::matchParametricEdge()) and need to be further subdivided.
+ *          They are then fixed by simpy inserting dividing this element in two along its longest direction. Unless this hits
+ *          another meshline perfectly, this line WILL be too short for legal insertion and the method will not work.
+ *
+ *
+ *          +-----------+
+ *          |           |  <--- fix this element by splitting in two along the u-direction
+ *          |           |
+ *          +-----+-----+
+ *          |     |     |
+ *          |     |     |
+ *          +-----+-----+
+ *
+ *                 \
+ *                  \ won't work unless this particular line is here, such that the new line forms an elongation of the old one
+ *
+ *
+ *
+ ***************************************************************************************************************************/
+bool LRSplineVolume::enforceIsotropic() {
+	bool somethingFixed = true;
+	bool result = false;
+	while(somethingFixed) {
+		somethingFixed = false;
+		for(uint i=0; i<element_.size(); i++) {
+			double umin = element_[i]->umin();
+			double umax = element_[i]->umax();
+			double vmin = element_[i]->vmin();
+			double vmax = element_[i]->vmax();
+			double wmin = element_[i]->wmin();
+			double wmax = element_[i]->wmax();
+			double du = umax-umin;
+			double dv = vmax-vmin;
+			double dw = wmax-wmin;
+			double h  = std::min(std::min(du,dv),dw);
+			MeshRectangle *m;
+			if(du - h > DOUBLE_TOL) {
+				m = new MeshRectangle(umin+du/2, vmin, wmin, umin+du/2, vmax, wmax, refKnotlineMult_);
+				insert_line(m);
+				somethingFixed = true;
+			}
+			if(dv - h > DOUBLE_TOL) {
+				m = new MeshRectangle(umin, vmin+dv/2, wmin, umax, vmin+dv/2, wmax, refKnotlineMult_);
+				insert_line(m);
+				somethingFixed = true;
+			}
+			if(dw - h > DOUBLE_TOL) {
+				m = new MeshRectangle(umin, vmin, wmin+dw/2, umax, vmax, wmin+dw/2, refKnotlineMult_);
+				insert_line(m);
+				somethingFixed = true;
+			}
+			if(somethingFixed) {
+				result = true;
+				break;
+			}
+		}
+	}
+	return result;
+}
+
 MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 	if(newRect->start_[0] < start_[0] ||
 	   newRect->start_[1] < start_[1] ||
@@ -1339,8 +1478,8 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 	}
 	} // end step 2 timer
 
-  // clear cache since mesh is now changed
-  builtElementCache_ = false;
+	// clear cache since mesh is now changed
+	builtElementCache_ = false;
 
 	return NULL;
 }
@@ -2395,7 +2534,25 @@ LRSplineVolume* LRSplineVolume::getDerivedBasis(int raise_p1, int raise_p2, int 
 		rect->multiplicity_ += dk;
 		result->insert_line(rect);
 	}
+	result->aPosterioriFixElements();
 	return result;
+}
+
+/************************************************************************************************************************//**
+ * \brief functions inserting batch of rectangles (i.e. getDerivativeSpace, getPrimalSpace) may not do proper element-splits
+ *        during refinement. This function fixes them a priori.
+ ***************************************************************************************************************************/
+void LRSplineVolume::aPosterioriFixElements() {
+	for(uint i=0; i<element_.size(); i++) {
+		for(uint j=0; j<meshrect_.size(); j++) {
+			MeshRectangle *m = meshrect_[j];
+			if(m->splits(element_[i])) {
+				element_.push_back(element_[i]->split(m->constDirection(), m->constParameter()) );
+				i=0;
+				break;
+			}
+		}
+	}
 }
 
 

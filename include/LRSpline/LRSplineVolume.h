@@ -78,7 +78,8 @@ public:
 	void refineBasisFunction(int index);
 	void refineBasisFunction(const std::vector<int> &indices);
 	void refineByDimensionIncrease(const std::vector<double> &error, double beta);
-  bool matchParametricEdge(parameterEdge edge, std::vector<Meshline*> lines, bool isotropic=false);
+	void matchParametricEdge(parameterEdge edge, const std::vector<Basisfunction*> &functions);
+	bool matchParametricEdge(parameterEdge edge, LRSplineVolume *other, parameterEdge otherEdge, bool reverse_u, bool reverse_v, bool flip_uv);
 
 	// (private) refinement functions
 	void getFullspanRects(  int iEl,    std::vector<MeshRectangle*>& rects);
@@ -92,6 +93,7 @@ public:
 	void enforceMaxTjoints(    std::vector<MeshRectangle*>* newLines=NULL);
 	void enforceMaxAspectRatio(std::vector<MeshRectangle*>* newLines=NULL);
 	*/
+	bool enforceIsotropic();
 
 	// linear independence methods
 	bool isLinearIndepByOverloading(bool verbose) ;
@@ -159,6 +161,7 @@ private:
 
 	std::vector<MeshRectangle*> meshrect_;
 
+	void aPosterioriFixElements();
 	void split(int constDir, Basisfunction *b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
 	void initMeta();
 	template <typename RandomIterator1,
