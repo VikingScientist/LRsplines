@@ -110,6 +110,9 @@ public:
 	virtual void refineElement(const std::vector<int> &indices) = 0;
 	virtual void refineByDimensionIncrease(const std::vector<double> &error, double beta) = 0;
 
+	// multipatch functions
+	// virtual void matchParametricEdge(parameterEdge edge, const std::vector<Basisfunction*> &functions) = 0;
+
 	// set refinement state parameters
 	void setRefStrat(enum refinementStrategy strat) { refStrat_        = strat;    };
 	void setRefSymmetry(int symmetry)               { this->symmetry_  = symmetry; };
@@ -140,7 +143,7 @@ protected:
 	std::vector<double> start_ ; //! \brief parametric start coordinate (2 components for surfaces, 3 for volumes)
 	std::vector<double> end_   ; //! \brief parametric stop coordinate (2 components for surfaces, 3 for volumes)
 	std::vector<int>    order_ ; //! \brief polynomial order (degree + 1) in each parametric direction (2 or 3 components)
-	
+
 	// core storage places for the building blocks
 	std::vector<Basisfunction*> basisVector; // only used in read/write functions
 	HashSet<Basisfunction*> basis_;

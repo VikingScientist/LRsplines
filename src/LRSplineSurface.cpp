@@ -930,6 +930,113 @@ std::vector<double> LRSplineSurface::getEdgeKnots(parameterEdge edge, bool norma
 /************************************************************************************************************************//**
  * \brief Creates matching discretization (mesh) across patch boundaries so they can be stiched together
  * \param edge      which of the 4 parameter edges (NORTH/SOUTH/EAST/WEST) that should be refined
+ * \param functions list of normalized functions (knot vectors in range (0,1)) that should appear on the boundary edge of this patch
+ * \details This will refine this patche so it will have conforming mesh on the interface between this patch and another. It will
+ *          not manipulate the control-points of the basis functions, and it is left to the user to make sure that these coincide
+ *          if the mesh is to match in the physical space, and not just in the parametric space.
+ ***************************************************************************************************************************/
+void LRSplineSurface::matchParametricEdge(parameterEdge edge, const std::vector<Basisfunction*> &functions) {
+	double u0 = this->startparam(0);
+	double u1 = this->endparam(0);
+	double v0 = this->startparam(1);
+	double v1 = this->endparam(1);
+	for(auto b : functions) {
+		for(int d=0; d<2; d++) {
+			int mult = 1;
+			auto knots = b->getknots(d);
+			for(int i=0; i<knots.size(); i++) {
+				if( i==knots.size()-1 || fabs(knots[i+1] - knots[i])>DOUBLE_TOL) {
+					if(d==0) this->insert_line(d==0, (u1-u0)*knots[i]+u0, (v1-v0)*b->getParmin(1-d)+v0, (v1-v0)*b->getParmax(1-d)+v0, mult);
+					else     this->insert_line(d==0, (v1-v0)*knots[i]+v0, (u1-u0)*b->getParmin(1-d)+u0, (u1-u0)*b->getParmax(1-d)+u0, mult);
+					mult = 1;
+				} else {
+					mult++;
+				}
+			}
+		}
+	}
+	aPosterioriFixElements();
+}
+
+/************************************************************************************************************************//**
+ * \brief Creates matching discretization (mesh) across patch boundaries so they can be stiched together in a C0-fashion
+ * \param edge      which of the 4 parameter edges (NORTH/SOUTH/EAST/WEST) on the master patch (this patch) that should be matched
+ * \param other     pointer to the other patch that is to be matched
+ * \param otherEdge which of the 4 parameter edges on the slave patch that should be matched
+ * \returns true if any new refinements were introduced
+ * \details This will refine this patche so it will have conforming mesh on the interface between this patch and another. It will
+ *          not manipulate the control-points of the basis functions, and it is left to the user to make sure that these coincide
+ *          if the mesh is to match in the physical space, and not just in the parametric space.
+ ***************************************************************************************************************************/
+bool LRSplineSurface::matchParametricEdge(parameterEdge edge, LRSplineSurface *other, parameterEdge otherEdge, bool reverse) {
+	int n1 = this->nBasisFunctions();
+	int n2 = other->nBasisFunctions();
+	std::vector<Basisfunction*> fun1, fun2, normalized1, normalized2;
+	this->getEdgeFunctions(fun1, edge);
+	other->getEdgeFunctions(fun2, otherEdge);
+
+	bool flip           = (edge==NORTH || edge==SOUTH) != (otherEdge==NORTH || otherEdge==SOUTH);
+	bool reverse_along  = reverse;
+	bool reverse_across = (edge==NORTH || edge==EAST)  != (otherEdge==NORTH || otherEdge==EAST);
+
+	// NOTE: normalizing is non-trivial when the matching boundaries are of different cross-parametric sizes. I.e. this example here:
+	/*
+	 *   +------+ +-----------------+  ^
+	 *   |      | |                 |  |
+	 *   |  #1  | |       #2        |  2
+	 *   |      | |                 |  |
+	 *   +------+ +-----------------+  v
+	 *
+	 *   <- 2 --> <------- 4 ------->
+	 *
+	 * Rescaling the functions of patch #2 in the u-direction to (0,1) may match a different scaling of patch #1 scaled in its u-direction
+	 * Note that we DO need to match the u-components of the basifunctions even if this is a v-direction edge that is being matched!
+	 */
+
+	// make a pre-processed rescaled set of basisfunctions which will be passed to the other LRSplineSurface patch
+	for(auto b : fun1) {
+		normalized1.push_back(b->copy());
+		normalized1.back()->normalize(0, this->startparam(0), this->endparam(0));
+		normalized1.back()->normalize(1, this->startparam(1), this->endparam(1));
+		int along  = (edge==EAST || edge==WEST);
+		int across = 1-along;
+		if(reverse_across)
+			normalized1.back()->reverse(across);
+		if(reverse_along)
+			normalized1.back()->reverse(along);
+		if(flip)
+			normalized1.back()->flip();
+	}
+
+	// make a pre-processed rescaled set of basisfunctions that will be passed from the other patch and onto this
+	for(auto b : fun2) {
+		normalized2.push_back(b->copy());
+		normalized2.back()->normalize(0, other->startparam(0), other->endparam(0));
+		normalized2.back()->normalize(1, other->startparam(1), other->endparam(1));
+		int along  = (otherEdge==EAST || otherEdge==WEST);
+		int across = 1-along;
+		if(reverse_across)
+			normalized2.back()->reverse(across);
+		if(reverse_along)
+			normalized2.back()->reverse(along);
+		if(flip)
+			normalized2.back()->flip();
+	}
+
+	// refine patch #1
+	this->matchParametricEdge(edge, normalized2);
+
+	// refine patch #2
+	other->matchParametricEdge(otherEdge, normalized1);
+
+	// check if any change has happened:
+	return (this->nBasisFunctions() != n1 || other->nBasisFunctions() != n2);
+
+}
+
+/************************************************************************************************************************//**
+ * \brief Creates matching discretization (mesh) across patch boundaries so they can be stiched together
+ * \param edge      which of the 4 parameter edges (NORTH/SOUTH/EAST/WEST) that should be refined
  * \param knots     list of normalized knots (range (0,1)) that should appear on the  boundary edge of this patch
  * \param isotropic if additional refinements should be done in an isotropic fashion (equal refinement in u- and v-direction,
  *                  i.e.function refinement)
@@ -1198,6 +1305,56 @@ void LRSplineSurface::enforceMaxAspectRatio(std::vector<Meshline*>* newLines) {
 	}
 }
 
+/************************************************************************************************************************//**
+ * \brief Enforces all elements to be of equal size in both directions
+ * \param newLines  list of new meshlines that were inserted, or NULL if this is not needed
+ * \details This is a rather specialized function and will only work in certain scenarios. The intended use is when 2:1-elements
+ *          sneak into the mesh (for instance by using LRSplineSurface::matchParametricEdge()) and need to be further subdivided.
+ *          They are then fixed by simpy inserting dividing this element in two along its longest direction. Unless this hits
+ *          another meshline perfectly, this line WILL be too short for legal insertion and the method will not work.
+ *
+ *
+ *          +-----------+
+ *          |           |  <--- fix this element by splitting in two along the u-direction
+ *          |           |
+ *          +-----+-----+
+ *          |     |     |
+ *          |     |     |
+ *          +-----+-----+
+ *
+ *                 \
+ *                  \ won't work unless this particular line is here, such that the new line forms an elongation of the old one
+ *
+ *
+ *
+ ***************************************************************************************************************************/
+void LRSplineSurface::enforceIsotropic(std::vector<Meshline*>* newLines) {
+	bool somethingFixed = true;
+	while(somethingFixed) {
+		somethingFixed = false;
+		for(uint i=0; i<element_.size(); i++) {
+			double umin = element_[i]->umin();
+			double umax = element_[i]->umax();
+			double vmin = element_[i]->vmin();
+			double vmax = element_[i]->vmax();
+			double du = umax-umin;
+			double dv = vmax-vmin;
+			Meshline *m;
+			if(fabs(du-dv)>DOUBLE_TOL) {
+				if(du>dv) {
+					m = insert_line(true,  umin + du/2, vmin, vmax, refKnotlineMult_);
+				} else {
+					m = insert_line(false, vmin + dv/2, umin, umax, refKnotlineMult_);
+				}
+				if(newLines != NULL)
+					newLines->push_back(m->copy());
+				somethingFixed = true;
+				break;
+			}
+		}
+	}
+}
+
 Meshline* LRSplineSurface::insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity) {
 	return insert_line(true, u, start_v, stop_v, multiplicity);
 }
@@ -1338,8 +1495,8 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 	}
 	} // end profiler (step 2)
 
-  // clear cache since mesh is now changed
-  builtElementCache_ = false;
+	// clear cache since mesh is now changed
+	builtElementCache_ = false;
 
 	return newline;
 }
@@ -2239,6 +2396,7 @@ LRSplineSurface* LRSplineSurface::getDerivedBasis(int raise_p1, int raise_p2, si
 		int dk = (m->span_u_line_) ? (lower_k2 + raise_p2) : (lower_k1 + raise_p1);
 		result->insert_line(!m->span_u_line_, m->const_par_, m->start_, m->stop_, m->multiplicity_ + dk);
 	}
+	result->aPosterioriFixElements();
 	return result;
 }
 
