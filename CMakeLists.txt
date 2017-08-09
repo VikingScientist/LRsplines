@@ -27,7 +27,8 @@ INCLUDE(cmake/Modules/UseMultiArch.cmake)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
-IF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+IF(CMAKE_CXX_COMPILER_ID MATCHES GNU OR
+   CMAKE_CXX_COMPILER_ID MATCHES Clang)
 # check if compiler supports c++-0x
   CHECK_CXX_COMPILER_FLAG("-std=gnu++0x" HAVE_0x)
   IF(HAVE_0x)
@@ -36,7 +37,7 @@ IF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
     MESSAGE("A compiler with c++-0x support is needed")
     EXIT(1)
   ENDIF(HAVE_0x)
-ENDIF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+ENDIF()
 
 # Check that the required C++11 features are available
 CHECK_CXX_SOURCE_COMPILES("
