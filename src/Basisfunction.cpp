@@ -43,15 +43,14 @@ Basisfunction::~Basisfunction() {
  * \returns The internal knot average
  ***************************************************************************************************************************/
 Go::Point Basisfunction::getGrevilleParameter() const {
-	Go::Point ans(2);
-        ans[0] = ans[1] = 0.0;
-	for(uint i=1; i<knots_[0].size()-1; i++)
-		ans[0] += knots_[0][i];
-	for(uint i=1; i<knots_[1].size()-1; i++)
-		ans[1] += knots_[1][i];
-	ans[0] /= (knots_[0].size()-2);
-	ans[1] /= (knots_[1].size()-2);
-	return ans;
+  Go::Point ans(knots_.size());
+  for (size_t d = 0; d < knots_.size(); ++d) {
+    ans[d] = 0.0;
+    for(uint i=1; i<knots_[d].size()-1; i++)
+      ans[d] += knots_[d][i];
+    ans[d] /= (knots_[d].size()-2);
+  }
+  return ans;
 }
 
 /************************************************************************************************************************//**
