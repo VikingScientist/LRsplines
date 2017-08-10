@@ -786,8 +786,8 @@ void LRSplineVolume::refineByDimensionIncrease(const std::vector<double> &errPer
 				e = *(b->supportedElementBegin() + j);
 				errors[i].first += errPerElement[e->getId()];
 			}
+			i++;
 		}
-		i++;
 	} else {
 		for(uint i=0; i<element_.size(); i++)
 			errors.push_back(IndexDouble(errPerElement[i], i));
