@@ -36,6 +36,7 @@ int main(int argc, char **argv) {
 	bool rat            = false;
 	bool dumpFile       = false;
 	bool quiet          = false;
+	bool functions      = false;
 	bool vol            = false;
 	char *lrInitMesh    = NULL;
 	char *inputFileName = NULL;
@@ -49,6 +50,7 @@ int main(int argc, char **argv) {
 	              "   -n3    <n>  number of basis functions in third parametric direction (only trivariate volumes)\n" \
 	              "   -in:   <s>  make the LRSplineSurface <s> the initial mesh\n"\
 	              "   -quiet      don't dump lrspline file to stdout \n" \
+	              "   -functions  perform function-type refinement instead of meshline refinement \n" \
 	              "   -dumpfile   writes an eps- and txt-file of the LR-mesh (bivariate surfaces only)\n"\
 	              "   -help       display (this) help screen\n";
 	parameters << " default values\n";
@@ -56,12 +58,16 @@ int main(int argc, char **argv) {
 	parameters << "   -n   = { " << n1 << ", " << n2 << ", " << n3 << " }\n";
 	parameters << "   -vol = { " << ((vol)?"true":"false") << " }\n";
 	parameters << " <refine inputfile>\n"\
-	              "   inputfile describing meshline insertions.\n"\
-	              "   FORMAT:\n"\
+	              "   inputfile describing either elements to be refined (identifed by coordinate) OR functions (by index)\n"\
+	              "   FORMAT (element):\n"\
 	              "     <numb. refined elements>\n"\
 	              "     <insert all meshlines at once>\n"\
 	              "     <x> <y>        (Surface only)\n"\
-	              "     <x> <y> <z>    (Volume only)\n";
+	              "     <x> <y> <z>    (Volume only)\n"\
+	              "   FORMAT (function):\n"\
+	              "     <numb. refined functions>\n"\
+	              "     <refine all functions at once>\n"\
+	              "     <i>\n";
 
 	// read input
 	for(int i=1; i<argc; i++) {
@@ -85,6 +91,8 @@ int main(int argc, char **argv) {
 			vol = true;
 		else if(strcmp(argv[i], "-quiet") == 0)
 			quiet = true;
+		else if(strcmp(argv[i], "-functions") == 0)
+			functions = true;
 		else if(strcmp(argv[i], "-dumpfile") == 0)
 			dumpFile = true;
 		else if(strcmp(argv[i], "-help") == 0) {
@@ -118,6 +126,7 @@ int main(int argc, char **argv) {
 
 	LRSplineSurface *lrs=nullptr;
 	LRSplineVolume  *lrv=nullptr;
+	LRSpline        *lr;
 
 	if(lrInitMesh == NULL) {
 		// make a uniform integer knot vector
@@ -141,36 +150,50 @@ int main(int argc, char **argv) {
 
 		// make two spline objects
 		if(vol) {
-			lrv = new LRSplineVolume(n1, n2, n3, p1, p2, p3, knot_u.begin(), knot_v.begin(), knot_w.begin(), cp.begin(), dim, rat);
+			lr = lrv = new LRSplineVolume(n1, n2, n3, p1, p2, p3, knot_u.begin(), knot_v.begin(), knot_w.begin(), cp.begin(), dim, rat);
 		} else {
-			lrs = new LRSplineSurface(n1, n2, p1, p2, knot_u.begin(), knot_v.begin(), cp.begin(), dim, rat);
+			lr = lrs = new LRSplineSurface(n1, n2, p1, p2, knot_u.begin(), knot_v.begin(), cp.begin(), dim, rat);
 		}
 	} else {
-#ifdef HAS_GOTOOLS
 		ifstream inputfile;
 		inputfile.open(lrInitMesh);
 		if(!inputfile.is_open()) {
 			cerr << "Error: could not open file " << lrInitMesh << endl;
 			exit(3);
 		}
-		Go::ObjectHeader head;
-		Go::SplineSurface *ss = new Go::SplineSurface();
-		Go::SplineVolume  *sv = new Go::SplineVolume();
-		inputfile >> head;
-		if(head.classType() == Go::Class_SplineVolume) {
-			vol = true;
-			inputfile >> *sv;
-			lrv = new LRSplineVolume(sv);
-		} else if(head.classType() == Go::Class_SplineSurface) {
-			vol = false;
-			inputfile >> *ss;
-			lrs = new LRSplineSurface(ss);
-		}
+		int n = strlen(lrInitMesh);
+		if(strncmp(lrInitMesh+n-3, ".lr", 3) == 0) {
+			if(vol) {
+				lr = lrv = new LRSplineVolume();
+			} else {
+				lr = lrv = new LRSplineVolume();
+			}
+			inputfile >> *lr;
+		} else if(strncmp(lrInitMesh+n-3, ".g2", 3) == 0) {
+#ifdef HAS_GOTOOLS
+			Go::ObjectHeader head;
+			Go::SplineSurface *ss = new Go::SplineSurface();
+			Go::SplineVolume  *sv = new Go::SplineVolume();
+			inputfile >> head;
+			if(head.classType() == Go::Class_SplineVolume) {
+				vol = true;
+				inputfile >> *sv;
+				lr = lrv = new LRSplineVolume(sv);
+			} else if(head.classType() == Go::Class_SplineSurface) {
+				vol = false;
+				inputfile >> *ss;
+				lr = lrs = new LRSplineSurface(ss);
+			}
+#else
+			cerr << "GoTools not available, cannot read .g2 file:" << lrInitMesh << endl;
+			exit(4);
 #endif
+		}
 	}
 
 	// ---------------- Read Input file   ----------------------------
 	vector<vector<double> > parPt;
+	vector<int>             functionIdx;
 	bool atOnce = false;
 	ifstream inputFile;
 	inputFile.open(inputFileName);
@@ -179,24 +202,38 @@ int main(int argc, char **argv) {
 		int parDim = (vol) ? 3 : 2;
 		inputFile >> n;
 		inputFile >> atOnce;
+		functionIdx.resize(n);
+		parPt.resize(n);
 		for(int i=0; i<n; i++) {
-			parPt.push_back(vector<double>(parDim));
-			for(int j=0; j<parDim; j++)
-				inputFile >> parPt[i][j];
+			if(functions) {
+				inputFile >> functionIdx[i];
+			} else {
+				parPt[i].resize(parDim);
+				for(int j=0; j<parDim; j++)
+					inputFile >> parPt[i][j];
+			}
 		}
+	}
+	if(functions && !atOnce) {
+		// not really an impossible task, but it is annoying to try and make it work, and I don't have the time right now
+		cout << "Warning: Function refinement requires all to be inserted at once (index chages during refinement)\n";
+		atOnce = true;
 	}
 
 	// ---------------- Do actual refinement   -----------------------
 	if(atOnce) {
-		vector<int> elIndex;
-		for(uint i=0; i<parPt.size(); i++) {
-			if(vol)
-				elIndex.push_back(lrv->getElementContaining(parPt[i][0], parPt[i][1], parPt[i][2]) );
-			else
-				elIndex.push_back(lrs->getElementContaining(parPt[i][0], parPt[i][1]) );
+		if(functions) {
+			lr->refineBasisFunction(functionIdx);
+		} else {
+			vector<int> elIndex;
+			for(uint i=0; i<parPt.size(); i++) {
+				if(vol)
+					elIndex.push_back(lrv->getElementContaining(parPt[i][0], parPt[i][1], parPt[i][2]) );
+				else
+					elIndex.push_back(lrs->getElementContaining(parPt[i][0], parPt[i][1]) );
+			}
+			lr->refineElement(elIndex);
 		}
-		if(vol) lrv->refineElement(elIndex);
-		else    lrs->refineElement(elIndex);
 	} else {
 		for(uint i=0; i<parPt.size(); i++) {
 			if(vol) lrv->refineElement(lrv->getElementContaining(parPt[i][0], parPt[i][1], parPt[i][2]) );

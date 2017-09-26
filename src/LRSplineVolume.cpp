@@ -1208,13 +1208,9 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 				} else if(status == 4) { // deleted j, i added to newGuys
 					newGuys.erase(newGuys.begin() + i);
 				} else if(status == 5) { // deleted j, i duplicate in newGuys
-					delete meshrect_[i];
-					meshrect_.erase(meshrect_.begin() + i);
-					break;
+					;
 				} else if(status == 6) { // j kept unchanged, i duplicate in newGuys
-					delete meshrect_[i];
-					meshrect_.erase(meshrect_.begin() + i);
-					break;
+					newGuys.erase(newGuys.begin() + i);
 				}
 				if(status > 0) {
 					change = true;
