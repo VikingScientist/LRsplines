@@ -181,7 +181,7 @@ void LRSplineSurface::initMeta() {
 	selected_basis_red    = 1.0;
 	selected_basis_green  = 0.2;
 	selected_basis_blue   = 0.05;
-  builtElementCache_    = false;
+	builtElementCache_    = false;
 }
 
 /************************************************************************************************************************//**
@@ -306,38 +306,38 @@ void LRSplineSurface::point(std::vector<Go::Point> &pts, double u, double v, int
 Go::SplineCurve* LRSplineSurface::edgeCurve(parameterEdge edge,
                                             std::vector<Basisfunction*>& functions) const
 {
-  functions.clear();
-  getEdgeFunctions(functions, edge);
+	functions.clear();
+	getEdgeFunctions(functions, edge);
 
-  int dir = (edge == WEST || edge == EAST) ? 1 : 0;
-  std::sort(functions.begin(), functions.end(),
-            [dir](const Basisfunction* a, const Basisfunction* b)
-            {
-              if (a->getGrevilleParameter()[dir] != b->getGrevilleParameter()[dir])
-                return a->getGrevilleParameter()[dir] < b->getGrevilleParameter()[dir];
+	int dir = (edge == WEST || edge == EAST) ? 1 : 0;
+	std::sort(functions.begin(), functions.end(),
+	          [dir](const Basisfunction* a, const Basisfunction* b)
+	          {
+	            if (a->getGrevilleParameter()[dir] != b->getGrevilleParameter()[dir])
+	              return a->getGrevilleParameter()[dir] < b->getGrevilleParameter()[dir];
 
-              size_t idx = 0;
-              for (auto& it : a->getknots(dir))
-                if (it != b->getknots(dir)[idx])
-                  return it < b->getknots(dir)[idx++];
+	            size_t idx = 0;
+	            for (auto& it : a->getknots(dir))
+	              if (it != b->getknots(dir)[idx])
+	                return it < b->getknots(dir)[idx++];
 
-              return false;
-            });
+	            return false;
+	          });
 
-  std::vector<double> cpts;
-  std::vector<double> knots;
-  for (auto& it : functions) {
-    std::vector<double> pt;
-    it->getControlPoint(pt);
-    cpts.insert(cpts.end(), pt.begin(), pt.end());
-    if (knots.empty())
-      knots.insert(knots.end(),it->getknots(dir).begin(),it->getknots(dir).end());
-    else
-      knots.push_back(it->getknots(dir).back());
-  }
+	std::vector<double> cpts;
+	std::vector<double> knots;
+	for (auto& it : functions) {
+		std::vector<double> pt;
+		it->getControlPoint(pt);
+		cpts.insert(cpts.end(), pt.begin(), pt.end());
+		if (knots.empty())
+			knots.insert(knots.end(),it->getknots(dir).begin(),it->getknots(dir).end());
+		else
+			knots.push_back(it->getknots(dir).back());
+	}
 
-  return new Go::SplineCurve(Go::BsplineBasis(order(dir), knots.begin(), knots.end()),
-                             cpts.begin(), functions.front()->dim(), false);
+	return new Go::SplineCurve(Go::BsplineBasis(order(dir), knots.begin(), knots.end()),
+	                           cpts.begin(), functions.front()->dim(), false);
 }
 #endif
 
@@ -3040,30 +3040,6 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 		double vmin = element_[iEl]->vmin();
 		double vmax = element_[iEl]->vmax();
 
-
-/*       DIAGONAL TEST REFINEMENT
- *       used to color the diagonal elements (only 2x2 evaluation points)
- *       maybe dust off this and color arbitrary elements at a later point
- */
-/*		point(corner[0], element_[iEl]->umin(), element_[iEl]->vmin(), iEl);
-		point(corner[1], element_[iEl]->umin(), element_[iEl]->vmax(), iEl);
-		point(corner[2], element_[iEl]->umax(), element_[iEl]->vmax(), iEl);
-		point(corner[3], element_[iEl]->umax(), element_[iEl]->vmin(), iEl);
-
-		if(colorDiag && element_[iEl]->umin() == element_[iEl]->vmin()) {
-			out << ".5 setgray\n";
-			if(element_[iEl]->umin() == element_[iEl]->vmin()) {
-				out << "newpath\n";
-				out <<  corner[0][0]*scale << " " << corner[0][1]*scale << " moveto\n";
-				out <<  corner[1][0]*scale << " " << corner[1][1]*scale << " lineto\n";
-				out <<  corner[2][0]*scale << " " << corner[2][1]*scale << " lineto\n";
-				out <<  corner[3][0]*scale << " " << corner[3][1]*scale << " lineto\n";
-				out << "closepath\n";
-				out << "fill\n";
-			}
-			out << "0 setgray\n";
-		}
-*/
 
 		std::vector<double> pt;
 		point(pt, umin, vmin, iEl);

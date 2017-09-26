@@ -43,14 +43,14 @@ Basisfunction::~Basisfunction() {
  * \returns The internal knot average
  ***************************************************************************************************************************/
 Go::Point Basisfunction::getGrevilleParameter() const {
-  Go::Point ans(knots_.size());
-  for (size_t d = 0; d < knots_.size(); ++d) {
-    ans[d] = 0.0;
-    for(uint i=1; i<knots_[d].size()-1; i++)
-      ans[d] += knots_[d][i];
-    ans[d] /= (knots_[d].size()-2);
-  }
-  return ans;
+	Go::Point ans(knots_.size());
+	for (size_t d = 0; d < knots_.size(); ++d) {
+		ans[d] = 0.0;
+		for(uint i=1; i<knots_[d].size()-1; i++)
+			ans[d] += knots_[d][i];
+		ans[d] /= (knots_[d].size()-2);
+	}
+	return ans;
 }
 
 /************************************************************************************************************************//**
@@ -648,7 +648,7 @@ Basisfunction* Basisfunction::copy() const {
 	std::vector<int> order;
 	for(uint i=0; i<knots_.size(); i++)
 		order.push_back(knots_[i].size()-1);
-    Basisfunction *returnValue = new Basisfunction(controlpoint_.size(), knots_.size(), order);
+	Basisfunction *returnValue = new Basisfunction(controlpoint_.size(), knots_.size(), order);
 
 	for(uint i=0; i<knots_.size(); i++)
 		std::copy(knots_[i].begin(), knots_[i].end(), returnValue->knots_[i].begin());
@@ -759,7 +759,7 @@ void Basisfunction::flip(int dir1, int dir2) {
 }
 
 /************************************************************************************************************************//**
- * \brief reverse one parametric direction. Need global range (parmin, parmax) for scaling 
+ * \brief reverse one parametric direction. Need global range (parmin, parmax) for scaling
  ***************************************************************************************************************************/
 void Basisfunction::reverse(int pardir, double parmin, double parmax) {
 	std::vector<double> tmp(knots_[pardir]);

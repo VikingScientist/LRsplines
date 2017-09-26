@@ -184,20 +184,20 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 				else
 					return 5;
 			/*
-		 	*    ADD ELONGATED RECT
-		 	* y3 +-------+
-		 	* y2 |       +------+         +-------+------+
-		 	*    |       |      |   =>    |              |
-		 	* y1 +-------+      |         +-------+------+
-		 	*            |      |                new one
-		 	* y0         +------+
-			*   x0      x1     x3
-		 	*/
+			 *    ADD ELONGATED RECT
+			 * y3 +-------+
+			 * y2 |       +------+         +-------+------+
+			 *    |       |      |   =>    |              |
+			 * y1 +-------+      |         +-------+------+
+			 *            |      |                new one
+			 * y0         +------+
+			 *   x0      x1     x3
+			 */
 
 			} else if((start_[v[j]] < rect->start_[v[j]]   &&
 			           stop_[v[j]]  < rect->stop_[v[j]] ) ||
 			          (start_[v[j]] > rect->start_[v[j]]   &&
-			          stop_[v[j]]  > rect->stop_[v[j]]  )) {
+			           stop_[v[j]]  > rect->stop_[v[j]]  )) {
 				double x0 = std::min(rect->start_[v[i]], start_[v[i]]);
 				double x3 = std::max(rect->stop_[v[i]],  stop_[v[i]] );
 				double y1 = std::max(rect->start_[v[j]], start_[v[j]]);

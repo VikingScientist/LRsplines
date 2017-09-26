@@ -21,61 +21,61 @@ class HashSet_iterator
 	typedef typename std::map<long, std::list<T> >::const_iterator citer;
 	typedef typename std::list<T>::iterator                        list_iter;
 
-    public:
+public:
 
-		//! \brief Default constructor
-		HashSet_iterator() {
-		}
+	//! \brief Default constructor
+	HashSet_iterator() {
+	}
 
-		//! \brief Default constructor
-		//! \param majorIter iterator position in the hashcode map
-		//! \param subIter   iterator position in the linked list for non-unique hash codes
-		//! \param majorEnd  iterator position to the end of the hashcode map
-		HashSet_iterator(iter majorIter, list_iter subIter, iter majorEnd) {
-			this->majorIter = majorIter;
-			this->subIter   = subIter;
-			this->majorEnd  = majorEnd;
-		}
+	//! \brief Default constructor
+	//! \param majorIter iterator position in the hashcode map
+	//! \param subIter   iterator position in the linked list for non-unique hash codes
+	//! \param majorEnd  iterator position to the end of the hashcode map
+	HashSet_iterator(iter majorIter, list_iter subIter, iter majorEnd) {
+		this->majorIter = majorIter;
+		this->subIter   = subIter;
+		this->majorEnd  = majorEnd;
+	}
 
-		//! \brief Dereferencing the iterator returns an object of class <T>
-		T& operator*() const {
-			return *subIter;
-		}
+	//! \brief Dereferencing the iterator returns an object of class <T>
+	T& operator*() const {
+		return *subIter;
+	}
 
-		//! \brief Dereferencing the iterator returns an object of class <T>
-		T* operator->() const {
-			return &(*subIter);
-		}
+	//! \brief Dereferencing the iterator returns an object of class <T>
+	T* operator->() const {
+		return &(*subIter);
+	}
 
-		HashSet_iterator& operator=(const HashSet_iterator &other) {
-			majorEnd  = other.majorEnd ;
-			majorIter = other.majorIter;
-			subIter   = other.subIter  ;
-			return *this;
-		}
+	HashSet_iterator& operator=(const HashSet_iterator &other) {
+		majorEnd  = other.majorEnd ;
+		majorIter = other.majorIter;
+		subIter   = other.subIter  ;
+		return *this;
+	}
 
-		HashSet_iterator& operator++() {
-			subIter++;
-			if(subIter == majorIter->second.end()) {
-				majorIter++;
-				if(majorIter != majorEnd)
-					subIter = majorIter->second.begin();
-			}
-			return *this;
+	HashSet_iterator& operator++() {
+		subIter++;
+		if(subIter == majorIter->second.end()) {
+			majorIter++;
+			if(majorIter != majorEnd)
+				subIter = majorIter->second.begin();
 		}
-		/*
-		HashSet_iterator operator++(int i) {
-			myIter += i;
-		}
-		*/
-		bool equal(HashSet_iterator const& rhs) const {
-			return majorIter == rhs.majorIter && subIter == rhs.subIter;
-		}
+		return *this;
+	}
+	/*
+	HashSet_iterator operator++(int i) {
+		myIter += i;
+	}
+	*/
+	bool equal(HashSet_iterator const& rhs) const {
+		return majorIter == rhs.majorIter && subIter == rhs.subIter;
+	}
 
-	private:
-		iter      majorIter;
-		iter      majorEnd;
-		list_iter subIter;
+private:
+	iter      majorIter;
+	iter      majorEnd;
+	list_iter subIter;
 
 };
 
@@ -91,61 +91,61 @@ class HashSet_const_iterator
 	typedef typename std::map<long, std::list<T> >::const_iterator iter;
 	typedef typename std::list<T>::const_iterator                  list_iter;
 
-    public:
+public:
 
-		//! \brief Default constructor
-		HashSet_const_iterator() {
-		}
+	//! \brief Default constructor
+	HashSet_const_iterator() {
+	}
 
-		//! \brief Default constructor
-		//! \param majorIter iterator position in the hashcode map
-		//! \param subIter   iterator position in the linked list for non-unique hash codes
-		//! \param majorEnd  iterator position to the end of the hashcode map
-		HashSet_const_iterator(iter majorIter, list_iter subIter, iter majorEnd) {
-			this->majorIter = majorIter;
-			this->subIter   = subIter;
-			this->majorEnd  = majorEnd;
-		}
+	//! \brief Default constructor
+	//! \param majorIter iterator position in the hashcode map
+	//! \param subIter   iterator position in the linked list for non-unique hash codes
+	//! \param majorEnd  iterator position to the end of the hashcode map
+	HashSet_const_iterator(iter majorIter, list_iter subIter, iter majorEnd) {
+		this->majorIter = majorIter;
+		this->subIter   = subIter;
+		this->majorEnd  = majorEnd;
+	}
 
-		//! \brief Dereferencing the iterator returns an object of class <T>
-		const T& operator*() const {
-			return *subIter;
-		}
+	//! \brief Dereferencing the iterator returns an object of class <T>
+	const T& operator*() const {
+		return *subIter;
+	}
 
-		//! \brief Dereferencing the iterator returns an object of class <T>
-		const T* operator->() const {
-			return &(*subIter);
-		}
+	//! \brief Dereferencing the iterator returns an object of class <T>
+	const T* operator->() const {
+		return &(*subIter);
+	}
 
-		HashSet_const_iterator& operator=(const HashSet_const_iterator &other) {
-			majorEnd  = other.majorEnd ;
-			majorIter = other.majorIter;
-			subIter   = other.subIter  ;
-			return *this;
-		}
+	HashSet_const_iterator& operator=(const HashSet_const_iterator &other) {
+		majorEnd  = other.majorEnd ;
+		majorIter = other.majorIter;
+		subIter   = other.subIter  ;
+		return *this;
+	}
 
-		HashSet_const_iterator& operator++() {
-			subIter++;
-			if(subIter == majorIter->second.end()) {
-				majorIter++;
-				if(majorIter != majorEnd)
-					subIter = majorIter->second.begin();
-			}
-			return *this;
+	HashSet_const_iterator& operator++() {
+		subIter++;
+		if(subIter == majorIter->second.end()) {
+			majorIter++;
+			if(majorIter != majorEnd)
+				subIter = majorIter->second.begin();
 		}
-		/*
-		HashSet_iterator operator++(int i) {
-			myIter += i;
-		}
-		*/
-		bool equal(HashSet_const_iterator const& rhs) const {
-			return majorIter == rhs.majorIter && subIter == rhs.subIter;
-		}
+		return *this;
+	}
+	/*
+	HashSet_iterator operator++(int i) {
+		myIter += i;
+	}
+	*/
+	bool equal(HashSet_const_iterator const& rhs) const {
+		return majorIter == rhs.majorIter && subIter == rhs.subIter;
+	}
 
-	private:
-		iter      majorIter;
-		iter      majorEnd;
-		list_iter subIter;
+private:
+	iter      majorIter;
+	iter      majorEnd;
+	list_iter subIter;
 
 };
 

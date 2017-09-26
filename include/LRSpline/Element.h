@@ -23,11 +23,11 @@ public:
 	explicit Element(int dim);
 	Element(double start_u, double start_v, double stop_u, double stop_v);
 	/************************************************************************************************************************//**
- 	* \brief General constructor
- 	* \param dim The dimension of the element (i.e. 2 for surfaces, 3 for volumes)
- 	* \param lowerLeft Template iterator to the lower left corner (for instance std::vector<double>::begin() or double*)
- 	* \param upperRight Template iterator to the upper right corner
- 	***************************************************************************************************************************/
+	 * \brief General constructor
+	 * \param dim The dimension of the element (i.e. 2 for surfaces, 3 for volumes)
+	 * \param lowerLeft Template iterator to the lower left corner (for instance std::vector<double>::begin() or double*)
+	 * \param upperRight Template iterator to the upper right corner
+	 ***************************************************************************************************************************/
 	template <typename RandomIterator1,
 	          typename RandomIterator2>
 	Element(int dim, RandomIterator1 lowerLeft, RandomIterator2 upperRight) {
@@ -35,15 +35,15 @@ public:
 		max.resize(dim);
 		std::copy(lowerLeft,  lowerLeft  + dim, min.begin());
 		std::copy(upperRight, upperRight + dim, max.begin());
-    id_           = -1;
-    overloadCount = 0;
+		id_           = -1;
+		overloadCount = 0;
 	}
 	Element(std::vector<double> &lowerLeft, std::vector<double> &upperRight);
 	void removeSupportFunction(Basisfunction *f);
 	void addSupportFunction(Basisfunction *f);
 	Element *split(int splitDim, double par_value);
 	Element* copy();
-        virtual ~Element() {}
+	virtual ~Element() {}
 	// get/set methods
 	//! \brief Get coordinate i of the lower left corner of the element
 	double getParmin(int i) const { return min[i]; };
