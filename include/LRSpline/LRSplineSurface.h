@@ -186,44 +186,51 @@ private:
 		dim_       = dim;
 		order_[0]  = order_u;
 		order_[1]  = order_v;
-		start_[0]  = knot_u[0];
-		start_[1]  = knot_v[0];
-		end_[0]    = knot_u[n1+p1-1];
-		end_[1]    = knot_v[n2+p2-1];
+		start_[0]  = knot_u[p1-1];
+		start_[1]  = knot_v[p2-1];
+		end_[0]    = knot_u[n1];
+		end_[1]    = knot_v[n2];
 
-		int unique_u=0;
-		int unique_v=0;
-		std::vector<int> elm_u; // element index of the knot vector (duplicate knots is multiple index in knot_u, single index in elmRows)
-		std::vector<int> elm_v;
+		std::vector<double> elm_u; // list of inner knots used to create elements (ingnoring ghost domain)
+		std::vector<double> elm_v;
+		std::vector<int> elm_u_i;
+		std::vector<int> elm_v_i;
 		for(int i=0; i<n1+p1; i++) {// const u, spanning v
 			int mult = 1;
-			elm_u.push_back(unique_u);
+			elm_u_i.push_back(elm_u.size());
 			while(i+1<n1+p1 && knot_u[i]==knot_u[i+1]) {
 				i++;
 				mult++;
-				elm_u.push_back(unique_u);
+				elm_u_i.push_back(elm_u.size());
 			}
-			unique_u++;
+			if(p1-1<=i && i-mult<n1)
+				elm_u.push_back(knot_u[i]);
+			if(i-mult >= n1)
+				elm_u_i.back()--;
 			meshline_.push_back(new Meshline(false, knot_u[i], knot_v[0], knot_v[n2+p2-1], mult) );
 		}
 		for(int i=0; i<n2+p2; i++) {// const v, spanning u
 			int mult = 1;
-			elm_v.push_back(unique_v);
+			elm_v_i.push_back(elm_v.size());
 			while(i+1<n2+p2 && knot_v[i]==knot_v[i+1]) {
 				i++;
 				mult++;
-				elm_v.push_back(unique_v);
+				elm_v_i.push_back(elm_v.size());
 			}
-			unique_v++;
+			if(p2-1<=i && i-mult<n2)
+				elm_v.push_back(knot_v[i]);
+			if(i-mult >= n2)
+				elm_v_i.back()--;
 			meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n1+p1-1], mult) );
 		}
-		std::vector<std::vector<Element*> > elmRows(unique_v-1);
-		for(int j=0; j<unique_v-1; j++) {
-			for(int i=0; i<unique_u-1; i++) {
-				double umin = meshline_[i]->const_par_;
-				double vmin = meshline_[unique_u + j]->const_par_;
-				double umax = meshline_[i+1]->const_par_;
-				double vmax = meshline_[unique_u + j+1]->const_par_;
+
+		std::vector<std::vector<Element*> > elmRows(elm_v.size()-1);
+		for(size_t j=0; j<elm_v.size()-1; j++) {
+			for(size_t i=0; i<elm_u.size()-1; i++) {
+				double umin = elm_u[ i ];
+				double umax = elm_u[i+1];
+				double vmin = elm_v[ j ];
+				double vmax = elm_v[j+1];
 				Element* elm = new Element(umin, vmin, umax, vmax);
 				element_.push_back(elm);
 				elmRows[j].push_back(elm);
@@ -234,8 +241,8 @@ private:
 			for(int i=0; i<n1; i++) {
 				Basisfunction *b = new Basisfunction(knot_u+i, knot_v+j, coef+(j*n1+i)*(dim+rational), dim, order_u, order_v);
 				basis_.insert(b);
-				for(int k=elm_v[j]; k<elm_v[j+p2]; k++)
-					updateSupport(b, elmRows[k].begin() + elm_u[i], elmRows[k].begin() + elm_u[i+p1]);
+				for(int k=elm_v_i[j]; k<elm_v_i[j+p2]; k++)
+					updateSupport(b, elmRows[k].begin() + elm_u_i[i], elmRows[k].begin() + elm_u_i[i+p1]);
 		}
 	}
 

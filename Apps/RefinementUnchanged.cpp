@@ -5,11 +5,6 @@
 #include <string.h>
 #include <fstream>
 #include <sstream>
-#ifdef HAS_GOTOOLS
-	#include <GoTools/geometry/SplineSurface.h>
-	#include <GoTools/trivariate/SplineVolume.h>
-	#include <GoTools/geometry/ObjectHeader.h>
-#endif
 #include "LRSpline/LRSplineSurface.h"
 #include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/Profiler.h"
@@ -49,7 +44,6 @@ int main(int argc, char **argv) {
 	bool rat            = false;
 	bool dumpFile       = false;
 	bool vol            = false;
-	char *lrInitMesh    = NULL;
 	char *inputFileName = NULL;
 	stringstream parameters;
 	parameters << " parameters: \n" \
@@ -64,7 +58,6 @@ int main(int argc, char **argv) {
 	              "   -knot3 <n>  space-seperated list of the third knot vector (must specify n3 and p3 first)\n"\
 	              "   -dim   <n>  dimension of the controlpoints\n" \
 	              "   -diag  <n>  override inputfile and run diagonal testcase\n"\
-	              "   -in:   <s>  make the LRSplineSurface <s> the initial mesh\n"\
 	              "   -dumpfile   writes an eps- and txt-file of the LR-mesh (bivariate surfaces only)\n"\
 	              "   -help       display (this) help screen\n";
 	parameters << " default values\n";
@@ -96,8 +89,6 @@ int main(int argc, char **argv) {
 			vol = true;
 		}  else if(strcmp(argv[i], "-dim") == 0)
 			dim = atoi(argv[++i]);
-		else if(strncmp(argv[i], "-in:", 4) == 0)
-			lrInitMesh = argv[i]+4;
 		else if(strcmp(argv[i], "-diag") == 0)
 			nDiagonals = atoi(argv[++i]);
 		else if(strcmp(argv[i], "-vol") == 0)
@@ -145,98 +136,44 @@ int main(int argc, char **argv) {
 		exit(3);
 	}
 
-#ifdef HAS_GOTOOLS
-	Go::SplineSurface   *ss=nullptr;
-	Go::SplineVolume    *sv=nullptr;
-#else
 	LRSplineSurface *ss=nullptr;
 	LRSplineVolume  *sv=nullptr;
-#endif
+
 	LRSplineSurface *lrs=nullptr;
 	LRSplineVolume  *lrv=nullptr;
 
-	if(lrInitMesh == NULL) {
+	// make a uniform integer knot vector
+	if(knot_u == NULL) {
+		knot_u = new double[n1+p1];
+		for(int i=0; i<p1+n1; i++)
+			knot_u[i] = (i<p1) ? 0 : (i>n1) ? n1-p1+1 : i-p1+1;
+	}
+	if(knot_v == NULL) {
+		knot_v = new double[n2+p2];
+		for(int i=0; i<p2+n2; i++)
+			knot_v[i] = (i<p2) ? 0 : (i>n2) ? n2-p2+1 : i-p2+1;
+	}
+	if(knot_w == NULL) {
+		knot_w = new double[n3+p3];
+		for(int i=0; i<p3+n3; i++)
+			knot_w[i] = (i<p3) ? 0 : (i>n3) ? n3-p3+1 : i-p3+1;
+	}
 
-		// make a uniform integer knot vector
-		if(knot_u == NULL) {
-			knot_u = new double[n1+p1];
-			for(int i=0; i<p1+n1; i++)
-				knot_u[i] = (i<p1) ? 0 : (i>n1) ? n1-p1+1 : i-p1+1;
-		}
-		if(knot_v == NULL) {
-			knot_v = new double[n2+p2];
-			for(int i=0; i<p2+n2; i++)
-				knot_v[i] = (i<p2) ? 0 : (i>n2) ? n2-p2+1 : i-p2+1;
-		}
-		if(knot_w == NULL) {
-			knot_w = new double[n3+p3];
-			for(int i=0; i<p3+n3; i++)
-				knot_w[i] = (i<p3) ? 0 : (i>n3) ? n3-p3+1 : i-p3+1;
-		}
+	// create a list of random control points (all between 0.1 and 1.1)
+	int nCP = (vol) ? n1*n2*n3 : n1*n2;
+	nCP    *= (dim+rat);
+	std::vector<double> cp(nCP);
+	int k=0;
+	for(int i=0; i<nCP; i++) // 839 as a generator over Z_853 gives a period of 425. Should suffice
+		cp[k++] = (i*839 % 853) / 853.0 + 0.1;  // rational weights also random and thus we need >0
 
-		// create a list of random control points (all between 0.1 and 1.1)
-		int nCP = (vol) ? n1*n2*n3 : n1*n2;
-		nCP    *= (dim+rat);
-		std::vector<double> cp(nCP);
-		int k=0;
-		for(int i=0; i<nCP; i++) // 839 as a generator over Z_853 gives a period of 425. Should suffice
-			cp[k++] = (i*839 % 853) / 853.0 + 0.1;  // rational weights also random and thus we need >0
-
-		// make two spline objects (using GoTools for reference if available)
-		if(vol) {
-#ifdef HAS_GOTOOLS
-			sv  = new Go::SplineVolume(n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
-#else
-			sv  = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
-#endif
-			lrv = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
-		} else {
-#ifdef HAS_GOTOOLS
-			ss  = new Go::SplineSurface(n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
-#else
-			ss  = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
-#endif
-			lrs = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
-		}
+	// make two spline objects (using GoTools for reference if available)
+	if(vol) {
+		sv  = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
+		lrv = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
 	} else {
-#ifdef HAS_GOTOOLS
-		ifstream inputfile;
-		inputfile.open(lrInitMesh);
-		if(!inputfile.is_open()) {
-			cerr << "Error: could not open file " << lrInitMesh << endl;
-			exit(3);
-		}
-		Go::ObjectHeader head;
-		ss = new Go::SplineSurface();
-		sv = new Go::SplineVolume();
-		inputfile >> head;
-		if(head.classType() == Go::Class_SplineVolume) {
-			vol = true;
-			inputfile >> *sv;
-			lrv = new LRSplineVolume(sv);
-			dim = sv->dimension();
-			rat = sv->rational();
-			n1  = sv->numCoefs(0);
-			n2  = sv->numCoefs(1);
-			n3  = sv->numCoefs(2);
-			p1  = sv->order(0);
-			p2  = sv->order(1);
-			p3  = sv->order(2);
-		} else if(head.classType() == Go::Class_SplineSurface) {
-			vol = false;
-			inputfile >> *ss;
-			lrs = new LRSplineSurface(ss);
-			dim = ss->dimension();
-			rat = ss->rational();
-			n1  = ss->numCoefs_u();
-			n2  = ss->numCoefs_v();
-			p1  = ss->order_u();
-			p2  = ss->order_v();
-		}
-#else
-		cerr << "Error: could not open file " << lrInitMesh << endl;
-		exit(4);
-#endif
+		ss  = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
+		lrs = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
 	}
 
 	vector<bool>   is_const_u;  // for surfaces
@@ -334,11 +271,7 @@ int main(int argc, char **argv) {
 		/***************************************************************************
 		******                SURFACE TESTING                                  *****
 		****************************************************************************/
-#ifdef HAS_GOTOOLS
-		vector<Go::Point> lr_pts(3), ss_pts(3);
-#else
 		vector<vector<double> > lr_pts(3), ss_pts(3);
-#endif
 		vector<double> par_u_values;
 		vector<double> par_v_values;
 		vector<Element*>::iterator el;
@@ -424,11 +357,7 @@ int main(int argc, char **argv) {
 		/***************************************************************************
 		******                VOLUME  TESTING                                  *****
 		****************************************************************************/
-#ifdef HAS_GOTOOLS
-		vector<Go::Point> lr_pts(4), ss_pts(4);
-#else
 		vector<vector<double> > lr_pts(4), ss_pts(4);
-#endif
 		vector<double> par_u_values;
 		vector<double> par_v_values;
 		vector<double> par_w_values;

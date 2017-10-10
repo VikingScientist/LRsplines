@@ -1,0 +1,25 @@
+-p1 3 -n1 7 -knot1 -1 0 0 1 2 2 3 4 4 5
+
+sum (0, 0.5) minus one = 0
+sum diff v  = 0
+sum diff uu = 0
+sum diff uv = 0
+_____u____________v_____________ASSERT__
+         0            0           OK
+         0          0.5           OK
+         0            1           OK
+       0.5            0           OK
+       0.5          0.5           OK
+       0.5            1           OK
+         1            0           OK
+         1          0.5           OK
+         1            1           OK
+         1            0           OK
+         1          0.5           OK
+         1            1           OK
+       1.5            0           OK
+       1.5          0.5           OK
+       1.5            1           OK
+    all assertions passed
+========================================
+

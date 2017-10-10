@@ -169,10 +169,13 @@ private:
 	          typename RandomIterator3,
 	          typename RandomIterator4>
 	void initCore(int n1, int n2, int n3, int order_u, int order_v, int order_w, RandomIterator1 knot_u, RandomIterator2 knot_v, RandomIterator3 knot_w, RandomIterator4 coef, int dim, bool rational=false) {
+		int p1     = order_u;
+		int p2     = order_v;
+		int p3     = order_w;
 		// sanity check input
-		if(n1 < order_u ||
-		   n2 < order_v ||
-		   n3 < order_w) {
+		if(n1 < p1 ||
+		   n2 < p2 ||
+		   n3 < p3) {
 			std::cerr << "Error: n<p in LRSplineVolume constructor\n";
 			// really ought to throw exception here, but havent the framework
 			// for this up and running yet. Make it a zombie surface
@@ -186,71 +189,77 @@ private:
 		end_.resize(3);
 		rational_ = rational;
 		dim_      = dim;
-		order_[0]  = order_u;
-		order_[1]  = order_v;
-		order_[2]  = order_w;
-		start_[0]  = knot_u[0];
-		start_[1]  = knot_v[0];
-		start_[2]  = knot_w[0];
+		order_[0]  = p1;
+		order_[1]  = p2;
+		order_[2]  = p3;
+		start_[0]  = knot_u[p1-1];
+		start_[1]  = knot_v[p2-1];
+		start_[2]  = knot_w[p3-1];
 		end_[0]    = knot_u[n1];
 		end_[1]    = knot_v[n2];
 		end_[2]    = knot_w[n3];
 
-		int p1       = order_u;
-		int p2       = order_v;
-		int p3       = order_w;
-		int unique_u = 0;
-		int unique_v = 0;
-		int unique_w = 0;
-		std::vector<int> elm_u; // element index of the knot vector (duplicate knots is multiple index in knot_u, single index in elmRows)
-		std::vector<int> elm_v;
-		std::vector<int> elm_w;
-		for(int i=0; i<n1+order_u; i++) {// const u, spanning v,w
+		std::vector<double> elm_u; // list of inner knots used to create elements (ingnoring ghost domain)
+		std::vector<double> elm_v;
+		std::vector<double> elm_w;
+		std::vector<int> elm_u_i;
+		std::vector<int> elm_v_i;
+		std::vector<int> elm_w_i;
+		for(int i=0; i<n1+p1; i++) {// const u, spanning v,w
 			int mult = 1;
-			elm_u.push_back(unique_u);
-			while(i+1<n1+order_u && knot_u[i]==knot_u[i+1]) {
+			elm_u_i.push_back(elm_u.size());
+			while(i+1<n1+p1 && knot_u[i]==knot_u[i+1]) {
 				i++;
 				mult++;
-			  elm_u.push_back(unique_u);
+			  elm_u_i.push_back(elm_u.size());
 			}
-			unique_u++;
-			meshrect_.push_back(new MeshRectangle(knot_u[i], knot_v[0],  knot_w[0],
-			                                      knot_u[i], knot_v[n2], knot_w[n3], mult));
+			if(p1-1<=i && i-mult<n1)
+				elm_u.push_back(knot_u[i]);
+			if(i-mult >= n1)
+				elm_u_i.back()--;
+			meshrect_.push_back(new MeshRectangle(knot_u[i], knot_v[0],       knot_w[0],
+			                                      knot_u[i], knot_v[n2+p2-1], knot_w[n3+p3-1], mult));
 		}
-		for(int i=0; i<n2+order_v; i++) {// const v, spanning u,w
+		for(int i=0; i<n2+p2; i++) {// const v, spanning u,w
 			int mult = 1;
-			elm_v.push_back(unique_v);
-			while(i+1<n2+order_v && knot_v[i]==knot_v[i+1]) {
+			elm_v_i.push_back(elm_v.size());
+			while(i+1<n2+p2 && knot_v[i]==knot_v[i+1]) {
 				i++;
 				mult++;
-			  elm_v.push_back(unique_v);
+			  elm_v_i.push_back(elm_v.size());
 			}
-			unique_v++;
-			meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[i], knot_w[0],
-			                                      knot_u[n1], knot_v[i], knot_w[n3], mult));
+			if(p2-1<=i && i-mult<n2)
+				elm_v.push_back(knot_v[i]);
+			if(i-mult >= n2)
+				elm_v_i.back()--;
+			meshrect_.push_back(new MeshRectangle(knot_u[0],       knot_v[i], knot_w[0],
+			                                      knot_u[n1+p1-1], knot_v[i], knot_w[n3+p3-1], mult));
 		}
-		for(int i=0; i<n3+order_w; i++) {
+		for(int i=0; i<n3+p3; i++) {
 			int mult = 1;
-			elm_w.push_back(unique_w);
-			while(i+1<n3+order_w && knot_w[i]==knot_w[i+1]) {
+			elm_w_i.push_back(elm_w.size());
+			while(i+1<n3+p3 && knot_w[i]==knot_w[i+1]) {
 				i++;
 				mult++;
-			  elm_w.push_back(unique_w);
+			  elm_w_i.push_back(elm_w.size());
 			}
-			unique_w++;
-			meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[0],  knot_w[i],
-			                                      knot_u[n1], knot_v[n2], knot_w[i], mult));
+			if(p3-1<=i && i-mult<n3)
+				elm_w.push_back(knot_w[i]);
+			if(i-mult >= n3)
+				elm_w_i.back()--;
+			meshrect_.push_back(new MeshRectangle(knot_u[0],       knot_v[0],       knot_w[i],
+			                                      knot_u[n1+p1-1], knot_v[n2+p2-1], knot_w[i], mult));
 		}
-		std::vector<std::vector<std::vector<Element*> > > elmRows(unique_w-1, std::vector<std::vector<Element*> >(unique_v-1));
-		for(int k=0; k<unique_w-1; k++) {
-			for(int j=0; j<unique_v-1; j++) {
-				for(int i=0; i<unique_u-1; i++) {
-					double umin = meshrect_[                      i  ]->start_[0];
-					double vmin = meshrect_[unique_u +            j  ]->start_[1];
-					double wmin = meshrect_[unique_v + unique_u + k  ]->start_[2];
-					double umax = meshrect_[                      i+1]->stop_[0];
-					double vmax = meshrect_[unique_u +            j+1]->stop_[1];
-					double wmax = meshrect_[unique_v + unique_u + k+1]->stop_[2];
+		std::vector<std::vector<std::vector<Element*> > > elmRows(elm_w.size()-1, std::vector<std::vector<Element*> >(elm_v.size()-1));
+		for(int k=0; k<elm_w.size()-1; k++) {
+			for(int j=0; j<elm_v.size()-1; j++) {
+				for(int i=0; i<elm_u.size()-1; i++) {
+					double umin = elm_u[ i ];
+					double umax = elm_u[i+1];
+					double vmin = elm_v[ i ];
+					double vmax = elm_v[i+1];
+					double wmin = elm_w[ i ];
+					double wmax = elm_w[i+1];
 					double min[] = {umin, vmin, wmin};
 					double max[] = {umax, vmax, wmax};
 					Element *elm = new Element(3, min, max);
@@ -267,11 +276,11 @@ private:
 					RandomIterator2 kv = knot_v + j;
 					RandomIterator3 kw = knot_w + k;
 					RandomIterator4 c = coef + (k*n1*n2 + j*n1 + i)*(dim + rational);
-					Basisfunction *b = new Basisfunction(ku, kv, kw, c , dim, order_u, order_v, order_w);
+					Basisfunction *b = new Basisfunction(ku, kv, kw, c , dim, p1, p2, p3);
 					basis_.insert(b);
-					for(int k1=elm_w[k]; k1<elm_w[k+p3]; k1++)
-						for(int k2=elm_v[j]; k2<elm_v[j+p2]; k2++)
-							updateSupport(b, elmRows[k1][k2].begin() + elm_u[i], elmRows[k1][k2].begin() + elm_u[i+p1]);
+					for(int k1=elm_w_i[k]; k1<elm_w_i[k+p3]; k1++)
+						for(int k2=elm_v_i[j]; k2<elm_v_i[j+p2]; k2++)
+							updateSupport(b, elmRows[k1][k2].begin() + elm_u_i[i], elmRows[k1][k2].begin() + elm_u_i[i+p1]);
 		}
 	}
 
