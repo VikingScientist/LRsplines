@@ -1,0 +1,28 @@
+-p3 3 -n3 7 -knot3 -2 -1 0 1 2 2 3 4 5 6 -vol
+
+sum (0, 0.5, 0.5) minus one = 0
+sum diff u  = 0
+sum diff v  = 0
+sum diff w  = 0
+sum diff uu = 0
+sum diff uv = 0
+sum diff uw = 0
+sum diff vv = 0
+sum diff vw = 0
+sum diff ww = 0
+_____u____________v____________w_____________ASSERT__
+         2            0            0           OK
+         2            0          0.5           OK
+         2            0            1           OK
+         2          0.5            0           OK
+         2          0.5          0.5           OK
+         2          0.5            1           OK
+         2            1            0           OK
+         2            1          0.5           OK
+         2            1            1           OK
+       2.5            0            0           OK
+       2.5            0          0.5           OK
+       2.5            0            1           OK
+    all assertions passed
+========================================
+

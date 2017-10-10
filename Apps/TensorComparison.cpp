@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 	              "   -p3  <n> polynomial order in third parametric direction (volume only)\n" \
 	              "   -n1  <n> number of basis functions in first parametric direction\n" \
 	              "   -n2  <n> number of basis functions in second parametric direction\n" \
-	              "   -n2  <n> number of basis functions in third parametric direction (volume only)\n" \
+	              "   -n3  <n> number of basis functions in third parametric direction (volume only)\n" \
 	              "   -dim <n> dimension of the controlpoints\n" \
 	              "   -vol     test trivariate volumes instead\n" \
 	              "   -help    display (this) help information\n" ;

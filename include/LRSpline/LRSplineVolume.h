@@ -251,15 +251,15 @@ private:
 			                                      knot_u[n1+p1-1], knot_v[n2+p2-1], knot_w[i], mult));
 		}
 		std::vector<std::vector<std::vector<Element*> > > elmRows(elm_w.size()-1, std::vector<std::vector<Element*> >(elm_v.size()-1));
-		for(int k=0; k<elm_w.size()-1; k++) {
-			for(int j=0; j<elm_v.size()-1; j++) {
-				for(int i=0; i<elm_u.size()-1; i++) {
+		for(uint k=0; k<elm_w.size()-1; k++) {
+			for(uint j=0; j<elm_v.size()-1; j++) {
+				for(uint i=0; i<elm_u.size()-1; i++) {
 					double umin = elm_u[ i ];
 					double umax = elm_u[i+1];
-					double vmin = elm_v[ i ];
-					double vmax = elm_v[i+1];
-					double wmin = elm_w[ i ];
-					double wmax = elm_w[i+1];
+					double vmin = elm_v[ j ];
+					double vmax = elm_v[j+1];
+					double wmin = elm_w[ k ];
+					double wmax = elm_w[k+1];
 					double min[] = {umin, vmin, wmin};
 					double max[] = {umax, vmax, wmax};
 					Element *elm = new Element(3, min, max);
