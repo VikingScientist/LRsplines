@@ -29,6 +29,7 @@ public:
 	bool touches(Basisfunction *basis) const;
 	bool splits(Element *el) const;
 	bool touches(Element *el) const;
+	bool intersects(Meshline *other, double *parval=nullptr) const;
 
 	bool is_spanning_u() const;
 

@@ -109,6 +109,24 @@ bool Meshline::splits(Basisfunction *basis) const {
 	return false;
 }
 
+/************************************************************************************************************************//**
+ * \brief Checks if another meshline intersects this one
+ * \param other  Pointer to the other meshline
+ * \param parval Pointer (or null) to the place to store the parametric intersection value on *this line
+ * \returns if *other intersects this line; touches at the start- or endpoints will return true
+ ***************************************************************************************************************************/
+bool Meshline::intersects(Meshline *other, double *parval) const {
+	if(other->span_u_line_ == this->span_u_line_)
+		return false;
+	if(other->start_ <= this->const_par_  && this->const_par_  <= other->stop_ && 
+	   this->start_  <= other->const_par_ && other->const_par_ <= this->stop_) {
+		if(parval != nullptr)
+			*parval = other->const_par_;
+		return true;
+	}
+	return false;
+}
+
 bool Meshline::is_spanning_u() const {
 	return span_u_line_;
 }
