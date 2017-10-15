@@ -55,6 +55,7 @@ public:
 	double umax()           const { return max[0]; };
 	double vmax()           const { return max[1]; };
 	double wmax()           const { return max[2]; };
+	std::vector<double> midpoint() const;
 	//! \brief Returns the parametric area of the element
 	double area()           const { return (max[1]-min[1])*(max[0]-min[0]);                  };
 	//! \brief Returns the parametric volume of the element

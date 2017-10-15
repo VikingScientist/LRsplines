@@ -117,6 +117,16 @@ Element* Element::split(int splitDim, double par_value) {
 }
 
 /************************************************************************************************************************//**
+ * \brief returns the parametric midpoint of the element, i.e. [ (umin()+umax())/2, (vmin()+vmax())/2] for 2D elements
+ ***************************************************************************************************************************/
+std::vector<double> Element::midpoint() const {
+	std::vector<double> result;
+	for(uint i=0; i<min.size(); i++)
+		result.push_back((min[i]+max[i])/2.0);
+	return result;
+}
+
+/************************************************************************************************************************//**
  * \brief Only used at the end of the read function. Updates the element-to-basisfunction and back again pointers.
  * \param basis The flat vector list of basisfunctions
  ***************************************************************************************************************************/

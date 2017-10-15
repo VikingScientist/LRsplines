@@ -71,6 +71,7 @@ public:
 	int getElementContaining(double u, double v) const;
 	// TODO: get rid of the iEl argument in evaluation signatures - it's too easy to mess it up (especially with derivatives at multiple-knot boundaries).
 	//       Try and sort the Elements after all refinements and binary search for the containing point in logarithmic time
+	int getElementContaining(const std::vector<double>& parvalues) const { return this->getElementContaining(parvalues[0], parvalues[1]); };
 
 	// refinement functions
 	void refineBasisFunction(int index);

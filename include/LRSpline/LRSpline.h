@@ -72,6 +72,7 @@ public:
 	void getEdgeElements( std::vector<Element*>       &edgeElements,  parameterEdge edge             ) const;
 	virtual void getBezierElement(   int iEl, std::vector<double> &controlPoints) const = 0;
 	virtual void getBezierExtraction(int iEl, std::vector<double> &extractMatrix) const = 0;
+	virtual int getElementContaining(const std::vector<double>& parvalues) const = 0;
 
 	// get container iterators
 	std::vector<Element*>::iterator        elementBegin()         { return element_.begin(); };
