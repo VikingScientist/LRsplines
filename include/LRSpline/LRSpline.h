@@ -65,6 +65,10 @@ public:
 	double endparam  (int i) const { return end_[i]        ; };
 	//! \brief should always return false as rational LR splines is not yet implemented
 	bool rational()          const { return rational_      ; };
+	//! \brief returns the maximum continuity in direction *i
+	virtual int getMaxContinuity(int i) const = 0;
+	//! \brief returns the minimum continuity in direction *i
+	virtual int getMinContinuity(int i) const = 0;
 
 
 	// more funky get methods

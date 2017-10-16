@@ -126,6 +126,10 @@ public:
 	const MeshRectangle* getMeshRectangle(int i) const              { return meshrect_[i]; };
 	void getBezierElement(   int iEl, std::vector<double> &controlPoints) const;
 	void getBezierExtraction(int iEl, std::vector<double> &extractMatrix) const;
+	int getMaxContinuity(int i) const ;
+	int getMinContinuity(int i) const ;
+	//! \brief sets the maximum continuity in direction *dir to *cont. Note that this never _increases_ continuity, only decreases 
+	void setMaxContinuity(int dir, int maxCont) ;
 
 	// assorted specialized functions
 	std::vector<Meshline*> getEdgeKnots(parameterEdge edge, bool normalized=false) const;

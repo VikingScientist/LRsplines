@@ -2474,6 +2474,26 @@ LRSplineSurface* LRSplineSurface::getRaiseOrderSpace(int raiseOrderU, int raiseO
 	return result;
 }
 
+int LRSplineSurface::getMinContinuity(int i) const {
+	int p = order_[i];
+	int minCont = p;
+	for(auto line : getAllMeshlines())
+		if(1-line->is_spanning_u() == i)
+			if(line->multiplicity() != p) // skip C^{-1} lines (typically the edges)
+				minCont = std::min(minCont, p - line->multiplicity() - 1);
+	return minCont;
+}
+
+int LRSplineSurface::getMaxContinuity(int i) const {
+	int p = order_[i];
+	int maxCont = -1;
+	for(auto line : getAllMeshlines())
+		if(1-line->is_spanning_u() == i)
+			if(line->multiplicity() != p) // skip C^{-1} lines (typically the edges)
+				maxCont = std::max(maxCont, p - line->multiplicity() - 1);
+	return maxCont;
+}
+
 /************************************************************************************************************************//**
  * \brief provides a maximum regularity constraint on the entire mesh
  * \param contU The maximum continuity on all meshlines with constant u

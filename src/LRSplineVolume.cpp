@@ -1957,6 +1957,40 @@ LRSplineVolume* LRSplineVolume::getDerivedBasis(int raise_p1, int raise_p2, int 
 	return result;
 }
 
+int LRSplineVolume::getMinContinuity(int i) const {
+	int p = order_[i];
+	int minCont = p;
+	for(auto rect : getAllMeshRectangles())
+		if(rect->constDirection() == i)
+			if(rect->multiplicity() != p) // skip C^{-1} lines (typically the edges)
+				minCont = std::min(minCont, p - rect->multiplicity() - 1);
+	return minCont;
+}
+
+int LRSplineVolume::getMaxContinuity(int i) const {
+	int p = order_[i];
+	int maxCont = -1;
+	for(auto rect : getAllMeshRectangles())
+		if(rect->constDirection() == i)
+			if(rect->multiplicity() != p) // skip C^{-1} lines (typically the edges)
+				maxCont = std::max(maxCont, p - rect->multiplicity() - 1);
+	return maxCont;
+}
+
+void LRSplineVolume::setMaxContinuity(int dir, int maxCont) {
+	int p = order_[dir];
+	for(auto rect : getAllMeshRectangles()) {
+		if(rect->constDirection() == dir) {
+			int thisCont = p - rect->multiplicity() - 1;
+			if(thisCont > maxCont) {
+				MeshRectangle *newRect = rect->copy();
+				newRect->multiplicity_ = p - maxCont - 1;
+				insert_line(newRect);
+			}
+		}
+	}
+}
+
 /************************************************************************************************************************//**
  * \brief functions inserting batch of rectangles (i.e. getDerivativeSpace, getPrimalSpace) may not do proper element-splits
  *        during refinement. This function fixes them a priori.

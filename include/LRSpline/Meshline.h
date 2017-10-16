@@ -32,6 +32,7 @@ public:
 	bool intersects(Meshline *other, double *parval=nullptr) const;
 
 	bool is_spanning_u() const;
+	int multiplicity() const { return multiplicity_; };
 
 	bool operator==(const Meshline &other) const;
 

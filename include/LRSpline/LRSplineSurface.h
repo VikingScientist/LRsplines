@@ -122,6 +122,8 @@ public:
 	const Meshline* getMeshline(int i) const                       { return meshline_[i]; };
 	std::vector<Meshline*> getAllMeshlines()                       { return meshline_;    };
 	const std::vector<Meshline*> getAllMeshlines() const           { return meshline_;    };
+	int getMaxContinuity(int i) const ;
+	int getMinContinuity(int i) const ;
 
 	// assorted specialized functions
 	std::vector<double> getEdgeKnots(parameterEdge edge, bool normalized=false) const;

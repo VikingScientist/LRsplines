@@ -46,6 +46,7 @@ public:
 	bool splits(Element *el) const;
 	int makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, int meshIndex, bool allowSplits) ;
 
+	int    multiplicity()   const { return multiplicity_; };
 	int    constDirection() const;
 	double constParameter() const;
 
