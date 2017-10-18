@@ -5,6 +5,7 @@
 	#include <GoTools/utils/Point.h>
 #endif
 #include <vector>
+#include "HashSet.h"
 #include "Streamable.h"
 #include "LRSpline.h"
 
@@ -115,6 +116,7 @@ public:
 	const std::vector<Element*>     support() const        { return support_;         };
 	std::vector<Element*>           getExtendedSupport()        ;
 	std::vector<Element*>           getMinimalExtendedSupport() ;
+	HashSet<Basisfunction*>         getOverlappingFunctions() const ;
 	bool                            isOverloaded()     const    ;
 	int                             getOverloadCount() const    ;
 

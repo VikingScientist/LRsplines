@@ -557,6 +557,20 @@ std::vector<Element*> Basisfunction::getMinimalExtendedSupport() {
 	return results;
 }
 
+
+/************************************************************************************************************************//**
+ * \brief Returns all functions which has support on one or more of the elements that this function have support on
+ ***************************************************************************************************************************/
+HashSet<Basisfunction*> Basisfunction::getOverlappingFunctions() const {
+	HashSet<Basisfunction*> result;
+	for(auto e : support())        // for all elements that this have support on
+		for(auto b : e->support()) // for all basis functions with support on that element
+			result.insert(b);
+	return result;
+}
+
+
+
 /************************************************************************************************************************//**
  * \brief Resize the B-spline dimension. All control point values set to 0.0
  * \param dim New control point dimension
