@@ -2591,7 +2591,7 @@ void LRSplineSurface::aPosterioriFixElements() {
 		for(uint j=0; j<meshline_.size(); j++) {
 			if(meshline_[j]->splits(element_[i])) {
 				element_.push_back(element_[i]->split(meshline_[j]->is_spanning_u(), meshline_[j]->const_par_));
-				i=0;
+				i=-1;
 				break;
 			}
 		}

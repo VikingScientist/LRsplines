@@ -108,6 +108,7 @@ Element* Element::split(int splitDim, double par_value) {
 		for(Basisfunction *b : support_) {
 			if(!b->overlaps(this)) {
 				support_.erase(b);
+				b->removeSupport(this);
 				someChange = true;
 				break;
 			}

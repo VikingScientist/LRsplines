@@ -2001,7 +2001,7 @@ void LRSplineVolume::aPosterioriFixElements() {
 			MeshRectangle *m = meshrect_[j];
 			if(m->splits(element_[i])) {
 				element_.push_back(element_[i]->split(m->constDirection(), m->constParameter()) );
-				i=0;
+				i=-1;
 				break;
 			}
 		}
