@@ -155,6 +155,10 @@ public:
 	MeshRectangle* insert_line(MeshRectangle *newRect) ;
 
 private:
+	// make non-copyable
+	LRSplineVolume(const LRSplineVolume&) = delete;
+	LRSplineVolume& operator=(const LRSplineVolume&) = delete;
+
 	// caching stuff
 	mutable std::vector<std::vector<std::vector<int> > > elementCache_;
 	mutable std::vector<double>            glob_knot_u_;
