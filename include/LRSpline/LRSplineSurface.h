@@ -155,6 +155,10 @@ public:
 	void writePostscriptMeshWithControlPoints(std::ostream &out, int nu=2, int nv=2) const ;
 
 private:
+	// make non-copyable
+	LRSplineSurface(const LRSplineSurface&) = delete;
+	LRSplineSurface& operator=(const LRSplineSurface&) = delete;
+
 	// caching stuff
 	mutable std::vector<std::vector<int> > elementCache_;
 	mutable std::vector<double>            glob_knot_u_;
