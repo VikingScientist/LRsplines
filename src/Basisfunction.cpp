@@ -73,7 +73,7 @@ void Basisfunction::getGrevilleParameter(std::vector<double> &pt) const {
 	pt.resize(knots_.size());
 	for(uint i=0; i<knots_.size(); i++) {
 		pt[i] = 0;
-		for(uint j=0; j<knots_[i].size()-1; j++)
+		for(uint j=1; j<knots_[i].size()-1; j++)
 			pt[i] += knots_[i][j];
 		pt[i] /= (knots_[i].size()-2);
 	}
