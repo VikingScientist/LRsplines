@@ -2549,6 +2549,21 @@ bool LRSplineSurface::decreaseContinuity(int du, int dv) {
 	return true;
 }
 
+bool LRSplineSurface::setControlPointsVDSA(const LRSplineSurface* lr) {
+	if(dim_ != lr->dimension())
+		this->rebuildDimension(lr->dimension());
+
+	std::vector<double> u(2), newCP(2);
+	for(auto bit : this->getAllBasisfunctions()) {
+		bit->getGrevilleParameter(u);
+		std::vector<double>::iterator cp = (*bit).cp();
+		lr->point(newCP, u[0], u[1]);
+		for(int i=0; i<dim_; i++)
+			cp[i] = newCP[i];
+	}
+	return true;
+}
+
 void LRSplineSurface::getSupportElements(std::vector<int> &result, const std::vector<int> &basisfunctions) const  {
 	result.clear();
 	std::set<int> tmp;

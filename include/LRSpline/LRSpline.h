@@ -141,6 +141,7 @@ public:
 	virtual void read(std::istream &is)         { };
 	virtual void write(std::ostream &os) const  { };
 
+
 protected:
 	// useful descriptive stuff
 	int  dim_;

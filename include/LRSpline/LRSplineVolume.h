@@ -148,6 +148,9 @@ public:
 	                         std::vector<double> val) const;
 	*/
 
+	//! \brief sets the controlpoints of *this to be a variational diminishing spline approximation of the input argument
+	bool setControlPointsVDSA(const LRSplineVolume *lr);
+
 	// input output methods
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;

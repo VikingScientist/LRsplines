@@ -141,6 +141,9 @@ public:
 	bool setGlobalContinuity(int contU, int contV);
 	bool decreaseContinuity( int du,    int dv);
 
+	//! \brief sets the controlpoints of *this to be a variational diminishing spline approximation of the input argument
+	bool setControlPointsVDSA(const LRSplineSurface *lr);
+
 	// input output methods
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;

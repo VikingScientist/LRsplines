@@ -1991,6 +1991,21 @@ void LRSplineVolume::setMaxContinuity(int dir, int maxCont) {
 	}
 }
 
+bool LRSplineVolume::setControlPointsVDSA(const LRSplineVolume* lr) {
+	if(dim_ != lr->dimension())
+		this->rebuildDimension(lr->dimension());
+
+	std::vector<double> u(3), newCP(3);
+	for(auto bit : this->getAllBasisfunctions()) {
+		bit->getGrevilleParameter(u);
+		std::vector<double>::iterator cp = (*bit).cp();
+		lr->point(newCP, u[0], u[1], u[2]);
+		for(int i=0; i<dim_; i++)
+			cp[i] = newCP[i];
+	}
+	return true;
+}
+
 /************************************************************************************************************************//**
  * \brief functions inserting batch of rectangles (i.e. getDerivativeSpace, getPrimalSpace) may not do proper element-splits
  *        during refinement. This function fixes them a priori.
