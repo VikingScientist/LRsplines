@@ -19,12 +19,12 @@ public:
 	              double stop_u,
 	              double stop_v,
 	              double stop_w,
-	              int multiplicity=1);
+	              int continuity=0);
 
 	template <typename RandomIterator1,
 	          typename RandomIterator2>
-	MeshRectangle(RandomIterator1 start, RandomIterator2 stop, int multiplicity=1) {
-		multiplicity_ = multiplicity;
+	MeshRectangle(RandomIterator1 start, RandomIterator2 stop, int continuity=0) {
+		continuity_ = continuity;
 		start_.resize(3);
 		stop_.resize(3);
 		std::copy(start, start+3, start_.begin());
@@ -46,7 +46,7 @@ public:
 	bool splits(Element *el) const;
 	int makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, int meshIndex, bool allowSplits) ;
 
-	int    multiplicity()   const { return multiplicity_; };
+	int    continuity()   const { return continuity_; };
 	int    constDirection() const;
 	double constParameter() const;
 
@@ -60,7 +60,7 @@ public:
 // private:
 	std::vector<double> start_;
 	std::vector<double> stop_;
-	int multiplicity_;
+	int continuity_;
 	int constDir_;
 
 };

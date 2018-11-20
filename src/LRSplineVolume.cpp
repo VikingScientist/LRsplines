@@ -32,22 +32,22 @@ namespace LR {
 
 
 LRSplineVolume::LRSplineVolume() {
-	order_.resize(3);
+	min_order_.resize(3);
 	start_.resize(3);
 	end_.resize(3);
-	rational_ = false;
-	dim_      = 0;
-	order_[0]  = 0;
-	order_[1]  = 0;
-	order_[2]  = 0;
-	start_[0]  = 0;
-	start_[1]  = 0;
-	start_[2]  = 0;
-	end_[0]    = 0;
-	end_[1]    = 0;
-	end_[2]    = 0;
-	meshrect_ = std::vector<MeshRectangle*>(0);
-	element_  = std::vector<Element*>(0);
+	rational_     = false;
+	dim_          = 0;
+	min_order_[0] = 0;
+	min_order_[1] = 0;
+	min_order_[2] = 0;
+	start_[0]     = 0;
+	start_[1]     = 0;
+	start_[2]     = 0;
+	end_[0]       = 0;
+	end_[1]       = 0;
+	end_[2]       = 0;
+	meshrect_     = std::vector<MeshRectangle*>(0);
+	element_      = std::vector<Element*>(0);
 
 	initMeta();
 }
@@ -172,7 +172,6 @@ void LRSplineVolume::initMeta() {
 	maxAspectRatio_       = 2.0;
 	doAspectRatioFix_     = false;
 	refStrat_             = LR_FULLSPAN;
-	refKnotlineMult_      = 1;
 	symmetry_             = 1;
 	builtElementCache_    = false;
 	builtBasisCache_      = false;
@@ -204,15 +203,15 @@ LRSplineVolume* LRSplineVolume::copy() const {
 
 	returnvalue->rational_         = this->rational_;
 	returnvalue->dim_              = this->dim_;
-	returnvalue->order_[0]          = this->order_[0];
-	returnvalue->order_[1]          = this->order_[1];
-	returnvalue->order_[2]          = this->order_[2];
-	returnvalue->start_[0]          = this->start_[0];
-	returnvalue->start_[1]          = this->start_[1];
-	returnvalue->start_[2]          = this->start_[2];
-	returnvalue->end_[0]            = this->end_[0];
-	returnvalue->end_[1]            = this->end_[1];
-	returnvalue->end_[2]            = this->end_[2];
+	returnvalue->min_order_[0]     = this->min_order_[0];
+	returnvalue->min_order_[1]     = this->min_order_[1];
+	returnvalue->min_order_[2]     = this->min_order_[2];
+	returnvalue->start_[0]         = this->start_[0];
+	returnvalue->start_[1]         = this->start_[1];
+	returnvalue->start_[2]         = this->start_[2];
+	returnvalue->end_[0]           = this->end_[0];
+	returnvalue->end_[1]           = this->end_[1];
+	returnvalue->end_[2]           = this->end_[2];
 	returnvalue->maxTjoints_       = this->maxTjoints_;
 	returnvalue->doCloseGaps_      = this->doCloseGaps_;
 	returnvalue->doAspectRatioFix_ = this->doAspectRatioFix_;
@@ -582,12 +581,12 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 	double min_du      = DBL_MAX;
 	double min_dv      = DBL_MAX;
 	double min_dw      = DBL_MAX;
-	int    best_startI = order_[0]+2;
-	int    best_stopI  = order_[0]+2;
-	int    best_startJ = order_[1]+2;
-	int    best_stopJ  = order_[1]+2;
-	int    best_startK = order_[2]+2;
-	int    best_stopK  = order_[2]+2;
+	int    best_startI = min_order_[0]+2;
+	int    best_stopI  = min_order_[0]+2;
+	int    best_startJ = min_order_[1]+2;
+	int    best_stopJ  = min_order_[1]+2;
+	int    best_startK = min_order_[2]+2;
+	int    best_stopK  = min_order_[2]+2;
 	double du          = umax - umin;
 	double dv          = vmax - vmin;
 	double dw          = wmax - wmin;
@@ -629,8 +628,8 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 
 		// min_du is defined as the minimum TOTAL knot span (of an entire basis function)
 		bool fixU = false;
-		int delta_startI = abs(startI - (order_[0]+1)/2);
-		int delta_stopI  = abs(stopI  - (order_[0]+1)/2);
+		int delta_startI = abs(startI - (min_order_[0]+1)/2);
+		int delta_stopI  = abs(stopI  - (min_order_[0]+1)/2);
 		if(  du <  min_du )
 			fixU = true;
 		if( du == min_du && delta_startI <= best_startI && delta_stopI  <= best_stopI )
@@ -644,8 +643,8 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 		}
 
 		bool fixV = false;
-		int delta_startJ = abs(startJ - (order_[1]+1)/2);
-		int delta_stopJ  = abs(stopJ  - (order_[1]+1)/2);
+		int delta_startJ = abs(startJ - (min_order_[1]+1)/2);
+		int delta_stopJ  = abs(stopJ  - (min_order_[1]+1)/2);
 		if(  dv <  min_dv )
 			fixV = true;
 		if( dv == min_dv && delta_startJ <= best_startJ && delta_stopJ  <= best_stopJ )
@@ -659,8 +658,8 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 		}
 
 		bool fixW = false;
-		int delta_startK = abs(startK - (order_[2]+1)/2);
-		int delta_stopK  = abs(stopK  - (order_[2]+1)/2);
+		int delta_startK = abs(startK - (min_order_[2]+1)/2);
+		int delta_stopK  = abs(stopK  - (min_order_[2]+1)/2);
 		if(  dw <  min_dw )
 			fixW = true;
 		if( dw == min_dw && delta_startK <= best_startK && delta_stopK  <= best_stopK )
@@ -674,11 +673,11 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 		}
 	}
 	if(! drop_u_rect )
-		lines.push_back(new MeshRectangle(midU, vmin, wmin,  midU, vmax, wmax));
+		lines.push_back(new MeshRectangle(midU, vmin, wmin,  midU, vmax, wmax, refKnotlineCont_));
 	if(! drop_v_rect )
-		lines.push_back(new MeshRectangle(umin, midV, wmin,  umax, midV, wmax));
+		lines.push_back(new MeshRectangle(umin, midV, wmin,  umax, midV, wmax, refKnotlineCont_));
 	if(! drop_w_rect )
-		lines.push_back(new MeshRectangle(umin, vmin, midW,  umax, vmax, midW));
+		lines.push_back(new MeshRectangle(umin, vmin, midW,  umax, vmax, midW, refKnotlineCont_));
 }
 
 void LRSplineVolume::getFullspanRects(int iEl, std::vector<MeshRectangle*>& lines) {
@@ -710,11 +709,11 @@ void LRSplineVolume::getFullspanRects(int iEl, std::vector<MeshRectangle*>& line
 	}
 
 	if(! drop_u_rect )
-		lines.push_back(new MeshRectangle(midU, vmin, wmin,  midU, vmax, wmax));
+		lines.push_back(new MeshRectangle(midU, vmin, wmin,  midU, vmax, wmax, refKnotlineCont_));
 	if(! drop_v_rect )
-		lines.push_back(new MeshRectangle(umin, midV, wmin,  umax, midV, wmax));
+		lines.push_back(new MeshRectangle(umin, midV, wmin,  umax, midV, wmax, refKnotlineCont_));
 	if(! drop_w_rect )
-		lines.push_back(new MeshRectangle(umin, vmin, midW,  umax, vmax, midW));
+		lines.push_back(new MeshRectangle(umin, vmin, midW,  umax, vmax, midW, refKnotlineCont_));
 }
 
 void LRSplineVolume::getStructMeshRects(Basisfunction *b, std::vector<MeshRectangle*>& rects) {
@@ -728,7 +727,7 @@ void LRSplineVolume::getStructMeshRects(Basisfunction *b, std::vector<MeshRectan
 	// find the largest knotspan in this function
 	double max[3] = {0,0,0};
 	for(int d=0; d<3; d++) {
-		for(int j=0; j<order_[d]; j++) {
+		for(int j=0; j<min_order_[d]; j++) {
 			double du = (*b)[d][j+1]-(*b)[d][j];
 			bool isZeroSpan =  fabs(du) < DOUBLE_TOL ;
 			max[d] = (isZeroSpan || max[d]>du) ? max[d] : du;
@@ -737,29 +736,32 @@ void LRSplineVolume::getStructMeshRects(Basisfunction *b, std::vector<MeshRectan
 
 	// to keep as "square" basis function as possible, only insert
 	// into the largest knot spans
-	for(int j=0; j<order_[0]; j++) {
+	for(int j=0; j<min_order_[0]; j++) {
 		double du = (*b)[0][j+1]-(*b)[0][j];
 		if( fabs(du-max[0]) < DOUBLE_TOL ) {
 			MeshRectangle *m = new MeshRectangle(((*b)[0][j] + (*b)[0][j+1])/2.0, vmin, wmin,
-			                                     ((*b)[0][j] + (*b)[0][j+1])/2.0, vmax, wmax);
+			                                     ((*b)[0][j] + (*b)[0][j+1])/2.0, vmax, wmax,
+			                                     refKnotlineCont_);
 			if(!MeshRectangle::addUniqueRect(rects, m))
 				delete m;
 		}
 	}
-	for(int j=0; j<order_[1]; j++) {
+	for(int j=0; j<min_order_[1]; j++) {
 		double dv = (*b)[1][j+1]-(*b)[1][j];
 		if( fabs(dv-max[1]) < DOUBLE_TOL ) {
 			MeshRectangle *m = new MeshRectangle(umin, ((*b)[1][j] + (*b)[1][j+1])/2.0, wmin,
-			                                     umax, ((*b)[1][j] + (*b)[1][j+1])/2.0, wmax);
+			                                     umax, ((*b)[1][j] + (*b)[1][j+1])/2.0, wmax,
+			                                     refKnotlineCont_);
 			if(!MeshRectangle::addUniqueRect(rects, m))
 				delete m;
 		}
 	}
-	for(int j=0; j<order_[2]; j++) {
+	for(int j=0; j<min_order_[2]; j++) {
 		double dw = (*b)[2][j+1]-(*b)[2][j];
 		if( fabs(dw-max[2]) < DOUBLE_TOL ) {
 			MeshRectangle *m = new MeshRectangle(umin, vmin, ((*b)[2][j] + (*b)[2][j+1])/2.0,
-			                                     umax, vmax, ((*b)[2][j] + (*b)[2][j+1])/2.0);
+			                                     umax, vmax, ((*b)[2][j] + (*b)[2][j+1])/2.0,
+			                                     refKnotlineCont_);
 			if(!MeshRectangle::addUniqueRect(rects, m))
 				delete m;
 		}
@@ -885,26 +887,28 @@ std::vector<Meshline*> LRSplineVolume::getEdgeKnots(parameterEdge edge, bool nor
 	double w1 = this->endparam(2);
 
 	for(auto rect : this->getAllMeshRectangles()) {
+		int dir = rect->constDirection();
+		int multiplicity = min_order_[dir] - rect->continuity() - 1;
 		if(edge == WEST && fabs(rect->start_[0] - u0) < DOUBLE_TOL  ||
 		   edge == EAST && fabs(rect->stop_[0]  - u1) < DOUBLE_TOL) {
 			if(rect->constDirection() == 1)
-				results.push_back(new Meshline(false, rect->start_[1], rect->start_[2], rect->stop_[2], rect->multiplicity_));
+				results.push_back(new Meshline(false, rect->start_[1], rect->start_[2], rect->stop_[2], multiplicity));
 			else if(rect->constDirection() == 2)
-				results.push_back(new Meshline(true, rect->start_[2], rect->start_[1], rect->stop_[1], rect->multiplicity_));
+				results.push_back(new Meshline(true, rect->start_[2], rect->start_[1], rect->stop_[1], multiplicity));
 
 		} else if(edge == SOUTH && fabs(rect->start_[1] - v0) < DOUBLE_TOL  ||
 		          edge == NORTH && fabs(rect->stop_[1]  - v1) < DOUBLE_TOL) {
 			if(rect->constDirection() == 0)
-				results.push_back(new Meshline(false, rect->start_[0], rect->start_[2], rect->stop_[2], rect->multiplicity_));
+				results.push_back(new Meshline(false, rect->start_[0], rect->start_[2], rect->stop_[2], multiplicity));
 			else if(rect->constDirection() == 2)
-				results.push_back(new Meshline(true, rect->start_[2], rect->start_[0], rect->stop_[0], rect->multiplicity_));
+				results.push_back(new Meshline(true, rect->start_[2], rect->start_[0], rect->stop_[0], multiplicity));
 
 		} else if(edge == BOTTOM && fabs(rect->start_[2] - w0) < DOUBLE_TOL  ||
 		          edge == TOP    && fabs(rect->stop_[2]  - w1) < DOUBLE_TOL) {
 			if(rect->constDirection() == 0)
-				results.push_back(new Meshline(false, rect->start_[0], rect->start_[1], rect->stop_[1], rect->multiplicity_));
+				results.push_back(new Meshline(false, rect->start_[0], rect->start_[1], rect->stop_[1], multiplicity));
 			else if(rect->constDirection() == 1)
-				results.push_back(new Meshline(true, rect->start_[1], rect->start_[0], rect->stop_[0], rect->multiplicity_));
+				results.push_back(new Meshline(true, rect->start_[1], rect->start_[0], rect->stop_[0], multiplicity));
 		}
 	}
 
@@ -1163,17 +1167,17 @@ bool LRSplineVolume::enforceIsotropic() {
 			double h  = std::min(std::min(du,dv),dw);
 			MeshRectangle *m;
 			if(du - h > DOUBLE_TOL) {
-				m = new MeshRectangle(umin+du/2, vmin, wmin, umin+du/2, vmax, wmax, refKnotlineMult_);
+				m = new MeshRectangle(umin+du/2, vmin, wmin, umin+du/2, vmax, wmax, refKnotlineCont_);
 				insert_line(m);
 				somethingFixed = true;
 			}
 			if(dv - h > DOUBLE_TOL) {
-				m = new MeshRectangle(umin, vmin+dv/2, wmin, umax, vmin+dv/2, wmax, refKnotlineMult_);
+				m = new MeshRectangle(umin, vmin+dv/2, wmin, umax, vmin+dv/2, wmax, refKnotlineCont_);
 				insert_line(m);
 				somethingFixed = true;
 			}
 			if(dw - h > DOUBLE_TOL) {
-				m = new MeshRectangle(umin, vmin, wmin+dw/2, umax, vmax, wmin+dw/2, refKnotlineMult_);
+				m = new MeshRectangle(umin, vmin, wmin+dw/2, umax, vmax, wmin+dw/2, refKnotlineCont_);
 				insert_line(m);
 				somethingFixed = true;
 			}
@@ -1198,8 +1202,8 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 		std::cerr << "(" <<   end_[0] << ", " <<   end_[1] << ", " <<   end_[2] << ") ";
 		exit(3239621);
 	}
-	if(newRect->multiplicity_ < 1) {
-		std::cerr << "LRSplineVolume::insert_line() requested mesh rectangle with multiplicity " << newRect->multiplicity_ << ". Needs non-negative values\n";
+	if(newRect->continuity() < -1) {
+		std::cerr << "LRSplineVolume::insert_line() requested mesh rectangle with multiplicity " << newRect->continuity() << ". Needs continuity >= -1\n";
 		exit(5312174);
 	}
 
@@ -1284,9 +1288,11 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 		for(MeshRectangle *m : newGuys) {
 			if(m->splits(b)) {
 				int nKnots = m->nKnotsIn(b);
-				if( nKnots < m->multiplicity_) {
+				int dir = m->constDirection();
+				int multiplicity = b->getOrder(dir) - m->continuity() - 1;
+				if( nKnots < multiplicity) {
 					removeFunc.insert(b);
-					split( m->constDirection(), b, m->constParameter(), m->multiplicity_-nKnots, newFuncStp1 );
+					split( m->constDirection(), b, m->constParameter(), multiplicity-nKnots, newFuncStp1 );
 					break; // can only be split once by single meshrectangle insertion
 				}
 			}
@@ -1316,9 +1322,11 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 		for(MeshRectangle *m : meshrect_) {
 			if(m->splits(b)) {
 				int nKnots = m->nKnotsIn(b);
-				if( nKnots < m->multiplicity_ ) {
+				int dir    = m->constDirection();
+				int multiplicity = b->getOrder(dir) - m->continuity() - 1;
+				if( nKnots < multiplicity ) {
 					splitMore = true;
-					split( m->constDirection(), b, m->constParameter(), m->multiplicity_-nKnots, newFuncStp1);
+					split( m->constDirection(), b, m->constParameter(), multiplicity-nKnots, newFuncStp1);
 					delete b;
 					break;
 				}
@@ -1357,14 +1365,14 @@ void LRSplineVolume::split(int constDir, Basisfunction *b, double new_knot, int 
 	newKnot[0] = new_knot;
 	std::sort(newKnot.begin(), newKnot.begin() + p+2);
 	if(constDir == 0) {
-		b1 = new Basisfunction(newKnot.begin()  ,  (*b)[1].begin(),  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha1);
-		b2 = new Basisfunction(newKnot.begin()+1,  (*b)[1].begin(),  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha2);
+		b1 = new Basisfunction(newKnot.begin()  ,  (*b)[1].begin(),  (*b)[2].begin(), b->cp(), b->dim(), b->getOrder(0), b->getOrder(1), b->getOrder(2), b->w()*alpha1);
+		b2 = new Basisfunction(newKnot.begin()+1,  (*b)[1].begin(),  (*b)[2].begin(), b->cp(), b->dim(), b->getOrder(0), b->getOrder(1), b->getOrder(2), b->w()*alpha2);
 	} else if(constDir == 1) {
-		b1 = new Basisfunction((*b)[0].begin(), newKnot.begin()   ,  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha1);
-		b2 = new Basisfunction((*b)[0].begin(), newKnot.begin()+1 ,  (*b)[2].begin(), b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha2);
+		b1 = new Basisfunction((*b)[0].begin(), newKnot.begin()   ,  (*b)[2].begin(), b->cp(), b->dim(), b->getOrder(0), b->getOrder(1), b->getOrder(2), b->w()*alpha1);
+		b2 = new Basisfunction((*b)[0].begin(), newKnot.begin()+1 ,  (*b)[2].begin(), b->cp(), b->dim(), b->getOrder(0), b->getOrder(1), b->getOrder(2), b->w()*alpha2);
 	} else { // insert in w
-		b1 = new Basisfunction((*b)[0].begin(), (*b)[1].begin(),  newKnot.begin()   , b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha1);
-		b2 = new Basisfunction((*b)[0].begin(), (*b)[1].begin(),  newKnot.begin()+1 , b->cp(), b->dim(), order_[0], order_[1], order_[2], b->w()*alpha2);
+		b1 = new Basisfunction((*b)[0].begin(), (*b)[1].begin(),  newKnot.begin()   , b->cp(), b->dim(), b->getOrder(0), b->getOrder(1), b->getOrder(2), b->w()*alpha1);
+		b2 = new Basisfunction((*b)[0].begin(), (*b)[1].begin(),  newKnot.begin()+1 , b->cp(), b->dim(), b->getOrder(0), b->getOrder(1), b->getOrder(2), b->w()*alpha2);
 	}
 
 	// add any brand new functions and detect their support elements
@@ -1416,9 +1424,10 @@ void LRSplineVolume::getGlobalKnotVector(std::vector<double> &knot_u, std::vecto
 
 	// add in duplicates where apropriate
 	for(uint i=0; i<knot_u.size(); i++) {
-		for(uint j=0; j<meshrect_.size(); j++) {
-			if(meshrect_[j]->constDirection() == 0 && meshrect_[j]->constParameter() == knot_u[i]) {
-				for(int m=1; m<meshrect_[j]->multiplicity_; m++) {
+		for(auto mr : getAllMeshRectangles() ) {
+			if(mr->constDirection() == 0 && mr->constParameter() == knot_u[i]) {
+				int multiplicity = min_order_[0] - mr->continuity() - 1;
+				for(int m=1; m<multiplicity; m++) {
 					knot_u.insert(knot_u.begin()+i, knot_u[i]);
 					i++;
 				}
@@ -1427,9 +1436,10 @@ void LRSplineVolume::getGlobalKnotVector(std::vector<double> &knot_u, std::vecto
 		}
 	}
 	for(uint i=0; i<knot_v.size(); i++) {
-		for(uint j=0; j<meshrect_.size(); j++) {
-			if(meshrect_[j]->constDirection() == 1 && meshrect_[j]->constParameter() == knot_v[i]) {
-				for(int m=1; m<meshrect_[j]->multiplicity_; m++) {
+		for(auto mr : getAllMeshRectangles()) {
+			if(mr->constDirection() == 1 && mr->constParameter() == knot_v[i]) {
+				int multiplicity = min_order_[1] - mr->continuity() - 1;
+				for(int m=1; m<multiplicity; m++) {
 					knot_v.insert(knot_v.begin()+i, knot_v[i]);
 					i++;
 				}
@@ -1438,9 +1448,10 @@ void LRSplineVolume::getGlobalKnotVector(std::vector<double> &knot_u, std::vecto
 		}
 	}
 	for(uint i=0; i<knot_w.size(); i++) {
-		for(uint j=0; j<meshrect_.size(); j++) {
-			if(meshrect_[j]->constDirection() == 2 && meshrect_[j]->constParameter() == knot_w[i]) {
-				for(int m=1; m<meshrect_[j]->multiplicity_; m++) {
+		for(auto mr : getAllMeshRectangles()) {
+			if(mr->constDirection() == 2 && mr->constParameter() == knot_w[i]) {
+				int multiplicity = min_order_[2] - mr->continuity() - 1;
+				for(int m=1; m<multiplicity; m++) {
 					knot_w.insert(knot_w.begin()+i, knot_w[i]);
 					i++;
 				}
@@ -1557,14 +1568,14 @@ bool LRSplineVolume::isLinearIndepByOverloading(bool verbose) {
 
 void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoints) const {
 	controlPoints.clear();
-	controlPoints.resize(order_[0]*order_[1]*order_[2]*dim_, 0);
+	controlPoints.resize(min_order_[0]*min_order_[1]*min_order_[2]*dim_, 0);
 	Element *el = element_[iEl];
 	for(Basisfunction* b : el->support()) {
 		int start[] = {-1,-1,-1};
 		std::vector<std::vector<double> > row(3);
 		std::vector<std::vector<double> > knot(3);
 		for(int d=0; d<3; d++) {
-			for(int i=0; i<order_[d]+1; i++)
+			for(int i=0; i<min_order_[d]+1; i++)
 				knot[d].push_back( (*b)[d][i] );
 			row[d].push_back(1);
 		}
@@ -1576,15 +1587,15 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 			double max = el->getParmax(d);
 			while(knot[d][++start[d]] < min);
 			while(true) {
-				int p    = order_[d]-1;
+				int p    = min_order_[d]-1;
 				int newI = -1;
 				double z;
-				if(       knot[d].size() < (uint) start[d]+order_[d]   || knot[d][start[d]+  order_[d]-1] != min) {
+				if(       knot[d].size() < (uint) start[d]+min_order_[d]   || knot[d][start[d]+  min_order_[d]-1] != min) {
 					z    = min;
 					newI = start[d];
-				} else if(knot[d].size() < (uint) start[d]+2*order_[d] || knot[d][start[d]+2*order_[d]-1] != max ) {
+				} else if(knot[d].size() < (uint) start[d]+2*min_order_[d] || knot[d][start[d]+2*min_order_[d]-1] != max ) {
 					z    = max;
-					newI = start[d] + order_[d];
+					newI = start[d] + min_order_[d];
 				} else {
 					break;
 				}
@@ -1609,9 +1620,9 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 		}
 
 		int ip = 0;
-		for(int w=start[2]; w<start[2]+order_[2]; w++)
-			for(int v=start[1]; v<start[1]+order_[1]; v++)
-				for(int u=start[0]; u<start[0]+order_[0]; u++)
+		for(int w=start[2]; w<start[2]+min_order_[2]; w++)
+			for(int v=start[1]; v<start[1]+min_order_[1]; v++)
+				for(int u=start[0]; u<start[0]+min_order_[0]; u++)
 					for(int d=0; d<dim_; d++)
 						controlPoints[ip++] += b->cp()[d]*row[0][u]*row[1][v]*row[2][w]*b->w();
 	}
@@ -1619,7 +1630,7 @@ void LRSplineVolume::getBezierElement(int iEl, std::vector<double> &controlPoint
 
 void LRSplineVolume::getBezierExtraction(int iEl, std::vector<double> &extractMatrix) const {
 	Element *el = element_[iEl];
-	int width  = order_[0]*order_[1]*order_[2];
+	int width  = min_order_[0]*min_order_[1]*min_order_[2];
 	int height = el->nBasisFunctions();
 	extractMatrix.clear();
 	extractMatrix.resize(width*height);
@@ -1630,7 +1641,7 @@ void LRSplineVolume::getBezierExtraction(int iEl, std::vector<double> &extractMa
 		std::vector<std::vector<double> > row(3);
 		std::vector<std::vector<double> > knot(3);
 		for(int d=0; d<3; d++) {
-			for(int i=0; i<order_[d]+1; i++)
+			for(int i=0; i<min_order_[d]+1; i++)
 				knot[d].push_back( (*b)[d][i] );
 			row[d].push_back(1);
 		}
@@ -1642,15 +1653,15 @@ void LRSplineVolume::getBezierExtraction(int iEl, std::vector<double> &extractMa
 			double max = el->getParmax(d);
 			while(knot[d][++start[d]] < min);
 			while(true) {
-				int p    = order_[d]-1;
+				int p    = min_order_[d]-1;
 				int newI = -1;
 				double z;
-				if(       knot[d].size() < (uint) start[d]+order_[d]   || knot[d][start[d]+  order_[d]-1] != min) {
+				if(       knot[d].size() < (uint) start[d]+min_order_[d]   || knot[d][start[d]+  min_order_[d]-1] != min) {
 					z    = min;
 					newI = start[d];
-				} else if(knot[d].size() < (uint) start[d]+2*order_[d] || knot[d][start[d]+2*order_[d]-1] != max ) {
+				} else if(knot[d].size() < (uint) start[d]+2*min_order_[d] || knot[d][start[d]+2*min_order_[d]-1] != max ) {
 					z    = max;
-					newI = start[d] + order_[d];
+					newI = start[d] + min_order_[d];
 				} else {
 					break;
 				}
@@ -1675,9 +1686,9 @@ void LRSplineVolume::getBezierExtraction(int iEl, std::vector<double> &extractMa
 		}
 
 		int colI = 0;
-		for(int w=start[2]; w<start[2]+order_[2]; w++)
-			for(int v=start[1]; v<start[1]+order_[1]; v++)
-				for(int u=start[0]; u<start[0]+order_[0]; u++, colI++)
+		for(int w=start[2]; w<start[2]+min_order_[2]; w++)
+			for(int v=start[1]; v<start[1]+min_order_[1]; v++)
+				for(int u=start[0]; u<start[0]+min_order_[0]; u++, colI++)
 					extractMatrix[colI*height + rowI] += row[0][u]*row[1][v]*row[2][w]*b->w();
 		rowI++;
 	}
@@ -1712,9 +1723,9 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 	std::vector<double> knots_u, knots_v, knots_w;
 	getGlobalKnotVector(knots_u, knots_v, knots_w);
 	int nmb_bas = basis_.size();
-	int n1 = knots_u.size() - order_[0];
-	int n2 = knots_v.size() - order_[1];
-	int n3 = knots_w.size() - order_[2];
+	int n1 = knots_u.size() - min_order_[0];
+	int n2 = knots_v.size() - min_order_[1];
+	int n3 = knots_w.size() - min_order_[2];
 	int fullDim = n1*n2*n3;
 	bool fullVerbose   = fullDim <  30 && nmb_bas <  50;
 	bool sparseVerbose = fullDim < 250 && nmb_bas < 100;
@@ -1748,21 +1759,21 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 
 		for(startU=knots_u.size(); startU-->0; )
 			if(knots_u[startU] == (*b)[0][0]) break;
-		for(int j=0; j<order_[0]; j++) {
+		for(int j=0; j<min_order_[0]; j++) {
 			if(knots_u[startU] == (*b)[0][j]) startU--;
 			else break;
 		}
 		startU++;
 		for(startV=knots_v.size(); startV-->0; )
 			if(knots_v[startV] == (*b)[1][0]) break;
-		for(int j=0; j<order_[1]; j++) {
+		for(int j=0; j<min_order_[1]; j++) {
 			if(knots_v[startV] == (*b)[1][j]) startV--;
 			else break;
 		}
 		startV++;
 		for(startW=knots_w.size(); startW-->0; )
 			if(knots_w[startW] == (*b)[2][0]) break;
-		for(int j=0; j<order_[2]; j++) {
+		for(int j=0; j<min_order_[2]; j++) {
 			if(knots_w[startW] == (*b)[2][j]) startW--;
 			else break;
 		}
@@ -1776,7 +1787,7 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 				for(uint k=0; k<rowU.size(); k++) {
 					#define U(x) ((unsigned long long) (locKnotU[x+k]/smallKnotU + 0.5))
 					unsigned long long z = (unsigned long long) (knots_u[curU] / smallKnotU + 0.5);
-					int p = order_[0]-1;
+					int p = min_order_[0]-1;
 					if(z < U(0) || z > U(p+1)) {
 						newRowU[k] = rowU[k];
 						continue;
@@ -1800,7 +1811,7 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 				for(uint k=0; k<rowV.size(); k++) {
 					#define V(x) ((unsigned long long) (locKnotV[x+k]/smallKnotV + 0.5))
 					unsigned long long z = (unsigned long long) (knots_v[curV] / smallKnotV + 0.5);
-					int p = order_[1]-1;
+					int p = min_order_[1]-1;
 					if(z < V(0) || z > V(p+1)) {
 						newRowV[k] = rowV[k];
 						continue;
@@ -1824,7 +1835,7 @@ bool LRSplineVolume::isLinearIndepByMappingMatrix(bool verbose) const {
 				for(uint k=0; k<rowW.size(); k++) {
 					#define W(x) ((unsigned long long) (locKnotW[x+k]/smallKnotW + 0.5))
 					unsigned long long z = (unsigned long long) (knots_w[curW] / smallKnotW + 0.5);
-					int p = order_[2]-1;
+					int p = min_order_[2]-1;
 					if(z < W(0) || z > W(p+1)) {
 						newRowW[k] = rowW[k];
 						continue;
@@ -1938,7 +1949,7 @@ void LRSplineVolume::getDiagonalBasisfunctions(std::vector<int> &result) const  
 	result.clear();
 	for(Basisfunction *b : basis_) {
 		bool isDiag = true;
-		for(int j=0; j<order_[0]+1; j++)
+		for(int j=0; j<b->getOrder(0)+1; j++)
 			if(b->getknots(0)[j] != b->getknots(1)[j] || b->getknots(0)[j] != b->getknots(2)[j])
 				isDiag = false;
 		if(isDiag)
@@ -1965,9 +1976,9 @@ LRSplineVolume* LRSplineVolume::getDerivedBasis(int raise_p1, int raise_p2, int 
 	  std::cerr << "Error: getDerivedBasis undefined for raise_p < 0 and raise_p > lower_k" << std::endl;
 		return NULL;
 	}
-	int p1 = order_[0] + raise_p1;
-	int p2 = order_[1] + raise_p2;
-	int p3 = order_[2] + raise_p3;
+	int p1 = min_order_[0] + raise_p1;
+	int p2 = min_order_[1] + raise_p2;
+	int p3 = min_order_[2] + raise_p3;
 	std::vector<double> knotU(2*p1);
 	std::vector<double> knotV(2*p2);
 	std::vector<double> knotW(2*p3);
@@ -2003,7 +2014,7 @@ LRSplineVolume* LRSplineVolume::getDerivedBasis(int raise_p1, int raise_p2, int 
 			dk = lower_k3 + raise_p3;
 
 		MeshRectangle *rect = m->copy();
-		rect->multiplicity_ += dk;
+		rect->continuity_ -= dk;
 		result->insert_line(rect);
 	}
 	result->aPosterioriFixElements();
@@ -2011,33 +2022,28 @@ LRSplineVolume* LRSplineVolume::getDerivedBasis(int raise_p1, int raise_p2, int 
 }
 
 int LRSplineVolume::getMinContinuity(int i) const {
-	int p = order_[i];
-	int minCont = p;
+	int minCont = 100000;
 	for(auto rect : getAllMeshRectangles())
 		if(rect->constDirection() == i)
-			if(rect->multiplicity() != p) // skip C^{-1} lines (typically the edges)
-				minCont = std::min(minCont, p - rect->multiplicity() - 1);
+			if(rect->continuity() != -1) // skip C^{-1} lines (typically the edges)
+				minCont = std::min(minCont, rect->continuity());
 	return minCont;
 }
 
 int LRSplineVolume::getMaxContinuity(int i) const {
-	int p = order_[i];
 	int maxCont = -1;
 	for(auto rect : getAllMeshRectangles())
 		if(rect->constDirection() == i)
-			if(rect->multiplicity() != p) // skip C^{-1} lines (typically the edges)
-				maxCont = std::max(maxCont, p - rect->multiplicity() - 1);
+			maxCont = std::max(maxCont, rect->continuity());
 	return maxCont;
 }
 
 void LRSplineVolume::setMaxContinuity(int dir, int maxCont) {
-	int p = order_[dir];
 	for(auto rect : getAllMeshRectangles()) {
 		if(rect->constDirection() == dir) {
-			int thisCont = p - rect->multiplicity() - 1;
-			if(thisCont > maxCont) {
+			if(rect->continuity() > maxCont) {
 				MeshRectangle *newRect = rect->copy();
-				newRect->multiplicity_ = p - maxCont - 1;
+				newRect->continuity_ = maxCont;
 				insert_line(newRect);
 			}
 		}
@@ -2099,9 +2105,9 @@ void LRSplineVolume::read(std::istream &is) {
 
 	// read actual parameters
 	int nBasis, nElements, nMeshRectangles;
-	is >> order_[0];        ws(is);
-	is >> order_[1];        ws(is);
-	is >> order_[2];        ws(is);
+	is >> min_order_[0];   ws(is);
+	is >> min_order_[1];   ws(is);
+	is >> min_order_[2];   ws(is);
 	is >> nBasis;          ws(is);
 	is >> nMeshRectangles; ws(is);
 	is >> nElements;       ws(is);
@@ -2112,7 +2118,7 @@ void LRSplineVolume::read(std::istream &is) {
 	element_.resize(nElements);
 	basis_.clear();
 	basisVector.resize(nBasis);
-	int allOrder[] = {order_[0], order_[1], order_[2]};
+	int allOrder[] = {min_order_[0], min_order_[1], min_order_[2]};
 
 	// get rid of more comments and spaces
 	firstChar = is.peek();
@@ -2170,9 +2176,9 @@ void LRSplineVolume::write(std::ostream &os) const {
 	os << std::setprecision(16);
 	os << "# LRSPLINE VOLUME\n";
 	os << "#\tp1\tp2\tp3\tNbasis\tNline\tNel\tdim\trat\n\t";
-	os << order_[0] << "\t";
-	os << order_[1] << "\t";
-	os << order_[2] << "\t";
+	os << min_order_[0] << "\t";
+	os << min_order_[1] << "\t";
+	os << min_order_[2] << "\t";
 	os << basis_.size() << "\t";
 	os << meshrect_.size() << "\t";
 	os << element_.size() << "\t";

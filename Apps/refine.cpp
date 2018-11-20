@@ -87,15 +87,18 @@ int main(int argc, char **argv) {
 	LRSpline        *lr;
 	LRSplineSurface *lrs = NULL;
 	LRSplineVolume  *lrv = NULL;
+  int p = 0;
 	char buffer[512];
 	inputfile.getline(buffer, 512); // peek the first line to figure out if it's an LRSpline or a GoTools spline
 	inputfile.seekg(ios_base::beg);
 	if(strncmp(buffer, "# LRSPLINE VOLUME",17)==0) {
 		lr = lrv = new LRSplineVolume();
 		inputfile >> *lrv;
+		p = std::min(std::min(lrv->min_order(0), lrv->min_order(1)), lrv->min_order(2));
 	} else if(strncmp(buffer, "# LRSPLINE",10)==0) {
 		lr = lrs = new LRSplineSurface();
 		inputfile >> *lrs;
+		p = std::min(lrs->min_order(0), lrs->min_order(1));
 	} else {
 #ifdef HAS_GOTOOLS
 		Go::ObjectHeader   head;
@@ -116,7 +119,7 @@ int main(int argc, char **argv) {
 	}
 
 	// setup refinement parameters
-	lr->setRefMultiplicity(m);
+	lr->setRefContinuity(p-m-1);
 	if(scheme == 0)
 		lr->setRefStrat(LR_FULLSPAN);
 	else if(scheme == 1)

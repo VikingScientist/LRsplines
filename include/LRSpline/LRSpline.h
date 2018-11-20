@@ -58,7 +58,7 @@ public:
 	//! \brief returns the number of local knot vectors for each B-spline (parametric dimension)
 	int nVariate()           const { return start_.size()  ; };
 	//! \brief returns the polynomial order (degree + 1) in the given parametric direction
-	int order        (int i) const { return order_[i]      ; };
+	int min_order    (int i) const { return min_order_[i]      ; };
 	//! \brief returns the start parameter of the given parametric direction
 	double startparam(int i) const { return start_[i]      ; };
 	//! \brief returns the end parameter of the given parametric direction
@@ -107,7 +107,7 @@ public:
 	// set refinement state parameters
 	void setRefStrat(enum refinementStrategy strat) { refStrat_        = strat;    };
 	void setRefSymmetry(int symmetry)               { this->symmetry_  = symmetry; };
-	void setRefMultiplicity(int mult)               { refKnotlineMult_ = mult;     };
+	void setRefContinuity(int cont)                 { refKnotlineCont_ = cont;     };
 	void setMaxTjoints(int n)                       { maxTjoints_      = n;        };
 	void setCloseGaps(bool doClose)                 { doCloseGaps_     = doClose;  };
 	void setMaxAspectRatio(double r, bool aposterioriFix=true) {
@@ -132,9 +132,9 @@ protected:
 	// useful descriptive stuff
 	int  dim_;
 	bool rational_;
-	std::vector<double> start_ ; //! \brief parametric start coordinate (2 components for surfaces, 3 for volumes)
-	std::vector<double> end_   ; //! \brief parametric stop coordinate (2 components for surfaces, 3 for volumes)
-	std::vector<int>    order_ ; //! \brief polynomial order (degree + 1) in each parametric direction (2 or 3 components)
+	std::vector<double> start_     ; //! \brief parametric start coordinate (2 components for surfaces, 3 for volumes)
+	std::vector<double> end_       ; //! \brief parametric stop coordinate (2 components for surfaces, 3 for volumes)
+	std::vector<int>    min_order_ ; //! \brief smallest polynomial order (degree + 1) in each parametric direction (2 or 3 components)
 
 	// core storage places for the building blocks
 	std::vector<Basisfunction*> basisVector; // only used in read/write functions
@@ -150,7 +150,7 @@ protected:
 
 	// refinement parameters
 	enum refinementStrategy refStrat_;
-	int                     refKnotlineMult_;
+	int                     refKnotlineCont_;
 	int                     symmetry_;
 	int                     maxTjoints_;
 	bool                    doCloseGaps_;

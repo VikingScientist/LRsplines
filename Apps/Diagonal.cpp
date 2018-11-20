@@ -90,10 +90,10 @@ int main(int argc, char **argv) {
 	else if(scheme == 2)
 		strat = LR_STRUCTURED_MESH;
 	if(vol) {
-		lrv->setRefMultiplicity(m);
+		lrv->setRefContinuity(p-m);
 		lrv->setRefStrat(strat);
 	} else {
-		lrs->setRefMultiplicity(m);
+		lrs->setRefContinuity(p-m);
 		lrs->setRefStrat(strat);
 	}
 

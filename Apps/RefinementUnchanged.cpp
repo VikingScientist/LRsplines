@@ -294,8 +294,10 @@ int main(int argc, char **argv) {
 				int c  = constParDir[i]; // constant dir
 				int v1 = (c+1)%3;        // first variable dir
 				int v2 = (c+2)%3;        // second variable dir
+				int p[] = {p1,p2,p3};
 				double min[3];
 				double max[3];
+				int continuity = p[c] - multiplicity[i] - 1;
 				min[c]  = constPar[i];
 				min[v1] = startPar1[i];
 				min[v2] = startPar2[i];
@@ -303,14 +305,14 @@ int main(int argc, char **argv) {
 				max[v1] = endPar1[i];
 				max[v2] = endPar2[i];
 
-				lrv->insert_line(new MeshRectangle(min[0], min[1], min[2], max[0], max[1], max[2]));
+				lrv->insert_line(new MeshRectangle(min[0], min[1], min[2], max[0], max[1], max[2], continuity));
 			}
 		} else {
 			for(uint i=0; i<is_const_u.size(); i++) {
 				if(is_const_u[i])
-					lrs->insert_const_u_edge(constPar[i], startPar1[i], endPar1[i], multiplicity[i]);
+					lrs->insert_const_u_edge(constPar[i], startPar1[i], endPar1[i], p1-multiplicity[i]-1);
 				else
-					lrs->insert_const_v_edge(constPar[i], startPar1[i], endPar1[i], multiplicity[i]);
+					lrs->insert_const_v_edge(constPar[i], startPar1[i], endPar1[i], p2-multiplicity[i]-1);
 			}
 		}
 	} else {

@@ -174,7 +174,7 @@ private:
 	std::vector<MeshRectangle*> meshrect_;
 
 	void aPosterioriFixElements();
-	void split(int constDir, Basisfunction *b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
+	void split(int constDir, Basisfunction *b, double new_knot, int continuity, HashSet<Basisfunction*> &newFunctions);
 	void initMeta();
 	template <typename RandomIterator1,
 	          typename RandomIterator2,
@@ -193,20 +193,21 @@ private:
 			initCore(2,2,2,2,2,2,knot,knot,knot,cp,1); // init dummy-state object
 			return;
 		}
-		order_.resize(3);
+		min_order_.resize(3);
 		start_.resize(3);
 		end_.resize(3);
-		rational_ = rational;
-		dim_      = dim;
-		order_[0]  = order_u;
-		order_[1]  = order_v;
-		order_[2]  = order_w;
-		start_[0]  = knot_u[0];
-		start_[1]  = knot_v[0];
-		start_[2]  = knot_w[0];
-		end_[0]    = knot_u[n1];
-		end_[1]    = knot_v[n2];
-		end_[2]    = knot_w[n3];
+		rational_     = rational;
+		dim_          = dim;
+		min_order_[0] = order_u;
+		min_order_[1] = order_v;
+		min_order_[2] = order_w;
+		start_[0]     = knot_u[0];
+		start_[1]     = knot_v[0];
+		start_[2]     = knot_w[0];
+		end_[0]       = knot_u[n1];
+		end_[1]       = knot_v[n2];
+		end_[2]       = knot_w[n3];
+	  refKnotlineCont_ = std::min(std::min(min_order_[0], min_order_[1]), min_order_[2]) - 2;
 
 		int p1       = order_u;
 		int p2       = order_v;
@@ -218,40 +219,40 @@ private:
 		std::vector<int> elm_v;
 		std::vector<int> elm_w;
 		for(int i=0; i<n1+order_u; i++) {// const u, spanning v,w
-			int mult = 1;
+			int continuity = order_u - 2;
 			elm_u.push_back(unique_u);
 			while(i+1<n1+order_u && knot_u[i]==knot_u[i+1]) {
 				i++;
-				mult++;
+				continuity--;
 			  elm_u.push_back(unique_u);
 			}
 			unique_u++;
 			meshrect_.push_back(new MeshRectangle(knot_u[i], knot_v[0],  knot_w[0],
-			                                      knot_u[i], knot_v[n2], knot_w[n3], mult));
+			                                      knot_u[i], knot_v[n2], knot_w[n3], continuity));
 		}
 		for(int i=0; i<n2+order_v; i++) {// const v, spanning u,w
-			int mult = 1;
+			int continuity = order_v - 2;
 			elm_v.push_back(unique_v);
 			while(i+1<n2+order_v && knot_v[i]==knot_v[i+1]) {
 				i++;
-				mult++;
+				continuity--;
 			  elm_v.push_back(unique_v);
 			}
 			unique_v++;
 			meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[i], knot_w[0],
-			                                      knot_u[n1], knot_v[i], knot_w[n3], mult));
+			                                      knot_u[n1], knot_v[i], knot_w[n3], continuity));
 		}
 		for(int i=0; i<n3+order_w; i++) {
-			int mult = 1;
+			int continuity = order_w - 2;
 			elm_w.push_back(unique_w);
 			while(i+1<n3+order_w && knot_w[i]==knot_w[i+1]) {
 				i++;
-				mult++;
+				continuity--;
 			  elm_w.push_back(unique_w);
 			}
 			unique_w++;
 			meshrect_.push_back(new MeshRectangle(knot_u[0],  knot_v[0],  knot_w[i],
-			                                      knot_u[n1], knot_v[n2], knot_w[i], mult));
+			                                      knot_u[n1], knot_v[n2], knot_w[i], continuity));
 		}
 		std::vector<std::vector<std::vector<Element*> > > elmRows(unique_w-1, std::vector<std::vector<Element*> >(unique_v-1));
 		for(int k=0; k<unique_w-1; k++) {

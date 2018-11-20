@@ -142,8 +142,8 @@ public:
 	bool matchParametricEdge(parameterEdge edge, LRSplineSurface *other, parameterEdge otherEdge, bool reverse);
 
 	// (private) refinement functions
-	Meshline* insert_const_u_edge(double u, double start_v, double stop_v, int multiplicity=1);
-	Meshline* insert_const_v_edge(double v, double start_u, double stop_u, int multiplicity=1);
+	Meshline* insert_const_u_edge(double u, double start_v, double stop_v, int continuity=0);
+	Meshline* insert_const_v_edge(double v, double start_u, double stop_u, int continuity=0);
 	void getFullspanLines(  int iEl,          std::vector<Meshline*>& lines);
 	void getMinspanLines(   int iEl,          std::vector<Meshline*>& lines);
 	void getStructMeshLines(Basisfunction *b, std::vector<Meshline*>& lines);
@@ -245,43 +245,44 @@ private:
 		}
 		int p1     = order_u;
 		int p2     = order_v;
-		order_.resize(2);
+		min_order_.resize(2);
 		start_.resize(2);
 		end_.resize(2);
 		rational_  = rational;
 		dim_       = dim;
-		order_[0]  = order_u;
-		order_[1]  = order_v;
+		min_order_[0]  = order_u;
+		min_order_[1]  = order_v;
 		start_[0]  = knot_u[0];
 		start_[1]  = knot_v[0];
 		end_[0]    = knot_u[n1+p1-1];
 		end_[1]    = knot_v[n2+p2-1];
+		refKnotlineCont_ = std::min(min_order_[0], min_order_[1]) - 1;
 
 		int unique_u=0;
 		int unique_v=0;
 		std::vector<int> elm_u; // element index of the knot vector (duplicate knots is multiple index in knot_u, single index in elmRows)
 		std::vector<int> elm_v;
 		for(int i=0; i<n1+p1; i++) {// const u, spanning v
-			int mult = 1;
+			int continuity = p1-1;
 			elm_u.push_back(unique_u);
 			while(i+1<n1+p1 && knot_u[i]==knot_u[i+1]) {
 				i++;
-				mult++;
+				continuity--;
 				elm_u.push_back(unique_u);
 			}
 			unique_u++;
-			meshline_.push_back(new Meshline(false, knot_u[i], knot_v[0], knot_v[n2+p2-1], mult) );
+			meshline_.push_back(new Meshline(false, knot_u[i], knot_v[0], knot_v[n2+p2-1], continuity) );
 		}
 		for(int i=0; i<n2+p2; i++) {// const v, spanning u
-			int mult = 1;
+			int continuity = p2-1;
 			elm_v.push_back(unique_v);
 			while(i+1<n2+p2 && knot_v[i]==knot_v[i+1]) {
 				i++;
-				mult++;
+				continuity--;
 				elm_v.push_back(unique_v);
 			}
 			unique_v++;
-			meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n1+p1-1], mult) );
+			meshline_.push_back(new Meshline(true, knot_v[i], knot_u[0], knot_u[n1+p1-1], continuity) );
 		}
 		std::vector<std::vector<Element*> > elmRows(unique_v-1);
 		for(int j=0; j<unique_v-1; j++) {
@@ -307,7 +308,7 @@ private:
 
 	void aPosterioriFixElements();
 	void split(bool insert_in_u, Basisfunction* b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
-	Meshline* insert_line(bool const_u, double const_par, double start, double stop, int multiplicity);
+	Meshline* insert_line(bool const_u, double const_par, double start, double stop, int continuity);
 
 	std::vector<Meshline*> meshline_;
 
