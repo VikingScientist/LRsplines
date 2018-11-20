@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 	for(int n=0; n<N; n++) {
 		std::cout << "Starting iteration " << (n+1) << " / " << N <<  std::endl;
 		lrGeom = geometries.back()->copy();
-		lrGeom->setRefMultiplicity(m);
+		lrGeom->setRefContinuity(p-m);
 		lrGeom->setRefStrat(strat);
 		lrGeom->generateIDs();
 

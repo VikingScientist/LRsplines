@@ -27,7 +27,7 @@ MeshRectangle::MeshRectangle() {
 	stop_[0]      = 0;
 	stop_[1]      = 0;
 	stop_[2]      = 0;
-	multiplicity_ = 0;
+	continuity_   = 0;
 	constDir_     = -1;
 }
 
@@ -37,7 +37,7 @@ MeshRectangle::MeshRectangle(double start_u,
                              double stop_u,
                              double stop_v,
                              double stop_w,
-                             int multiplicity) {
+                             int continuity) {
 	start_.resize(3);
 	stop_.resize(3);
 	start_[0]     = start_u;
@@ -46,7 +46,7 @@ MeshRectangle::MeshRectangle(double start_u,
 	stop_[0]      = stop_u;
 	stop_[1]      = stop_v;
 	stop_[2]      = stop_w;
-	multiplicity_ =  multiplicity;
+	continuity_   =  continuity;
 	constDir_     = -1;
 
 	for(int i=0; i<3; i++)
@@ -65,7 +65,7 @@ MeshRectangle* MeshRectangle::copy() const {
 
 	 returnvalue->start_        = this->start_; // apperently vector::operator=() takes a deep copy
 	 returnvalue->stop_         = this->stop_ ;
-	 returnvalue->multiplicity_ = this->multiplicity_;
+	 returnvalue->continuity_   = this->continuity_;
 	 returnvalue->constDir_     = this->constDir_;
 	 return returnvalue;
 }
@@ -93,7 +93,7 @@ bool MeshRectangle::equals(const MeshRectangle *rect) const {
 		if(start_[i] != rect->start_[i])     return false;
 		if(stop_[i]  != rect->stop_[i])      return false;
 	}
-	if(multiplicity_ != rect->multiplicity_) return false;
+	if(continuity_ != rect->continuity_) return false;
 
 	return true;
 }
@@ -211,7 +211,7 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 				start[v[j]] = y1;
 				stop[v[j]]  = y2;
 				if(allowSplits) {
-					MeshRectangle *m1 = new MeshRectangle(start, stop);
+					MeshRectangle *m1 = new MeshRectangle(start, stop, continuity_);
 					if(!addUniqueRect(newGuys, m1))
 						delete m1;
 				}
@@ -310,13 +310,13 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 			stop[v1]  = x3;
 			start[v2] = y1;
 			stop[v2]  = y2;
-			MeshRectangle *m1 = new MeshRectangle(start, stop);
+			MeshRectangle *m1 = new MeshRectangle(start, stop, continuity_);
 
 			start[v1] = x1;
 			stop[v1]  = x2;
 			start[v2] = y0;
 			stop[v2]  = y3;
-			MeshRectangle *m2 = new MeshRectangle(start, stop);
+			MeshRectangle *m2 = new MeshRectangle(start, stop, continuity_);
 
 			// std::cout << "Added: " << *m1 << std::endl;
 			// std::cout << "Added: " << *m2 << std::endl;
@@ -407,7 +407,7 @@ void MeshRectangle::read(std::istream &is) {
 	ASSERT_NEXT_CHAR(']');
 
 	ASSERT_NEXT_CHAR('(');
-	is >> multiplicity_;
+	is >> continuity_;
 	ASSERT_NEXT_CHAR(')');
 
 
@@ -423,7 +423,7 @@ void MeshRectangle::write(std::ostream &os) const {
 	os << "[" << start_[0] << ", " << stop_[0] << "] x ";
 	os << "[" << start_[1] << ", " << stop_[1] << "] x ";
 	os << "[" << start_[2] << ", " << stop_[2] << "] ";
-	os << "(" << multiplicity_ << ")";
+	os << "(" << continuity_ << ")";
 }
 
 #undef DOUBLE_TOL

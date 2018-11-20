@@ -14,16 +14,16 @@ Meshline::Meshline() {
 	const_par_    = 0;
 	start_        = 0;
 	stop_         = 0;
-	multiplicity_ = 0;
+	continuity_   = 0;
 	type_         = INITIAL;
 }
 
-Meshline::Meshline(bool span_u_line, double const_par, double start, double stop, int multiplicity) {
+Meshline::Meshline(bool span_u_line, double const_par, double start, double stop, int continuity) {
 	span_u_line_  =  span_u_line   ;
 	const_par_    =  const_par     ;
 	start_        =  start         ;
 	stop_         =  stop          ;
-	multiplicity_ =  multiplicity  ;
+	continuity_   =  continuity  ;
 	type_         =  INITIAL       ;
 }
 
@@ -38,7 +38,7 @@ Meshline* Meshline::copy() {
 	 returnvalue->const_par_   = this->const_par_;
 	 returnvalue->start_       = this->start_;
 	 returnvalue->stop_        = this->stop_;
-	 returnvalue->multiplicity_= this->multiplicity_;
+	 returnvalue->continuity_  = this->continuity_;
 	 returnvalue->type_        = this->type_;
 	 return returnvalue;
 }
@@ -136,7 +136,7 @@ bool Meshline::operator==(const Meshline &other) const {
 	       const_par_    == other.const_par_ &&
 	       start_        == other.start_ &&
 	       stop_         == other.stop_ &&
-	       multiplicity_ == other.multiplicity_;
+	       continuity_   == other.continuity_;
 
 }
 
@@ -156,7 +156,7 @@ void Meshline::read(std::istream &is) {
 		ASSERT_NEXT_CHAR('x');
 		is >> const_par_;
 		ASSERT_NEXT_CHAR('(');
-		is >> multiplicity_;
+		is >> continuity_;
 		ASSERT_NEXT_CHAR(')');
 	} else {
 		span_u_line_ = false;
@@ -168,7 +168,7 @@ void Meshline::read(std::istream &is) {
 		is >> stop_;
 		ASSERT_NEXT_CHAR(']');
 		ASSERT_NEXT_CHAR('(');
-		is >> multiplicity_;
+		is >> continuity_;
 		ASSERT_NEXT_CHAR(')');
 	}
 }
@@ -176,16 +176,16 @@ void Meshline::read(std::istream &is) {
 
 void Meshline::write(std::ostream &os) const {
 	if(span_u_line_)
-		os <<  "[" << start_ << ", " << stop_ << "] x " << const_par_ << " (" << multiplicity_ << ")";
+		os <<  "[" << start_ << ", " << stop_ << "] x " << const_par_ << " (" << continuity_ << ")";
 	else // span-v line
-		os << const_par_ << " x [" << start_ << ", " << stop_ << "] (" << multiplicity_ << ")";
+		os << const_par_ << " x [" << start_ << ", " << stop_ << "] (" << continuity_ << ")";
 }
 
 void Meshline::writeMore(std::ostream &os) const {
 	if(span_u_line_)
-		os <<  "[" << start_ << ", " << stop_ << "] x " << const_par_ << " (" << multiplicity_ << ")";
+		os <<  "[" << start_ << ", " << stop_ << "] x " << const_par_ << " (" << continuity_ << ")";
 	else // span-v line
-		os << const_par_ << " x [" << start_ << ", " << stop_ << "] (" << multiplicity_ << ")";
+		os << const_par_ << " x [" << start_ << ", " << stop_ << "] (" << continuity_ << ")";
 	if(type_ == INITIAL)
 		os << " INITIAL";
 	else if(type_ == NEWLINE)

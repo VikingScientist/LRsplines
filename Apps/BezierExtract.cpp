@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 
 	int comp = 1;
 	for(int i=0; i<3; i++)
-		comp *= lr.order(i);
+		comp *= lr.min_order(i);
 
 	vector<double> cp;
 	if(el < 0) {

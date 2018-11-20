@@ -20,7 +20,7 @@ class Meshline : public Streamable {
 
 public:
 	Meshline();
-	Meshline(bool span_u_line, double const_par, double start, double stop, int multiplicity);
+	Meshline(bool span_u_line, double const_par, double start, double stop, int continuity);
 	virtual ~Meshline();
 	Meshline* copy();
 
@@ -32,7 +32,7 @@ public:
 	bool intersects(Meshline *other, double *parval=nullptr) const;
 
 	bool is_spanning_u() const;
-	int multiplicity() const { return multiplicity_; };
+	int continuity() const { return continuity_; };
 
 	bool operator==(const Meshline &other) const;
 
@@ -45,7 +45,7 @@ public:
 	double const_par_;
 	double start_;
 	double stop_;
-	int multiplicity_;
+	int continuity_;
 
 // even more private (only used for linear independence testing)
 	enum meshlineExtension type_;

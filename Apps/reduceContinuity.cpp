@@ -25,8 +25,8 @@ int main(int argc, char **argv) {
 	}
 	LRSplineSurface lr;
 	inputfile >> lr;
-	int p1 = lr.order(0);
-	int p2 = lr.order(1);
+	int p1 = lr.min_order(0);
+	int p2 = lr.min_order(1);
 
 	for(Meshline *m : lr.getAllMeshlines()) {
 		if(m->span_u_line_)

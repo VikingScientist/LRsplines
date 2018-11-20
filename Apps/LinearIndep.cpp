@@ -191,9 +191,9 @@ int main(int argc, char **argv) {
 #endif
 
 				if(m->is_spanning_u())
-					lr_original->insert_const_v_edge(m->const_par_, m->start_, m->stop_, m->multiplicity_);
+					lr_original->insert_const_v_edge(m->const_par_, m->start_, m->stop_, m->continuity_);
 				else
-					lr_original->insert_const_u_edge(m->const_par_, m->start_, m->stop_, m->multiplicity_);
+					lr_original->insert_const_u_edge(m->const_par_, m->start_, m->stop_, m->continuity_);
 
 				if(floatingPointCheck)
 					isLinearIndep = lr_original->isLinearIndepByFloatingPointMappingMatrix(false);
