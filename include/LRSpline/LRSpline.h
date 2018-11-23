@@ -43,7 +43,7 @@ class LRSpline : public Streamable {
 
 public:
 	LRSpline();
-        virtual ~LRSpline() {}
+	virtual ~LRSpline() {}
 
 	virtual void generateIDs() const;
 

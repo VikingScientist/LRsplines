@@ -291,7 +291,7 @@ private:
 				double vmin = meshline_[unique_u + j]->const_par_;
 				double umax = meshline_[i+1]->const_par_;
 				double vmax = meshline_[unique_u + j+1]->const_par_;
-				Element* elm = new Element(umin, vmin, umax, vmax);
+				Element* elm = new Element(umin, vmin, umax, vmax, order_u, order_v);
 				element_.push_back(elm);
 				elmRows[j].push_back(elm);
 			}

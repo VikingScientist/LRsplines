@@ -164,6 +164,9 @@ TARGET_LINK_LIBRARIES(MakeWaterfall LRSpline ${DEPLIBS})
 ADD_EXECUTABLE(RefinementUnchanged ${PROJECT_SOURCE_DIR}/Apps/RefinementUnchanged.cpp)
 TARGET_LINK_LIBRARIES(RefinementUnchanged LRSpline ${DEPLIBS})
 
+# ADD_EXECUTABLE(makePointRefine ${PROJECT_SOURCE_DIR}/Apps/makePointRefine.cpp)
+# TARGET_LINK_LIBRARIES(makePointRefine LRSpline ${DEPLIBS})
+
 IF(HAS_GOTOOLS)
   ADD_EXECUTABLE(TensorComparison ${PROJECT_SOURCE_DIR}/Apps/TensorComparison.cpp)
   TARGET_LINK_LIBRARIES(TensorComparison LRSpline ${DEPLIBS})

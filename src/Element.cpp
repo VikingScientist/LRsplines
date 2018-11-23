@@ -25,6 +25,7 @@ Element::Element(int dim) {
 	overloadCount = 0;
 	min.resize(dim);
 	max.resize(dim);
+	order_.resize(dim);
 }
 
 /************************************************************************************************************************//**
@@ -33,16 +34,21 @@ Element::Element(int dim) {
  * \param start_v Lower left v-coordinate
  * \param stop_u  Upper right u-coordinate
  * \param stop_v  Upper right v-coordinate
+ * \param order_u Polynomial degree in u-coordinate
+ * \param order_v Polynomial degree in v-coordinate
  ***************************************************************************************************************************/
-Element::Element(double start_u, double start_v, double stop_u, double stop_v) {
+Element::Element(double start_u, double start_v, double stop_u, double stop_v, int order_u, int order_v) {
 	min.resize(2);
 	max.resize(2);
+	order_.resize(2);
 
-	min[0] = start_u;
-	min[1] = start_v;
-	max[0] = stop_u ;
-	max[1] = stop_v ;
-	id_    = -1;
+	min[0]    = start_u;
+	min[1]    = start_v;
+	max[0]    = stop_u ;
+	max[1]    = stop_v ;
+	order_[0] = order_u ;
+	order_[1] = order_v ;
+	id_       = -1;
 	overloadCount = 0;
 }
 
@@ -68,9 +74,10 @@ void Element::addSupportFunction(Basisfunction *f) {
 Element* Element::copy() {
 	Element *returnvalue = new Element();
 
-	returnvalue->id_          = this->id_;
-	returnvalue->min          = this->min;    // it seems that the default vector operator= thing takes a deep copy
-	returnvalue->max          = this->max;
+	returnvalue->id_     = this->id_;
+	returnvalue->min     = this->min;    // it seems that the default vector operator= thing takes a deep copy
+	returnvalue->max     = this->max;
+	returnvalue->order_  = this->order_;
 
 	for(Basisfunction* b : support_)
 		returnvalue->support_ids_.push_back(b->getId());
@@ -96,7 +103,7 @@ Element* Element::split(int splitDim, double par_value) {
 	newMin[splitDim] = par_value; // new element should start at par_value
 	max[splitDim]    = par_value; // old element should stop  at par_value
 
-	newElement = new Element(min.size(), newMin.begin(), newMax.begin());
+	newElement = new Element(min.size(), newMin.begin(), newMax.begin(), order_.begin());
 
 	for(Basisfunction *b : support_)
 		if(b->addSupport(newElement)) // tests for overlapping as well

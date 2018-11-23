@@ -655,10 +655,10 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 	double vmax = e->vmax();
 	double min_du = DBL_MAX;
 	double min_dv = DBL_MAX;
-	int    best_startI = min_order_[0]+2;
-	int    best_stopI  = min_order_[0]+2;
-	int    best_startJ = min_order_[1]+2;
-	int    best_stopJ  = min_order_[1]+2;
+	int    best_startI = e->order(0)+2;
+	int    best_stopI  = e->order(0)+2;
+	int    best_startJ = e->order(1)+2;
+	int    best_stopJ  = e->order(1)+2;
 	bool   only_insert_span_u_line = (vmax-vmin) >= maxAspectRatio_*(umax-umin);
 	bool   only_insert_span_v_line = (umax-umin) >= maxAspectRatio_*(vmax-vmin);
 	// loop over all supported B-splines and choose the minimum one
@@ -684,8 +684,8 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 
 		// min_du is defined as the minimum TOTAL knot span (of an entire basis function)
 		bool fixU = false;
-		int delta_startI = abs(startI - (min_order_[0]+1)/2);
-		int delta_stopI  = abs(stopI  - (min_order_[0]+1)/2);
+		int delta_startI = abs(startI - (b->getOrder(0)+1)/2);
+		int delta_stopI  = abs(stopI  - (b->getOrder(0)+1)/2);
 		if(  du <  min_du )
 			fixU = true;
 		if( du == min_du && delta_startI <= best_startI && delta_stopI  <= best_stopI )
@@ -698,8 +698,8 @@ void LRSplineSurface::getMinspanLines(int iEl, std::vector<Meshline*>& lines) {
 			best_stopI  = delta_stopI;
 		}
 		bool fixV = false;
-		int delta_startJ = abs(startJ - (min_order_[1]+1)/2);
-		int delta_stopJ  = abs(stopJ  - (min_order_[1]+1)/2);
+		int delta_startJ = abs(startJ - (b->getOrder(1)+1)/2);
+		int delta_stopJ  = abs(stopJ  - (b->getOrder(1)+1)/2);
 		if(  dv <  min_dv )
 			fixV = true;
 		if( dv == min_dv && delta_startJ <= best_startJ && delta_stopJ  <= best_stopJ )
@@ -1552,8 +1552,8 @@ void LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot,
 
 	// create the new functions b1 and b2
 	Basisfunction *b1, *b2;
-	std::vector<double> knot = (insert_in_u) ? (*b)[0]  : (*b)[1];
-	int     p                = b->getOrder(insert_in_u == false);
+	std::vector<double> knot = (insert_in_u) ? (*b)[0]        : (*b)[1];
+	int     p                = (insert_in_u) ? b->getOrder(0) : b->getOrder(1);
 	int     insert_index = 0;
 	if(new_knot < knot[0] || knot[p] < new_knot)
 		return ;
@@ -1585,8 +1585,8 @@ void LRSplineSurface::split(bool insert_in_u, Basisfunction* b, double new_knot,
 			delete b1;
 		} else {
 			updateSupport(b1, b->supportedElementBegin(), b->supportedElementEnd());
-			bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && (*b1)[0][b->getOrder(0)]!=new_knot) ||
-			                                               (!insert_in_u && (*b1)[1][b->getOrder(1)]!=new_knot)  );
+			bool recursive_split = (multiplicity > 1) && ( ( insert_in_u && (*b1)[0][b1->getOrder(0)]!=new_knot) ||
+			                                               (!insert_in_u && (*b1)[1][b1->getOrder(1)]!=new_knot)  );
 			if(recursive_split) {
 				split( insert_in_u, b1, new_knot, multiplicity-1, newFunctions);
 				delete b1;
