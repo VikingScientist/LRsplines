@@ -21,7 +21,7 @@ class Element : public Streamable {
 public:
 	Element();
 	explicit Element(int dim);
-	Element(double start_u, double start_v, double stop_u, double stop_v);
+	Element(double start_u, double start_v, double stop_u, double stop_v, int order_u, int order_v);
 	/************************************************************************************************************************//**
 	 * \brief General constructor
 	 * \param dim The dimension of the element (i.e. 2 for surfaces, 3 for volumes)
@@ -29,16 +29,19 @@ public:
 	 * \param upperRight Template iterator to the upper right corner
 	 ***************************************************************************************************************************/
 	template <typename RandomIterator1,
-	          typename RandomIterator2>
-	Element(int dim, RandomIterator1 lowerLeft, RandomIterator2 upperRight) {
+	          typename RandomIterator2,
+	          typename RandomIterator3>
+	Element(int dim, RandomIterator1 lowerLeft, RandomIterator2 upperRight, RandomIterator3 order) {
 		min.resize(dim);
 		max.resize(dim);
+		order_.resize(dim);
 		std::copy(lowerLeft,  lowerLeft  + dim, min.begin());
 		std::copy(upperRight, upperRight + dim, max.begin());
+		std::copy(order,      order      + dim, order_.begin());
 		id_           = -1;
 		overloadCount = 0;
 	}
-	Element(std::vector<double> &lowerLeft, std::vector<double> &upperRight);
+	Element(std::vector<double> &lowerLeft, std::vector<double> &upperRight, std::vector<int> &order);
 	void removeSupportFunction(Basisfunction *f);
 	void addSupportFunction(Basisfunction *f);
 	Element *split(int splitDim, double par_value);
@@ -60,6 +63,8 @@ public:
 	double area()           const { return (max[1]-min[1])*(max[0]-min[0]);                  };
 	//! \brief Returns the parametric volume of the element
 	double volume()         const { return (max[2]-min[2])*(max[1]-min[1])*(max[0]-min[0]);  };
+	//! \brief returns the polynomial order (degree + 1) in the given parametric direction
+	int order        (int i) const { return order_[i]      ; };
 	HashSet_iterator<Basisfunction*> supportBegin()                 { return support_.begin(); };
 	HashSet_iterator<Basisfunction*> supportEnd()                   { return support_.end();   };
 	HashSet_const_iterator<Basisfunction*> constSupportBegin()const { return support_.begin(); };
@@ -89,12 +94,14 @@ public:
 	virtual void write(std::ostream &os) const;
 
 private:
-	std::vector<double> min;  // lower left corner in typical 2 or 3 dimensions
-	std::vector<double> max;  // upper right corner
+	std::vector<double> min;     //! lower left corner in typical 2 or 3 dimensions
+	std::vector<double> max;     //! upper right corner
+	std::vector<int>    order_ ; //! \brief polynomial order (degree + 1) in each parametric direction (2 or 3 components)
 	int id_;
 
 	HashSet<Basisfunction*> support_;
 	std::vector<int> support_ids_; // temporary storage for the read() method only
+
 
 	int overloadCount ;
 
