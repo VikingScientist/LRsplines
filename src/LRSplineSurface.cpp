@@ -457,6 +457,37 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 	}
 }
 
+
+void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDerivsSf3 & result, int iEl ) const {
+#ifdef TIME_LRSPLINE
+	PROFILE("computeBasis()");
+#endif
+	std::vector<double> values;
+	HashSet_const_iterator<Basisfunction*> it, itStop, itStart;
+	itStart = (iEl<0) ? basis_.begin() : element_[iEl]->constSupportBegin();
+	itStop  = (iEl<0) ? basis_.end()   : element_[iEl]->constSupportEnd();
+	int nPts= (iEl<0) ? basis_.size()  : element_[iEl]->nBasisFunctions();
+	result.prepareDerivs(param_u, param_v, 0, -1, nPts);
+
+	int i=0;
+	//element_[i]->write(std::cout);
+
+	for(it=itStart; it!=itStop; ++it, ++i) {
+		(*it)->evaluate(values, param_u, param_v, 3, param_u!=end_[0], param_v!=end_[1]);
+
+		result.basisValues[i]    = values[0];
+		result.basisDerivs_u[i]  = values[1];
+		result.basisDerivs_v[i]  = values[2];
+		result.basisDerivs_uu[i] = values[3];
+		result.basisDerivs_uv[i] = values[4];
+		result.basisDerivs_vv[i] = values[5];
+		result.basisDerivs_uuu[i] = values[6];
+		result.basisDerivs_uuv[i] = values[6];
+		result.basisDerivs_uvv[i] = values[7];
+		result.basisDerivs_vvv[i] = values[8];
+	}
+}
+
 /************************************************************************************************************************//**
  * \brief Compute all basis functions at a parametric point (u,v)
  * \param param_u The u-coordinate on which to evaluate the surface

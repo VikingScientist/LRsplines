@@ -19,6 +19,61 @@
 #include "Element.h"
 #include "HashSet.h"
 
+#ifdef HAS_GOTOOLS
+#ifndef GOTOOLS_HAS_BASISDERIVS_SF3
+namespace Go {
+/// Structure for storage of results of grid evaluation of the basis function of a spline surface.
+/// Position, first, second and third derivatives
+struct BasisDerivsSf3
+{
+  /// Parameter double in which the basis functions are evaluated
+  double param[2];
+  /// Index of the knot interval where the parameter value is situated for all
+  /// parameter directions. The indices of the non-zero basis functions are
+  /// left_idx[i]-order[i]+1, ..., left_idx[i] for i=0,1
+  int left_idx[2];
+  /// The value of all basis functions, size equal to (degree_u+1)*(degree_v+1)
+  std::vector< double > basisValues;
+
+  /// the derivative of all basis functions in u direction, same size as previous
+  std::vector< double > basisDerivs_u;
+  /// the derivative of all basis functions in v direction, same size as previous
+  std::vector< double > basisDerivs_v;
+
+  /// the second derivative of all basis functions twice in u direction, same size as previous
+  std::vector< double > basisDerivs_uu;
+  /// the second derivative of all basis functions in u and v direction, same size as previous
+  std::vector< double > basisDerivs_uv;
+  /// the second derivative of all basis functions twice in v direction, same size as previous
+    std::vector< double > basisDerivs_vv;
+
+    std::vector< double > basisDerivs_uuu;
+    std::vector< double > basisDerivs_uuv;
+    std::vector< double > basisDerivs_uvv;
+    std::vector< double > basisDerivs_vvv;
+
+    void prepareDerivs(double u, double v, int idx_u, int idx_v, int size)
+    {
+      param[0] = u;
+      param[1] = v;
+      left_idx[0] = idx_u;
+      left_idx[1] = idx_v;
+      basisValues.resize(size);
+      basisDerivs_u.resize(size);
+      basisDerivs_v.resize(size);
+      basisDerivs_uu.resize(size);
+      basisDerivs_uv.resize(size);
+      basisDerivs_vv.resize(size);
+      basisDerivs_uuu.resize(size);
+      basisDerivs_uuv.resize(size);
+      basisDerivs_uvv.resize(size);
+      basisDerivs_vvv.resize(size);
+    }
+};
+}
+#endif
+#endif
+
 
 namespace LR {
 
@@ -55,6 +110,7 @@ public:
 	void computeBasis (double param_u, double param_v, Go::BasisPtsSf     & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf  & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf2 & result, int iEl=-1 ) const;
+	void computeBasis (double param_u, double param_v, Go::BasisDerivsSf3 & result, int iEl=-1 ) const;
 
 	Go::SplineCurve* edgeCurve(parameterEdge edge,
 	                           std::vector<Basisfunction*>& functions) const;
