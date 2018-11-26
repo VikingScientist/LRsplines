@@ -1,5 +1,5 @@
-lrspline (1.4.2-2~xenial) xenial; urgency=medium
+lrspline (1.5.0-1~xenial) xenial; urgency=medium
 
   * New version
 
- -- Arne Morten Kvarving <arne.morten.kvarving@sintef.no>  Fri, 27 Nov 2015 15:33:25 +0100
+ -- Arne Morten Kvarving <arne.morten.kvarving@sintef.no>  Mon, 26 Nov 2018 15:33:25 +0100
