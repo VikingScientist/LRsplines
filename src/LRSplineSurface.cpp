@@ -482,9 +482,9 @@ void LRSplineSurface::computeBasis (double param_u, double param_v, Go::BasisDer
 		result.basisDerivs_uv[i] = values[4];
 		result.basisDerivs_vv[i] = values[5];
 		result.basisDerivs_uuu[i] = values[6];
-		result.basisDerivs_uuv[i] = values[6];
-		result.basisDerivs_uvv[i] = values[7];
-		result.basisDerivs_vvv[i] = values[8];
+		result.basisDerivs_uuv[i] = values[7];
+		result.basisDerivs_uvv[i] = values[8];
+		result.basisDerivs_vvv[i] = values[9];
 	}
 }
 
