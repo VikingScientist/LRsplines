@@ -581,12 +581,12 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 	double min_du      = DBL_MAX;
 	double min_dv      = DBL_MAX;
 	double min_dw      = DBL_MAX;
-	int    best_startI = min_order_[0]+2;
-	int    best_stopI  = min_order_[0]+2;
-	int    best_startJ = min_order_[1]+2;
-	int    best_stopJ  = min_order_[1]+2;
-	int    best_startK = min_order_[2]+2;
-	int    best_stopK  = min_order_[2]+2;
+	int    best_startI = e->order(0)+2;
+	int    best_stopI  = e->order(0)+2;
+	int    best_startJ = e->order(1)+2;
+	int    best_stopJ  = e->order(1)+2;
+	int    best_startK = e->order(2)+2;
+	int    best_stopK  = e->order(2)+2;
 	double du          = umax - umin;
 	double dv          = vmax - vmin;
 	double dw          = wmax - wmin;
@@ -628,8 +628,8 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 
 		// min_du is defined as the minimum TOTAL knot span (of an entire basis function)
 		bool fixU = false;
-		int delta_startI = abs(startI - (min_order_[0]+1)/2);
-		int delta_stopI  = abs(stopI  - (min_order_[0]+1)/2);
+		int delta_startI = abs(startI - (b->getOrder(0)+1)/2);
+		int delta_stopI  = abs(stopI  - (b->getOrder(0)+1)/2);
 		if(  du <  min_du )
 			fixU = true;
 		if( du == min_du && delta_startI <= best_startI && delta_stopI  <= best_stopI )
@@ -643,8 +643,8 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 		}
 
 		bool fixV = false;
-		int delta_startJ = abs(startJ - (min_order_[1]+1)/2);
-		int delta_stopJ  = abs(stopJ  - (min_order_[1]+1)/2);
+		int delta_startJ = abs(startJ - (b->getOrder(1)+1)/2);
+		int delta_stopJ  = abs(stopJ  - (b->getOrder(1)+1)/2);
 		if(  dv <  min_dv )
 			fixV = true;
 		if( dv == min_dv && delta_startJ <= best_startJ && delta_stopJ  <= best_stopJ )
@@ -658,8 +658,8 @@ void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines
 		}
 
 		bool fixW = false;
-		int delta_startK = abs(startK - (min_order_[2]+1)/2);
-		int delta_stopK  = abs(stopK  - (min_order_[2]+1)/2);
+		int delta_startK = abs(startK - (b->getOrder(2)+1)/2);
+		int delta_stopK  = abs(stopK  - (b->getOrder(2)+1)/2);
 		if(  dw <  min_dw )
 			fixW = true;
 		if( dw == min_dw && delta_startK <= best_startK && delta_stopK  <= best_stopK )
@@ -727,7 +727,7 @@ void LRSplineVolume::getStructMeshRects(Basisfunction *b, std::vector<MeshRectan
 	// find the largest knotspan in this function
 	double max[3] = {0,0,0};
 	for(int d=0; d<3; d++) {
-		for(int j=0; j<min_order_[d]; j++) {
+		for(int j=0; j<b->getOrder(d); j++) {
 			double du = (*b)[d][j+1]-(*b)[d][j];
 			bool isZeroSpan =  fabs(du) < DOUBLE_TOL ;
 			max[d] = (isZeroSpan || max[d]>du) ? max[d] : du;
@@ -736,7 +736,7 @@ void LRSplineVolume::getStructMeshRects(Basisfunction *b, std::vector<MeshRectan
 
 	// to keep as "square" basis function as possible, only insert
 	// into the largest knot spans
-	for(int j=0; j<min_order_[0]; j++) {
+	for(int j=0; j<b->getOrder(0); j++) {
 		double du = (*b)[0][j+1]-(*b)[0][j];
 		if( fabs(du-max[0]) < DOUBLE_TOL ) {
 			MeshRectangle *m = new MeshRectangle(((*b)[0][j] + (*b)[0][j+1])/2.0, vmin, wmin,
@@ -746,7 +746,7 @@ void LRSplineVolume::getStructMeshRects(Basisfunction *b, std::vector<MeshRectan
 				delete m;
 		}
 	}
-	for(int j=0; j<min_order_[1]; j++) {
+	for(int j=0; j<b->getOrder(1); j++) {
 		double dv = (*b)[1][j+1]-(*b)[1][j];
 		if( fabs(dv-max[1]) < DOUBLE_TOL ) {
 			MeshRectangle *m = new MeshRectangle(umin, ((*b)[1][j] + (*b)[1][j+1])/2.0, wmin,
@@ -756,7 +756,7 @@ void LRSplineVolume::getStructMeshRects(Basisfunction *b, std::vector<MeshRectan
 				delete m;
 		}
 	}
-	for(int j=0; j<min_order_[2]; j++) {
+	for(int j=0; j<b->getOrder(2); j++) {
 		double dw = (*b)[2][j+1]-(*b)[2][j];
 		if( fabs(dw-max[2]) < DOUBLE_TOL ) {
 			MeshRectangle *m = new MeshRectangle(umin, vmin, ((*b)[2][j] + (*b)[2][j+1])/2.0,

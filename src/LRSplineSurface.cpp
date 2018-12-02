@@ -2620,7 +2620,7 @@ void LRSplineSurface::getDiagonalBasisfunctions(std::vector<int> &result) const 
 	int i = 0;
 	for(Basisfunction *b : basis_) {
 		bool isDiag = true;
-		for(int j=0; j<min_order_[0]+1; j++)
+		for(int j=0; j<b->getOrder(0)+1; j++)
 			if((*b)[0][j] != (*b)[1][j])
 				isDiag = false;
 		if(isDiag)
@@ -2646,9 +2646,9 @@ void LRSplineSurface::aPosterioriFixElements() {
 }
 
 void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoints) const {
-	controlPoints.clear();
-	controlPoints.resize(min_order_[0]*min_order_[1]*dim_, 0);
 	Element *el = element_[iEl];
+	controlPoints.clear();
+	controlPoints.resize(el->order(0)*el->order(1)*dim_, 0);
 	for(Basisfunction* b : el->support()) {
 		std::vector<double> knotU((*b)[0].begin(), (*b)[0].end() );
 		std::vector<double> knotV((*b)[1].begin(), (*b)[1].end() );
@@ -2661,15 +2661,15 @@ void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoin
 		double max = el->umax();
 		while(knotU[++startU] < min);
 		while(true) {
-			int p    = min_order_[0]-1;
+			int p    = b->getOrder(0)-1;
 			int newI = -1;
 			double z;
-			if(       knotU.size() < (uint) startU+min_order_[0]   || knotU[startU+  min_order_[0]-1] != min) {
+			if(       knotU.size() < (uint) startU+p   || knotU[startU+  p-1] != min) {
 				z    = min;
 				newI = startU;
-			} else if(knotU.size() < (uint) startU+2*min_order_[0] || knotU[startU+2*min_order_[0]-1] != max ) {
+			} else if(knotU.size() < (uint) startU+2*p || knotU[startU+2*p-1] != max ) {
 				z    = max;
-				newI = startU + min_order_[0];
+				newI = startU + p;
 			} else {
 				break;
 			}
@@ -2695,15 +2695,15 @@ void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoin
 		max = el->vmax();
 		while(knotV[++startV] < min);
 		while(true) {
-			int p    = min_order_[1]-1;
+			int p    = b->getOrder(1)-1;
 			int newI = -1;
 			double z;
-			if(       knotV.size() < (uint) startV+min_order_[1]   || knotV[startV+  min_order_[1]-1] != min) {
+			if(       knotV.size() < (uint) startV+p   || knotV[startV+  p-1] != min) {
 				z    = min;
 				newI = startV;
-			} else if(knotV.size() < (uint) startV+2*min_order_[1] || knotV[startV+2*min_order_[1]-1] != max ) {
+			} else if(knotV.size() < (uint) startV+2*p || knotV[startV+2*p-1] != max ) {
 				z = max;
-				newI = startV + min_order_[1];
+				newI = startV + p;
 			} else {
 				break;
 			}
@@ -2726,8 +2726,8 @@ void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoin
 		}
 
 		int ip = 0;
-		for(int v=startV; v<startV+min_order_[1]; v++)
-			for(int u=startU; u<startU+min_order_[0]; u++)
+		for(int v=startV; v<startV+b->getOrder(1); v++)
+			for(int u=startU; u<startU+b->getOrder(0); u++)
 				for(int d=0; d<dim_; d++)
 					controlPoints[ip++] += b->cp()[d]*rowU[u]*rowV[v]*b->w();
 
@@ -3196,16 +3196,16 @@ void LRSplineSurface::writePostscriptMeshWithControlPoints(std::ostream &out, in
 		double cp_x = b->cp(0);
 		double cp_y = b->cp(1);
 		// move C^{-1} text on internal functions
-		int textX   = ((*b)[0][1] == (*b)[0][min_order_[0]]) ? -2 : 1;
-		int textY   = ((*b)[1][1] == (*b)[1][min_order_[1]]) ? -2 : 1;
+		int textX   = ((*b)[0][1] == (*b)[0][b->getOrder(0)]) ? -2 : 1;
+		int textY   = ((*b)[1][1] == (*b)[1][b->getOrder(1)]) ? -2 : 1;
 		// move text on edge functions
 		if((*b)[0][1] == end_[0])
 			textX = 1;
-		else if((*b)[0][min_order_[0]-1] == start_[0])
+		else if((*b)[0][b->getOrder(0)-1] == start_[0])
 			textX = -2;
 		if((*b)[1][1] == end_[1])
 			textY = 1;
-		else if((*b)[1][min_order_[1]-1] == start_[1])
+		else if((*b)[1][b->getOrder(1)-1] == start_[1])
 			textY = -2;
 
 		out << "newpath\n";
@@ -3235,8 +3235,8 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 	double max_du = 0;
 	double max_dv = 0;
 	for(Basisfunction *b : basis_) {
-		double du    = (*b)[0][min_order_[0]] - (*b)[0][0];
-		double dv    = (*b)[1][min_order_[1]] - (*b)[1][0];
+		double du    = (*b)[0][b->getOrder(0)] - (*b)[0][0];
+		double dv    = (*b)[1][b->getOrder(1)] - (*b)[1][0];
 		max_du       = (max_du > du) ? max_du : du;
 		max_dv       = (max_dv > dv) ? max_dv : dv;
 	}
@@ -3269,29 +3269,29 @@ void LRSplineSurface::writePostscriptFunctionSpace(std::ostream &out, std::vecto
 		i++;
 		double avg_u = 0;
 		double avg_v = 0;
-		double du    = (*b)[0][min_order_[0]] - (*b)[0][0];
-		double dv    = (*b)[1][min_order_[1]] - (*b)[1][0];
+		double du    = (*b)[0][b->getOrder(0)] - (*b)[0][0];
+		double dv    = (*b)[1][b->getOrder(1)] - (*b)[1][0];
 
 		// move C^{-1} text on internal functions
 		double textOffset = 15.0;
-		int textX   = ((*b)[0][1] == (*b)[0][min_order_[0]]) ? -2 : 1;
-		int textY   = ((*b)[1][1] == (*b)[1][min_order_[1]]) ? -2 : 1;
+		int textX   = ((*b)[0][1] == (*b)[0][b->getOrder(0)]) ? -2 : 1;
+		int textY   = ((*b)[1][1] == (*b)[1][b->getOrder(1)]) ? -2 : 1;
 		// move text on edge functions
 		if((*b)[0][1] == end_[0])
 			textX = 1;
-		else if((*b)[0][min_order_[0]-1] == start_[0])
+		else if((*b)[0][b->getOrder(0)-1] == start_[0])
 			textX = -2;
 		if((*b)[1][1] == end_[1])
 			textY = 1;
-		else if((*b)[1][min_order_[1]-1] == start_[1])
+		else if((*b)[1][b->getOrder(1)-1] == start_[1])
 			textY = -2;
 
-		for(int j=1; j<min_order_[0]; j++)
+		for(int j=1; j<b->getOrder(0); j++)
 			avg_u += (*b)[0][j];
-		for(int j=1; j<min_order_[1]; j++)
+		for(int j=1; j<b->getOrder(1); j++)
 			avg_v += (*b)[1][j];
-		avg_u /= (min_order_[0]-1);
-		avg_v /= (min_order_[1]-1);
+		avg_u /= (b->getOrder(0)-1);
+		avg_v /= (b->getOrder(1)-1);
 
 		bool doColor = false;
 		if(colorBasis != NULL)
