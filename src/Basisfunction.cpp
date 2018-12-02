@@ -7,6 +7,7 @@
 #include <climits>
 #include <cmath>
 #include <set>
+#include <eigen3/Eigen/Dense>
 
 typedef unsigned int uint;
 
@@ -98,6 +99,66 @@ void Basisfunction::getControlPoint(Go::Point &pt) const {
 		pt[d] = controlpoint_[d];
 }
 #endif
+
+/************************************************************************************************************************//**
+ * \brief Order elevate this function to create multiple new functions of one degree higher, but at the same continuity
+ * \param results   [out] B-splines of degree *this->getOrder()*+1
+ * \param dierction       Parametric direction to do the order elevation in
+ ***************************************************************************************************************************/
+void Basisfunction::order_elevate(std::vector<double> &results, int direction) const {
+	// basic logic is this. For p=2 knot vector [1,2,3,3] we need to create the
+	// p=3 knot vector [1,1,2,2,3,3,3] with every unique knot have one more
+	// multiplicity.
+	// This means that [1,2,3,3] => [1,1,2,2,3,3,3],   3 (p=3) functions,
+	// while           [1,2,3,4] => [1,1,2,2,3,3,4,4], 4 (p=3) functions
+	int d = direction;
+	int p = getOrder(d) + 1;
+	std::vector<double> newKnots;
+	for(int i=0; i<knots_[d].size(); i++) {
+		newKnots.push_back(knots_[d][i]); // every new knot added twice
+		newKnots.push_back(knots_[d][i]);
+		while(i<knots_[d].size()-1 && knots_[d][i] == knots_[d][i+1] ) {
+			newKnots.push_back(knots_[d][i]); // every multiple knot added once
+			i++;
+		}
+	}
+
+	// newKnots is really a non-open B-spline knot vector with multiple functions
+	// asociated with it, but we will hack it together here by using a multiple
+	// univariate functions to represent it.
+	int n = newKnots.size() - p;
+	int order[] = {p};
+	std::vector<Basisfunction> newBasis(n, Basisfunction(1,1,order));
+	std::vector<double> greville_points(n);
+	std::vector<bool>   from_right(n, true);
+	std::vector<double> g_pt;
+	for(int i=0; i<n; i++) {
+		std::copy(newKnots.begin()+i, newKnots.begin()+i+p+1, newBasis[i].getknots(0).begin());
+		newBasis[i].getGrevilleParameter(g_pt);
+		greville_points[i] = g_pt[0];
+	}
+	order[0] = p-1;
+	Basisfunction oldBasis(1,1,order);
+	std::copy(knots_[d].begin(), knots_[d].end(), oldBasis.getknots(0).begin());
+
+	// set up the interpolation problem
+	Eigen::MatrixXf A(n,n);
+	Eigen::VectorXf b(n);
+	for(int j=0; j<n; j++) {
+		for(int i=0; i<n; i++) {
+			A(i,j) = newBasis[j].evaluate(greville_points[i]);
+		}
+		b(j) = oldBasis.evaluate(greville_points[j]);
+	}
+
+	Eigen::VectorXf alpha = A.colPivHouseholderQr().solve(b);
+
+
+	// we should really return a vector of Basisfunctions and not the knot vector
+	// but this is a temporary thing to debug the method
+	results.resize(newKnots.size());
+	std::copy(newKnots.begin(), newKnots.end(), results.begin());
+}
 
 
 /************************************************************************************************************************//**
@@ -225,6 +286,26 @@ void Basisfunction::evaluate(std::vector<double> &results, double u, double v, i
 	delete[] diff_u;
 	delete[] diff_v;
 
+}
+
+
+double Basisfunction::evaluate(double u, bool u_from_right) const {
+	if(knots_[0][0] > u || u > knots_[0].back())
+		return 0;
+
+	double ans_u[knots_[0].size()-1];
+
+	for(uint i=0; i<knots_[0].size()-1; i++) {
+		if(u_from_right) ans_u[i] = (knots_[0][i] <= u && u <  knots_[0][i+1]) ? 1 : 0;
+		else             ans_u[i] = (knots_[0][i] <  u && u <= knots_[0][i+1]) ? 1 : 0;
+	}
+	for(uint n=1; n<knots_[0].size()-1; n++)
+		for(uint j=0; j<knots_[0].size()-1-n; j++) {
+			ans_u[j]  = (knots_[0][ j+n ]==knots_[0][ j ]) ? 0 : (  u-knots_[0][j]  )/(knots_[0][j+n]  -knots_[0][ j ])*ans_u[ j ];
+			ans_u[j] += (knots_[0][j+n+1]==knots_[0][j+1]) ? 0 : (knots_[0][j+n+1]-u)/(knots_[0][j+n+1]-knots_[0][j+1])*ans_u[j+1];
+	}
+
+	return ans_u[0]*weight_;
 }
 
 double Basisfunction::evaluate(double u, double v, bool u_from_right, bool v_from_right) const {
@@ -412,11 +493,11 @@ void Basisfunction::evaluate(std::vector<double> &results, const std::vector<dou
 		exit(9230);
 	}
 
-	if(dim == 1) {    // univariate splines
-		results.resize(derivs+1);
-	} else if(dim == 2) {    // bivariate splines
+	if(dim == 1) {          // univariate splines
+		results.resize((derivs+1));
+	} else if(dim == 2) {   // bivariate splines
 		results.resize((derivs+1)*(derivs+2)/2);               // (this is the triangular numbers)
-	} else if(dim == 3) { // trivariate splines
+	} else if(dim == 3) {   // trivariate splines
 		results.resize((derivs+1)*(derivs+2)*(2*derivs+6)/12); // (sum of triangular numbers)
 	} else {
 		std::cerr << "Error Basisfunction::evalate(...) for parametric dimension other than 1,2 or 3" << std::endl;

@@ -126,6 +126,8 @@ public:
 	virtual ~Basisfunction();
 	Basisfunction* copy() const;
 
+	void order_elevate(std::vector<double> &results, int direction) const;
+
 	//evaluation functions
 	double evaluate(double u, bool u_from_right=true) const;
 	double evaluate(double u, double v, bool u_from_right=true, bool v_from_right=true) const;
