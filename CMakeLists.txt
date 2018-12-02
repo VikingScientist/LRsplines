@@ -61,6 +61,7 @@ ENABLE_TESTING()
 
 # Required packages
 #    - none -
+FIND_PACKAGE(Eigen3 REQUIRED NO_MODULE)
 
 # Required include directories
 SET(INCLUDES ${PROJECT_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include)
@@ -68,6 +69,7 @@ SET(INCLUDES ${PROJECT_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include)
 # Optional packages
 # FIND_PACKAGE(Boost)
 FIND_PACKAGE(GoTools)
+
 
 set(LRSpline_DEFINITIONS)
 IF(GoTools_FOUND)
@@ -191,6 +193,9 @@ TARGET_LINK_LIBRARIES(refine LRSpline ${DEPLIBS})
 
 ADD_EXECUTABLE(TestMatchingKnots ${PROJECT_SOURCE_DIR}/Apps/TestMatchingKnots.cpp)
 TARGET_LINK_LIBRARIES(TestMatchingKnots LRSpline ${DEPLIBS})
+
+ADD_EXECUTABLE(TestOrderElevate ${PROJECT_SOURCE_DIR}/Apps/TestOrderElevate.cpp)
+TARGET_LINK_LIBRARIES(TestOrderElevate LRSpline ${DEPLIBS})
 
 # # Regression tests
 IF(HAS_BOOST)

@@ -159,10 +159,17 @@ void Element::read(std::istream &is) {
 	is >> id_;
 	ASSERT_NEXT_CHAR('[');
 	is >> dim;
-	ASSERT_NEXT_CHAR(']');
-	ASSERT_NEXT_CHAR(':');
+
+	order_.resize(dim);
 	min.resize(dim);
 	max.resize(dim);
+
+	for(int i=0; i<dim; i++) {
+		ASSERT_NEXT_CHAR(',');
+		is >> order_[i];
+	}
+	ASSERT_NEXT_CHAR(']');
+	ASSERT_NEXT_CHAR(':');
 
 	ASSERT_NEXT_CHAR('(');
 	is >> min[0];
@@ -202,7 +209,10 @@ void Element::read(std::istream &is) {
  * \param os The output stream to write to
  ***************************************************************************************************************************/
 void Element::write(std::ostream &os) const {
-	os << id_ << " [" << min.size() << "] : ";
+	os << id_ << " [" << min.size();
+	for(auto p : order_)
+		os << ", " << p;
+	os << "] : ";
 	os << "(" << min[0];
 	for(uint i=1; i<min.size(); i++)
 		os << ", " << min[i] ;
