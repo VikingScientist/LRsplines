@@ -64,7 +64,8 @@ public:
 	//! \brief Returns the parametric volume of the element
 	double volume()         const { return (max[2]-min[2])*(max[1]-min[1])*(max[0]-min[0]);  };
 	//! \brief returns the polynomial order (degree + 1) in the given parametric direction
-	int order        (int i) const { return order_[i]      ; };
+	int  order        (int i) const { return order_[i] ; };
+	void set_order    (int i, int p){ order_[i] = p    ; };
 	HashSet_iterator<Basisfunction*> supportBegin()                 { return support_.begin(); };
 	HashSet_iterator<Basisfunction*> supportEnd()                   { return support_.end();   };
 	HashSet_const_iterator<Basisfunction*> constSupportBegin()const { return support_.begin(); };

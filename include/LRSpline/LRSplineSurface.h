@@ -140,6 +140,8 @@ public:
 	bool matchParametricEdge(parameterEdge edge, std::vector<double> knots, bool isotropic=false);
 	void matchParametricEdge(parameterEdge edge, const std::vector<Basisfunction*> &functions);
 	bool matchParametricEdge(parameterEdge edge, LRSplineSurface *other, parameterEdge otherEdge, bool reverse);
+	void orderElevateFunction(int index);
+	void orderElevateFunction(const std::vector<int> &indices);
 
 	// (private) refinement functions
 	Meshline* insert_const_u_edge(double u, double start_v, double stop_v, int continuity=0);
@@ -194,7 +196,7 @@ public:
 	// fetch function spaces of different order/continuity
 	LRSplineSurface*              getRaiseOrderSpace(int raiseOrderU, int raiseOrderV) const;
 	std::vector<LRSplineSurface*> getDerivativeSpace() const ;
-  LRSplineSurface*              getDerivedBasis(int raise_p1, int raise_p2, size_t lower_k1, size_t lower_k2, int dim=1) const;
+	LRSplineSurface*              getDerivedBasis(int raise_p1, int raise_p2, size_t lower_k1, size_t lower_k2, int dim=1) const;
 	LRSplineSurface*              getPrimalSpace() const ;
 	bool setGlobalContinuity(int contU, int contV);
 	bool decreaseContinuity( int du,    int dv);
@@ -263,7 +265,7 @@ private:
 		std::vector<int> elm_u; // element index of the knot vector (duplicate knots is multiple index in knot_u, single index in elmRows)
 		std::vector<int> elm_v;
 		for(int i=0; i<n1+p1; i++) {// const u, spanning v
-			int continuity = p1-1;
+			int continuity = p1-2;
 			elm_u.push_back(unique_u);
 			while(i+1<n1+p1 && knot_u[i]==knot_u[i+1]) {
 				i++;
@@ -274,7 +276,7 @@ private:
 			meshline_.push_back(new Meshline(false, knot_u[i], knot_v[0], knot_v[n2+p2-1], continuity) );
 		}
 		for(int i=0; i<n2+p2; i++) {// const v, spanning u
-			int continuity = p2-1;
+			int continuity = p2-2;
 			elm_v.push_back(unique_v);
 			while(i+1<n2+p2 && knot_v[i]==knot_v[i+1]) {
 				i++;
@@ -309,6 +311,7 @@ private:
 	void aPosterioriFixElements();
 	void split(bool insert_in_u, Basisfunction* b, double new_knot, int multiplicity, HashSet<Basisfunction*> &newFunctions);
 	Meshline* insert_line(bool const_u, double const_par, double start, double stop, int continuity);
+	void order_elevate(std::vector<Element*> elements, int direction, int newOrder);
 
 	std::vector<Meshline*> meshline_;
 

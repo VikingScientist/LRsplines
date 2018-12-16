@@ -841,6 +841,44 @@ void LRSplineSurface::refineBasisFunction(const std::vector<int> &indices) {
 }
 
 /************************************************************************************************************************//**
+ * \brief Order elevate one Basisfunction
+ * \param index The Basisfunction to elevate
+ * \details This will order elevate a basisfunction
+ ***************************************************************************************************************************/
+void LRSplineSurface::orderElevateFunction(int index) {
+	std::vector<int> tmp = std::vector<int>(1, index);
+	orderElevateFunction(tmp);
+}
+
+/************************************************************************************************************************//**
+ * \brief Order elevate several Basisfunction
+ * \param indices The Basisfunction that define the area to order elevate
+ * \details This will compute a combined region and order elevate all functions that is contained within this region
+ ***************************************************************************************************************************/
+void LRSplineSurface::orderElevateFunction(const std::vector<int> &indices) {
+	std::vector<int> sortedInd(indices);
+	std::set<Element*> elms;
+	// make sure all functions tagged for order elevation is on the same "level", i.e. have the same order
+	int oldOrder1 = getBasisfunction(indices[0])->getOrder(0);
+	int oldOrder2 = getBasisfunction(indices[0])->getOrder(1);
+	for(int i : indices) {
+		Basisfunction *b = getBasisfunction(i);
+		// collect the combined support of all requrested basisfunctions (taking care to not double-count elements)
+		for(auto el : b->support())
+			elms.insert(el);
+		if(b->getOrder(0) != oldOrder1 ||
+		   b->getOrder(1) != oldOrder2) {
+			std::cerr << "LRSplineSurface::orderElevateFunction: Mismatching order on basis functions tagged for order elevation\n";
+			exit(12385204);
+		}
+	}
+	std::vector<Element*> refElms(elms.size());
+	std::copy(elms.begin(), elms.end(), refElms.begin());
+	order_elevate(refElms, 0, oldOrder1 + 1);
+	order_elevate(refElms, 1, oldOrder2 + 1);
+}
+
+/************************************************************************************************************************//**
  * \brief Refine one Element
  * \param index The Element to refine
  * \details This will refine an Element in accordance with the strategy set by setRefStrat() (i.e. either fullspan or minspan)
@@ -1396,6 +1434,127 @@ Meshline* LRSplineSurface::insert_const_u_edge(double u, double start_v, double 
 	return insert_line(true, u, start_v, stop_v, continuity);
 }
 
+void LRSplineSurface::order_elevate(std::vector<Element*> elements, int direction, int newOrder) {
+	// error test input
+	if(!(direction == 0 || direction == 1)) {
+		std::cerr << "LRSplineSurface::order_elevate() requested direction " << direction << ". Needs values in {0,1}\n";
+		exit(99822174);
+	}
+	if(elements.size() == 0)
+		return;
+
+	HashSet<Basisfunction*> newFunctions, thisElevation;
+	HashSet<Basisfunction*> removeFunc;
+#ifdef TIME_LRSPLINE
+	PROFILE("order_elevate()");
+#endif
+	{ // STEP 1: test EVERY function against the NEW raise-order-domain
+
+	// get all functions with *some* overlapping support on the target elements
+	HashSet<Basisfunction*> supportFunctions;
+	for(auto el : elements) {
+		for(auto b = el->supportBegin(); b!=el->supportEnd(); ++b)
+			supportFunctions.insert(*b);
+		if(el->order(direction) < newOrder)
+			el->set_order(direction, newOrder);
+	}
+
+	// extract all functions with entire support in order elevated domain
+	HashSet<Basisfunction*> raiseOrderFunctions;
+	for(auto b : supportFunctions) {
+		bool contained = true;
+		for(auto el : b->support()) {
+			if(el->order(direction) < newOrder) {
+				contained = false;
+				break;
+			}
+		}
+		if(contained)
+			raiseOrderFunctions.insert(b);
+	}
+
+	for(auto b : raiseOrderFunctions) {
+		b->order_elevate(thisElevation, direction);
+		for(auto bn : thisElevation) {
+			auto it  = newFunctions.find(bn);
+			if(it != newFunctions.end()) {
+				**it += *bn;
+				delete bn;
+			} else {
+				it = basis_.find(bn);
+				if(it != basis_.end()) {
+					**it += *bn;
+					delete bn;
+				} else {
+					newFunctions.insert(bn);
+					updateSupport(bn, elements.begin(), elements.end());
+				}
+			}
+		}
+		basis_.erase(b);
+		delete b;
+	}
+	} // end profiler (step 1)
+
+	{ // STEP 2: test every NEW function against ALL old meshlines
+#ifdef TIME_LRSPLINE
+	PROFILE("STEP 2");
+#endif
+	while(newFunctions.size() > 0) {
+		Basisfunction *b = newFunctions.pop();
+		bool splitMore = false;
+		for(Meshline *m : meshline_) {
+			if(m->splits(b)) {
+				int nKnots = m->nKnotsIn(b);
+				int multiplicity = b->getOrder(m->is_spanning_u()==true) - m->continuity_ - 1;
+				if( nKnots < multiplicity ) {
+					splitMore = true;
+					split( !m->is_spanning_u(), b, m->const_par_, multiplicity-nKnots, newFunctions);
+					delete b;
+					break;
+				}
+			}
+		}
+		bool raise_u = true;
+		bool raise_v = true;
+		for(auto el : b->support()) {
+			if (el->order(0) <= b->getOrder(0))
+				raise_u = false;
+			if (el->order(1) <= b->getOrder(1))
+				raise_v = false;
+		}
+		if(raise_u) {
+			b->order_elevate(thisElevation, 0);
+		} else if(raise_v) {
+			b->order_elevate(thisElevation, 1);
+		}
+		if(raise_u || raise_v) {
+			splitMore = true;
+			for(auto bn : thisElevation) {
+				auto it  = newFunctions.find(bn);
+				if(it != newFunctions.end()) {
+					**it += *bn;
+					delete bn;
+				} else {
+					it = basis_.find(bn);
+					if(it != basis_.end()) {
+						**it += *bn;
+						delete bn;
+					} else {
+						newFunctions.insert(bn);
+						updateSupport(bn, elements.begin(), elements.end());
+					}
+				}
+			}
+			delete b;
+		}
+
+		if(!splitMore)
+			basis_.insert(b);
+	}
+	} // end profiler (step 2)
+}
+
 Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double start, double stop, int continuity) {
 	// error test input
 	if(continuity < -1) {
@@ -1472,7 +1631,7 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 	}
 	}
 
-	HashSet<Basisfunction*> newFuncStp1, newFuncStp2;
+	HashSet<Basisfunction*> newFuncStp1;
 	HashSet<Basisfunction*> removeFunc;
 
 	{ // STEP 1: test EVERY function against the NEW meshline
