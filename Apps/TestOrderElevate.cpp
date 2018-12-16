@@ -4,7 +4,6 @@
 #include <string.h>
 #include <fstream>
 #include "LRSpline/LRSplineSurface.h"
-#include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/MeshRectangle.h"
 #include "LRSpline/Meshline.h"
 #include "LRSpline/Profiler.h"
@@ -88,8 +87,8 @@ int main(int argc, char **argv) {
 
 		lrs = new LRSplineSurface(n1, n2, p1, p2, knot_u.begin(), knot_v.begin(), cp.begin(), dim, rat);
 		// insert a cross in the lower left corner element (should always be possible)
-		lrs->insert_const_u_edge(.5, 0, 1);
-		lrs->insert_const_v_edge(.5, 0, 1);
+		lrs->insert_const_u_edge(.5, 0, 1, 1);
+		lrs->insert_const_v_edge(.5, 0, 1, 1);
 
 	} else {
 		ifstream inputfile;
@@ -106,15 +105,46 @@ int main(int argc, char **argv) {
 	double knot2[] = {1,1,2,3,3};
 	double cp[]    = {2,3};
 	Basisfunction b1(knot1, knot2, cp, 2, 4, 4);
-	vector<double> newKnot;
-	b1.order_elevate(newKnot, 0);
-	for(auto d : newKnot) cout << d << ", ";
+	HashSet<Basisfunction*> newFuncs;
+	b1.order_elevate(newFuncs, 0);
+	cout << "Number of new functions: " << newFuncs.size() << endl;
+	for(auto d : newFuncs) cout << *d << endl;
 	cout << endl;
-	b1.order_elevate(newKnot, 1);
-	for(auto d : newKnot) cout << d << ", ";
+	cout << endl;
+	cout << endl;
+	b1.order_elevate(newFuncs, 1);
+	for(auto d : newFuncs) cout << *d << endl;
 	cout << endl;
 
+	lrs->generateIDs();
+	//// Easy function on the domain interior
+	cout << *lrs->getBasisfunction(24) << endl;
+	lrs->orderElevateFunction(24);
+	// cout << *lrs->getBasisfunction(37) << endl;
+	// lrs->orderElevateFunction(37);
+	// cout << *lrs->getBasisfunction(14) << endl;
+	// lrs->orderElevateFunction(14);
+	cout << endl << endl << *lrs << endl;
+	int count3 = 0;
+	int count4 = 0;
+	vector<int> myOrder4_functions;
+	vector<int> myOrder4_elements;
+	for(auto el : lrs->getAllElements()) {
+		if(el->order(0) == 4) myOrder4_elements.push_back(el->getId());
+	}
+	for(auto b : lrs->getAllBasisfunctions()) {
+		if(b->getOrder(0) == 3) count3++;
+		if(b->getOrder(0) == 4) count4++;
+		if(b->getOrder(0) == 4) myOrder4_functions.push_back(b->getId());
+	}
+	cout << "Number of quadratic basis functions: " << count3 << endl;
+	cout << "Number of cubic     basis functions: " << count4 << endl;
 
+	ofstream out("myMesh.eps");
+	lrs->setElementColor(1.0, 0.6, 0.6);
+	lrs->writePostscriptMesh(out, false, &myOrder4_elements);
+	lrs->writePostscriptFunctionSpace(out, &myOrder4_functions);
+	out.close();
 
 }
 

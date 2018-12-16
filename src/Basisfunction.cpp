@@ -70,7 +70,7 @@ void Basisfunction::getControlPoint(Go::Point &pt) const {
  * \param results   [out] B-splines of degree *this->getOrder()*+1
  * \param dierction       Parametric direction to do the order elevation in
  ***************************************************************************************************************************/
-void Basisfunction::order_elevate(std::vector<double> &results, int direction) const {
+void Basisfunction::order_elevate(HashSet<Basisfunction*> &results, int direction) const {
 	// basic logic is this. For p=2 knot vector [1,2,3,3] we need to create the
 	// p=3 knot vector [1,1,2,2,3,3,3] with every unique knot have one more
 	// multiplicity.
@@ -78,6 +78,7 @@ void Basisfunction::order_elevate(std::vector<double> &results, int direction) c
 	// while           [1,2,3,4] => [1,1,2,2,3,3,4,4], 4 (p=3) functions
 	int d = direction;
 	int p = getOrder(d) + 1;
+	bool rightEdge = knots_[d][1] == knots_[d].back();
 	std::vector<double> newKnots;
 	for(int i=0; i<knots_[d].size(); i++) {
 		newKnots.push_back(knots_[d][i]); // every new knot added twice
@@ -95,7 +96,6 @@ void Basisfunction::order_elevate(std::vector<double> &results, int direction) c
 	int order[] = {p};
 	std::vector<Basisfunction> newBasis(n, Basisfunction(1,1,order));
 	std::vector<double> greville_points(n);
-	std::vector<bool>   from_right(n, true);
 	std::vector<double> g_pt;
 	for(int i=0; i<n; i++) {
 		std::copy(newKnots.begin()+i, newKnots.begin()+i+p+1, newBasis[i].getknots(0).begin());
@@ -111,18 +111,39 @@ void Basisfunction::order_elevate(std::vector<double> &results, int direction) c
 	Eigen::VectorXf b(n);
 	for(int j=0; j<n; j++) {
 		for(int i=0; i<n; i++) {
-			A(i,j) = newBasis[j].evaluate(greville_points[i]);
+			A(i,j) = newBasis[j].evaluate(greville_points[i], !rightEdge);
 		}
-		b(j) = oldBasis.evaluate(greville_points[j]);
+		b(j) = oldBasis.evaluate(greville_points[j], !rightEdge);
 	}
 
-	Eigen::VectorXf alpha = A.colPivHouseholderQr().solve(b);
+	// Eigen::VectorXf alpha = A.colPivHouseholderQr().solve(b);
+	// Eigen::VectorXf alpha = A.fullPivHouseholderQr().solve(b);
+	Eigen::VectorXf alpha = A.fullPivLu().solve(b);
+	
 
+	// clean up if output array contains anything
+	results.clear();
 
-	// we should really return a vector of Basisfunctions and not the knot vector
-	// but this is a temporary thing to debug the method
-	results.resize(newKnots.size());
-	std::copy(newKnots.begin(), newKnots.end(), results.begin());
+	// create all the resulting functions
+	std::vector<const double*> knots(3);
+	int neworder[3];
+	for(int j=0; j<knots_.size(); j++) {
+		knots[j] = &knots_[j][0];
+		neworder[j] = getOrder(j);
+	}
+	neworder[d] = p;
+	for(int i=0; i<n; i++) {
+		knots[d] = &newKnots[i];
+
+		if(knots_.size() == 2)
+			results.insert(new Basisfunction(knots[0], knots[1],           cp(), dim(), neworder[0], neworder[1],              w()*alpha[i]));
+		else if(knots_.size() == 3)
+			results.insert(new Basisfunction(knots[0], knots[1], knots[2], cp(), dim(), neworder[0], neworder[1], neworder[2], w()*alpha[i]));
+		else {
+			std::cerr << "Error Basisfunction::order_elevate(...) parametric dimension mismatch" << std::endl;
+			exit(2390);
+		}
+	}
 }
 
 
