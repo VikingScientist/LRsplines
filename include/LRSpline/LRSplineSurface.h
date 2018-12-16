@@ -258,7 +258,7 @@ private:
 		start_[1]  = knot_v[0];
 		end_[0]    = knot_u[n1+p1-1];
 		end_[1]    = knot_v[n2+p2-1];
-		refKnotlineCont_ = std::min(min_order_[0], min_order_[1]) - 1;
+		refKnotlineCont_ = std::min(min_order_[0], min_order_[1]) - 2;
 
 		int unique_u=0;
 		int unique_v=0;

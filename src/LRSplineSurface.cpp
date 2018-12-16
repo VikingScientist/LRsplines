@@ -856,6 +856,7 @@ void LRSplineSurface::orderElevateFunction(int index) {
  * \details This will compute a combined region and order elevate all functions that is contained within this region
  ***************************************************************************************************************************/
 void LRSplineSurface::orderElevateFunction(const std::vector<int> &indices) {
+  if(indices.size() == 0) return;
 	std::vector<int> sortedInd(indices);
 	std::set<Element*> elms;
 	// make sure all functions tagged for order elevation is on the same "level", i.e. have the same order
