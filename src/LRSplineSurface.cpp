@@ -1448,6 +1448,7 @@ void LRSplineSurface::order_elevate(std::vector<Element*> elements, int directio
 	PROFILE("order_elevate()");
 #endif
 	{ // STEP 1: test EVERY function against the NEW raise-order-domain
+	std::cout << "ORDER_ELEVATE: step 1 (direction = " << direction << ", newOrder = " << newOrder << ")" << std::endl;
 
 	// get all functions with *some* overlapping support on the target elements
 	HashSet<Basisfunction*> supportFunctions;
@@ -1461,6 +1462,8 @@ void LRSplineSurface::order_elevate(std::vector<Element*> elements, int directio
 	// extract all functions with entire support in order elevated domain
 	HashSet<Basisfunction*> raiseOrderFunctions;
 	for(auto b : supportFunctions) {
+		if(b->getOrder(direction) >= newOrder) // skip functions with the correct order
+			continue;
 		bool contained = true;
 		for(auto el : b->support()) {
 			if(el->order(direction) < newOrder) {
@@ -1474,19 +1477,24 @@ void LRSplineSurface::order_elevate(std::vector<Element*> elements, int directio
 
 	for(auto b : raiseOrderFunctions) {
 		b->order_elevate(thisElevation, direction);
+		std::cout << "  Splitting: " << *b << std::endl;
 		for(auto bn : thisElevation) {
 			auto it  = newFunctions.find(bn);
+			std::cout << "    Into: " << *bn;
 			if(it != newFunctions.end()) {
+				std::cout << " - SIMILAR" << std::endl;
 				**it += *bn;
 				delete bn;
 			} else {
 				it = basis_.find(bn);
 				if(it != basis_.end()) {
+					std::cout << " - EXISTS" << std::endl;
 					**it += *bn;
 					delete bn;
 				} else {
+					std::cout << " - NEW" << std::endl;
 					newFunctions.insert(bn);
-					updateSupport(bn, elements.begin(), elements.end());
+					updateSupport(bn, b->supportedElementBegin(), b->supportedElementEnd());
 				}
 			}
 		}
@@ -1499,6 +1507,7 @@ void LRSplineSurface::order_elevate(std::vector<Element*> elements, int directio
 #ifdef TIME_LRSPLINE
 	PROFILE("STEP 2");
 #endif
+	std::cout << "ORDER_ELEVATE: step 2" << std::endl;
 	while(newFunctions.size() > 0) {
 		Basisfunction *b = newFunctions.pop();
 		bool splitMore = false;
@@ -1507,6 +1516,7 @@ void LRSplineSurface::order_elevate(std::vector<Element*> elements, int directio
 				int nKnots = m->nKnotsIn(b);
 				int multiplicity = b->getOrder(m->is_spanning_u()==true) - m->continuity_ - 1;
 				if( nKnots < multiplicity ) {
+					std::cout << "  h-ref " << *b << " by existing line " << *m << std::endl;
 					splitMore = true;
 					split( !m->is_spanning_u(), b, m->const_par_, multiplicity-nKnots, newFunctions);
 					delete b;
@@ -1514,6 +1524,8 @@ void LRSplineSurface::order_elevate(std::vector<Element*> elements, int directio
 				}
 			}
 		}
+		if(splitMore)
+			continue;
 		bool raise_u = true;
 		bool raise_v = true;
 		for(auto el : b->support()) {
@@ -1529,19 +1541,24 @@ void LRSplineSurface::order_elevate(std::vector<Element*> elements, int directio
 		}
 		if(raise_u || raise_v) {
 			splitMore = true;
+			std::cout << "  Splitting: " << *b << std::endl;
 			for(auto bn : thisElevation) {
+				std::cout << "    Into: " << *bn;
 				auto it  = newFunctions.find(bn);
 				if(it != newFunctions.end()) {
+					std::cout << " - SIMILAR" << std::endl;
 					**it += *bn;
 					delete bn;
 				} else {
 					it = basis_.find(bn);
 					if(it != basis_.end()) {
+						std::cout << " - EXISTS" << std::endl;
 						**it += *bn;
 						delete bn;
 					} else {
+						std::cout << " - NEW" << std::endl;
 						newFunctions.insert(bn);
-						updateSupport(bn, elements.begin(), elements.end());
+						updateSupport(bn, b->supportedElementBegin(), b->supportedElementEnd());
 					}
 				}
 			}
@@ -1630,7 +1647,7 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 	}
 	}
 
-	HashSet<Basisfunction*> newFuncStp1;
+	HashSet<Basisfunction*> newFuncStp1, thisElevation;
 	HashSet<Basisfunction*> removeFunc;
 
 	{ // STEP 1: test EVERY function against the NEW meshline
@@ -1686,6 +1703,41 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 					break;
 				}
 			}
+		}
+		if(splitMore)
+			continue;
+		bool raise_u = true;
+		bool raise_v = true;
+		for(auto el : b->support()) {
+			if (el->order(0) <= b->getOrder(0))
+				raise_u = false;
+			if (el->order(1) <= b->getOrder(1))
+				raise_v = false;
+		}
+		if(raise_u) {
+			b->order_elevate(thisElevation, 0);
+		} else if(raise_v) {
+			b->order_elevate(thisElevation, 1);
+		}
+		if(raise_u || raise_v) {
+			splitMore = true;
+			for(auto bn : thisElevation) {
+				auto it  = newFuncStp1.find(bn);
+				if(it != newFuncStp1.end()) {
+					**it += *bn;
+					delete bn;
+				} else {
+					it = basis_.find(bn);
+					if(it != basis_.end()) {
+						**it += *bn;
+						delete bn;
+					} else {
+						newFuncStp1.insert(bn);
+						updateSupport(bn, b->supportedElementBegin(), b->supportedElementEnd());
+					}
+				}
+			}
+			delete b;
 		}
 		if(!splitMore)
 			basis_.insert(b);

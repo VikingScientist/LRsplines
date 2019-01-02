@@ -107,8 +107,8 @@ void Basisfunction::order_elevate(HashSet<Basisfunction*> &results, int directio
 	std::copy(knots_[d].begin(), knots_[d].end(), oldBasis.getknots(0).begin());
 
 	// set up the interpolation problem
-	Eigen::MatrixXf A(n,n);
-	Eigen::VectorXf b(n);
+	Eigen::MatrixXd A(n,n);
+	Eigen::VectorXd b(n);
 	for(int j=0; j<n; j++) {
 		for(int i=0; i<n; i++) {
 			A(i,j) = newBasis[j].evaluate(greville_points[i], !rightEdge);
@@ -116,10 +116,10 @@ void Basisfunction::order_elevate(HashSet<Basisfunction*> &results, int directio
 		b(j) = oldBasis.evaluate(greville_points[j], !rightEdge);
 	}
 
-	// Eigen::VectorXf alpha = A.colPivHouseholderQr().solve(b);
-	// Eigen::VectorXf alpha = A.fullPivHouseholderQr().solve(b);
-	Eigen::VectorXf alpha = A.fullPivLu().solve(b);
-	
+	// Eigen::VectorXd alpha = A.colPivHouseholderQr().solve(b);
+	// Eigen::VectorXd alpha = A.fullPivHouseholderQr().solve(b);
+	Eigen::VectorXd alpha = A.fullPivLu().solve(b);
+
 
 	// clean up if output array contains anything
 	results.clear();
