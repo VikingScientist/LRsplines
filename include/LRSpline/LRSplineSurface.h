@@ -102,6 +102,8 @@ public:
 	virtual ~LRSplineSurface();
 	LRSplineSurface* copy() const;
 
+	virtual void generateIDs() const;
+
 	// surface evaluation
 #ifdef HAS_GOTOOLS
 	virtual void point(Go::Point &pt, double u, double v, int iEl=-1) const;
@@ -222,7 +224,6 @@ private:
 	mutable std::vector<std::vector<int> > elementCache_;
 	mutable std::vector<double>            glob_knot_u_;
 	mutable std::vector<double>            glob_knot_v_;
-	mutable bool                           builtElementCache_;
 
 	void createElementCache() const;
 
