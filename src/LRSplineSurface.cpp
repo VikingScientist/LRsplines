@@ -181,7 +181,6 @@ void LRSplineSurface::initMeta() {
 	selected_basis_red    = 1.0;
 	selected_basis_green  = 0.2;
 	selected_basis_blue   = 0.05;
-	builtElementCache_    = false;
 }
 
 /************************************************************************************************************************//**
@@ -579,6 +578,12 @@ void LRSplineSurface::computeBasis (double param_u,
 
 }
 
+void LRSplineSurface::generateIDs() const
+{
+  this->LRSpline::generateIDs();
+  createElementCache();
+}
+
 /************************************************************************************************************************//**
  * \brief Computes a cached lookup table for quick determination of element distribution. Allows getElementContaining()
  *        to be ran in O(log(n)) time.
@@ -586,7 +591,6 @@ void LRSplineSurface::computeBasis (double param_u,
  *          sub-element came from.
  ***************************************************************************************************************************/
 void LRSplineSurface::createElementCache() const {
-	generateIDs();
 	// find the set of all unique knots in each direction (this is our global mesh)
 	glob_knot_u_.clear();
 	glob_knot_v_.clear();
@@ -606,7 +610,6 @@ void LRSplineSurface::createElementCache() const {
 			for(int j=j0; j<j1; j++)
 				elementCache_[i][j] = e->getId();
 	}
-	builtElementCache_ = true;
 }
 
 /************************************************************************************************************************//**
@@ -619,9 +622,6 @@ int LRSplineSurface::getElementContaining(double u, double v) const {
 	// sanity check input
 	if(u < startparam(0) || u > endparam(0) || v < startparam(1) || v > endparam(1))
 		return -1;
-	// build cache if not already present
-	if(builtElementCache_ == false)
-		createElementCache();
 
 	// binary search for the right element
 	size_t i = std::upper_bound(glob_knot_u_.begin(), glob_knot_u_.end(), u) - glob_knot_u_.begin() - 1;
@@ -1525,9 +1525,6 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 			basis_.insert(b);
 	}
 	} // end profiler (step 2)
-
-	// clear cache since mesh is now changed
-	builtElementCache_ = false;
 
 	return newline;
 }
