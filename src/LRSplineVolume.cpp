@@ -522,6 +522,47 @@ int LRSplineVolume::getElementContaining(double u, double v, double w) const {
 	return elementCache_[i][j][k];
 }
 
+/************************************************************************************************************************//**
+ * \brief Get the all neighbours for a given Element
+ * \param iEl  The element index
+ * \param edge The boundary edge
+ * \return A set of indexes of all neighbouring elements on a given edge
+ ***************************************************************************************************************************/
+std::set<int> LRSplineVolume::getElementNeighbours(int iEl, parameterEdge edge) {
+	Element *e = element_[iEl];
+	double eps = 1e-8;
+	int i0 = std::lower_bound(glob_knot_u_.begin(), glob_knot_u_.end(), e->umin()) - glob_knot_u_.begin();
+	int i1 = std::lower_bound(glob_knot_u_.begin(), glob_knot_u_.end(), e->umax()) - glob_knot_u_.begin();
+	int j0 = std::lower_bound(glob_knot_v_.begin(), glob_knot_v_.end(), e->vmin()) - glob_knot_v_.begin();
+	int j1 = std::lower_bound(glob_knot_v_.begin(), glob_knot_v_.end(), e->vmax()) - glob_knot_v_.begin();
+	int k0 = std::lower_bound(glob_knot_w_.begin(), glob_knot_w_.end(), e->wmin()) - glob_knot_w_.begin();
+	int k1 = std::lower_bound(glob_knot_w_.begin(), glob_knot_w_.end(), e->wmax()) - glob_knot_w_.begin();
+	std::set<int> result;
+	if (edge & (TOP|BOTTOM)) {
+		int k = (edge == TOP) ? k1+1:k0-1;
+		for(int i=i0; i<i1; i++) {
+			for(int j=j0; j<j1; j++) {
+				result.insert(elementCache_[i][j][k]);
+			}
+		}
+	} else if (edge & (NORTH|SOUTH)) {
+		int j = (edge == NORTH) ? j1+1:j0-1;
+		for(int i=i0; i<i1; i++) {
+			for(int k=k0; k<k1; k++) {
+				result.insert(elementCache_[i][j][k]);
+			}
+		}
+	} else if (edge & (WEST|EAST)) {
+		int i = (edge == EAST) ? i1+1:i0-1;
+		for(int j=j0; j<j1; j++) {
+			for(int k=k0; k<k1; k++) {
+				result.insert(elementCache_[i][j][k]);
+			}
+		}
+	}
+	return result;
+}
+
 void LRSplineVolume::getMinspanRects(int iEl, std::vector<MeshRectangle*>& lines) {
 	Element *e = element_[iEl];
 	std::vector<Basisfunction*>::iterator it;
