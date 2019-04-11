@@ -1,13 +1,14 @@
-#include <stdio.h>
+/*
+  To build on Linux (with LRSpline installed):
+  $ g++ -std=c++11 drawLRmultipatch.cpp -o drawLRmultipatch -lLRSpline
+*/
+
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
-#include <algorithm>
-#include <string.h>
 #include <fstream>
 #include "LRSpline/LRSplineSurface.h"
-#include "LRSpline/Profiler.h"
-#include "LRSpline/Element.h"
-#include "LRSpline/Meshline.h"
 
 using namespace LR;
 using namespace std;
@@ -28,12 +29,12 @@ vector<double> bounding_box(const LRSplineSurface &surf) {
 	return result;
 }
 
-void writePostscriptElements(std::ostream &out, const LRSplineSurface &lr, int nu, int nv, double scale, double color[3]) {
+void writePostscriptElements(std::ostream &out, const LRSplineSurface &lr, int nu, int nv, double scale, double color[3], double linewidth) {
 	// Set color
 	out << color[0] << " ";
 	out << color[1] << " ";
 	out << color[2] << " ";
-	out << "setrgbcolor \n";
+	out << "setrgbcolor\n";
 	for(int iEl=0; iEl<lr.nElements(); iEl++) {
 		double umin = lr.getElement(iEl)->umin();
 		double umax = lr.getElement(iEl)->umax();
@@ -73,7 +74,7 @@ void writePostscriptElements(std::ostream &out, const LRSplineSurface &lr, int n
 	}
 
 	out << "0 setgray\n";
-	out << "1 setlinewidth\n";
+	out << linewidth << " setlinewidth\n";
 
 	for(int iEl=0; iEl<lr.nElements(); iEl++) {
 		double umin = lr.getElement(iEl)->umin();
@@ -118,7 +119,7 @@ void writePostscriptElements(std::ostream &out, const LRSplineSurface &lr, int n
 int main(int argc, char **argv) {
 	// error test input
 	if(argc < 2) {
-		cout << "Usage: " << argv[0] << " <inputfiles>\n";
+		cout << "Usage: " << argv[0] << " [-lw <linewidth>] <inputfiles> [<outputfile>]\n";
 		exit(1);
 	}
 
@@ -141,11 +142,18 @@ int main(int argc, char **argv) {
 
 	// read all patches
 	vector<LRSplineSurface*> surfs;
-	for(int i=1; i<argc; ++i) {
+        int imesh = 0;
+	double linewidth = 1.0;
+	for (int i = 1; i < argc && imesh == 0; i++)
+	  if (strstr(argv[i],".eps") && strlen(strstr(argv[i],".eps")) == 4)
+	    imesh = i;
+	  else if (!strcmp(argv[i],"-lw") && i+1 < argc)
+	    linewidth = atof(argv[++i]);
+	  else {
 		ifstream inputfile;
 		inputfile.open(argv[i]);
 		if(!inputfile.is_open()) {
-			cerr << "Error: could not open file " << argv[i] << endl;
+			cerr << "Error: could not open file " << argv[i] << "\n";
 			exit(2);
 		}
 		while(inputfile.is_open() && !inputfile.eof()) {
@@ -187,20 +195,22 @@ int main(int argc, char **argv) {
 	int ymax = (y[1] + dy/20.0)*scale;
 
 	// open output file
-	ofstream out("mesh.eps");
+	char meshfile[64];
+	strcpy(meshfile, imesh ? argv[imesh] : "mesh.eps");
+	ofstream out(meshfile);
 
 	// print eps header
 	out << "%!PS-Adobe-3.0 EPSF-3.0\n";
 	out << "%%Creator: LRSplineHelpers.cpp object\n";
 	out << "%%Title: LR-spline physical domain\n";
-	out << "%%CreationDate: " << date << std::endl;
+	out << "%%CreationDate: " << date << "\n";
 	out << "%%Origin: 0 0\n";
-	out << "%%BoundingBox: " << xmin << " " << ymin << " " << xmax << " " << ymax << std::endl;
+	out << "%%BoundingBox: " << xmin << " " << ymin << " " << xmax << " " << ymax << "\n";
 
 	// draw all patches
 	int i=0;
 	for(auto srf : surfs) {
-		writePostscriptElements(out, *srf, 7,7, scale, color[i++ % 7]);
+	  writePostscriptElements(out, *srf, 7,7, scale, color[i++ % 7], linewidth);
 	}
 
 	// close file
@@ -208,6 +218,6 @@ int main(int argc, char **argv) {
 
 	out.close();
 
-  cout << "Written mesh.eps" << endl;
-
+	cout << "Written " << meshfile << endl;
+	return 0;
 }
