@@ -16,6 +16,7 @@
 #include "Basisfunction.h"
 #include "MeshRectangle.h"
 #include "Element.h"
+#include <set>
 
 namespace Go {
 	class SplineVolume;
@@ -68,6 +69,7 @@ public:
 	                   std::vector<std::vector<double> >& result,
 	                   int derivs=0,
 	                   int iEl=-1 ) const;
+	std::set<int> getElementNeighbours(int iEl, parameterEdge edge) const;
 	int getElementContaining(double u, double v, double w) const;
 	// TODO: get rid of the iEl argument in evaluation signatures - it's too easy to mess it up (especially with derivatives at multiple-knot boundaries).
 	//       Try and sort the Elements after all refinements and binary search for the containing point in logarithmic time
