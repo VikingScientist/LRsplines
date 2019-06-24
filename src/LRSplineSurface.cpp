@@ -2948,7 +2948,8 @@ void LRSplineSurface::getBezierElement(int iEl, std::vector<double> &controlPoin
 
 void LRSplineSurface::getBezierExtraction(int iEl, std::vector<double> &extractMatrix) const {
 	Element *el = element_[iEl];
-	int width  = min_order_[0]*min_order_[1];
+    int order[2] = {el->order(0), el->order(1)};
+	int width  = order[0]*order[1];
 	int height = el->nBasisFunctions();
 	extractMatrix.clear();
 	extractMatrix.resize(width*height);
@@ -2959,7 +2960,7 @@ void LRSplineSurface::getBezierExtraction(int iEl, std::vector<double> &extractM
 		std::vector<std::vector<double> > row(2);
 		std::vector<std::vector<double> > knot(2);
 		for(int d=0; d<2; d++) {
-			for(int i=0; i<min_order_[d]+1; i++)
+			for(int i=0; i<order[d]+1; i++)
 				knot[d].push_back( (*b)[d][i] );
 			row[d].push_back(1);
 		}
@@ -2971,15 +2972,15 @@ void LRSplineSurface::getBezierExtraction(int iEl, std::vector<double> &extractM
 			double max = el->getParmax(d);
 			while(knot[d][++start[d]] < min);
 			while(true) {
-				int p    = min_order_[d]-1;
+				int p    = order[d]-1;
 				int newI = -1;
 				double z;
-				if(       knot[d].size() < (uint) start[d]+min_order_[d]   || knot[d][start[d]+  min_order_[d]-1] != min) {
+				if(       knot[d].size() < (uint) start[d]+order[d]   || knot[d][start[d]+  order[d]-1] != min) {
 					z    = min;
 					newI = start[d];
-				} else if(knot[d].size() < (uint) start[d]+2*min_order_[d] || knot[d][start[d]+2*min_order_[d]-1] != max ) {
+				} else if(knot[d].size() < (uint) start[d]+2*order[d] || knot[d][start[d]+2*order[d]-1] != max ) {
 					z    = max;
-					newI = start[d] + min_order_[d];
+					newI = start[d] + order[d];
 				} else {
 					break;
 				}
@@ -3004,8 +3005,8 @@ void LRSplineSurface::getBezierExtraction(int iEl, std::vector<double> &extractM
 		}
 
 		int colI = 0;
-		for(int v=start[1]; v<start[1]+min_order_[1]; v++)
-			for(int u=start[0]; u<start[0]+min_order_[0]; u++, colI++)
+		for(int v=start[1]; v<start[1]+order[1]; v++)
+			for(int u=start[0]; u<start[0]+order[0]; u++, colI++)
 				extractMatrix[colI*height + rowI] += row[0][u]*row[1][v]*b->w();
 		rowI++;
 	}
