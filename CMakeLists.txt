@@ -197,6 +197,9 @@ TARGET_LINK_LIBRARIES(refine LRSpline ${DEPLIBS})
 ADD_EXECUTABLE(TestMatchingKnots ${PROJECT_SOURCE_DIR}/Apps/TestMatchingKnots.cpp)
 TARGET_LINK_LIBRARIES(TestMatchingKnots LRSpline ${DEPLIBS})
 
+ADD_EXECUTABLE(drawLocalPmesh ${PROJECT_SOURCE_DIR}/Apps/drawLocalPmesh.cpp)
+TARGET_LINK_LIBRARIES(drawLocalPmesh LRSpline ${DEPLIBS})
+
 ADD_EXECUTABLE(TestOrderElevate ${PROJECT_SOURCE_DIR}/Apps/TestOrderElevate.cpp)
 TARGET_LINK_LIBRARIES(TestOrderElevate LRSpline ${DEPLIBS})
 
