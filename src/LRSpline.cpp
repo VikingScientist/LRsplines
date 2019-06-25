@@ -91,6 +91,12 @@ bool LRSpline::setControlPoints(const std::vector<double>& controlpoints) {
 	}
 	return true;
 }
+int LRSpline::max_order(int i) const {
+	int ans=-1;
+	for(auto el : element_)
+	  ans=std::max(el->order(i),ans);
+	return ans;
+}
 
 Basisfunction* LRSpline::getBasisfunction(int iBasis) {
 	if(!builtBasisCache_)
