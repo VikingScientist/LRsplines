@@ -83,6 +83,8 @@ public:
 	void refineByDimensionIncrease(const std::vector<double> &error, double beta);
 	void matchParametricEdge(parameterEdge edge, const std::vector<Basisfunction*> &functions);
 	bool matchParametricEdge(parameterEdge edge, LRSplineVolume *other, parameterEdge otherEdge, bool reverse_u, bool reverse_v, bool flip_uv);
+	void orderElevateFunction(int index) { return; };
+	void orderElevateFunction(const std::vector<int> &indices) { return; };
 
 	// (private) refinement functions
 	void getFullspanRects(  int iEl,    std::vector<MeshRectangle*>& rects);

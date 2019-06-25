@@ -810,6 +810,13 @@ void Basisfunction::read(std::istream &is) {
 	ws(is);
 	ASSERT_NEXT_CHAR(':');
 
+    // read polynomial degree
+    int p;
+	for(uint i=0; i<knots_.size(); i++) {
+        is >> p;
+        knots_[i].resize(p+1);
+    }
+
 	// read knot vectors
 	bool isFirst = true;
 	for(uint i=0; i<knots_.size(); i++) {
@@ -837,6 +844,8 @@ void Basisfunction::read(std::istream &is) {
  ***************************************************************************************************************************/
 void Basisfunction::write(std::ostream &os) const {
 	os << id_ << ": ";
+    for(int i=0; i<knots_.size(); i++)
+        os << getOrder(i) << " ";
 	bool isFirst = true;
 	for(std::vector<double> knot : knots_) {
 		if(!isFirst) os << "x ";

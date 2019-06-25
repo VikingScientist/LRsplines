@@ -59,6 +59,8 @@ public:
 	int nVariate()           const { return start_.size()  ; };
 	//! \brief returns the polynomial order (degree + 1) in the given parametric direction
 	int min_order    (int i) const { return min_order_[i]      ; };
+	//! \brief returns the polynomial order (degree + 1) in the given parametric direction
+	int max_order    (int i) const ;
 	//! \brief returns the start parameter of the given parametric direction
 	double startparam(int i) const { return start_[i]      ; };
 	//! \brief returns the end parameter of the given parametric direction
@@ -114,6 +116,8 @@ public:
 	virtual void refineElement(int index) = 0;
 	virtual void refineElement(const std::vector<int> &indices) = 0;
 	virtual void refineByDimensionIncrease(const std::vector<double> &error, double beta) = 0;
+	virtual void orderElevateFunction(int index) = 0;
+	virtual void orderElevateFunction(const std::vector<int> &indices) = 0;
 
 	// multipatch functions
 	// virtual void matchParametricEdge(parameterEdge edge, const std::vector<Basisfunction*> &functions) = 0;
