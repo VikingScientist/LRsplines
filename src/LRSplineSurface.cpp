@@ -857,26 +857,33 @@ void LRSplineSurface::orderElevateFunction(int index) {
  ***************************************************************************************************************************/
 void LRSplineSurface::orderElevateFunction(const std::vector<int> &indices) {
   if(indices.size() == 0) return;
-	std::vector<int> sortedInd(indices);
-	std::set<Element*> elms;
+	std::vector<std::set<Element*> > elms_u(128);
+	std::vector<std::set<Element*> > elms_v(128);
 	// make sure all functions tagged for order elevation is on the same "level", i.e. have the same order
-	int oldOrder1 = getBasisfunction(indices[0])->getOrder(0);
-	int oldOrder2 = getBasisfunction(indices[0])->getOrder(1);
 	for(int i : indices) {
 		Basisfunction *b = getBasisfunction(i);
 		// collect the combined support of all requrested basisfunctions (taking care to not double-count elements)
-		for(auto el : b->support())
-			elms.insert(el);
-		if(b->getOrder(0) != oldOrder1 ||
-		   b->getOrder(1) != oldOrder2) {
-			std::cerr << "LRSplineSurface::orderElevateFunction: Mismatching order on basis functions tagged for order elevation\n";
-			exit(12385204);
+		for(auto el : b->support()) {
+			int p1 = b->getOrder(0);
+			int p2 = b->getOrder(1);
+			elms_u[p1].insert(el);
+			elms_v[p2].insert(el);
 		}
 	}
-	std::vector<Element*> refElms(elms.size());
-	std::copy(elms.begin(), elms.end(), refElms.begin());
-	order_elevate(refElms, 0, oldOrder1 + 1);
-	order_elevate(refElms, 1, oldOrder2 + 1);
+	for(int p1=0; p1<elms_u.size(); ++p1) {
+		if(elms_u[p1].size() > 0) {
+			std::vector<Element*> refElms(elms_u[p1].size());
+			std::copy(elms_u[p1].begin(), elms_u[p1].end(), refElms.begin());
+			order_elevate(refElms, 0, p1 + 1);
+		}
+	}
+	for(int p2=0; p2<elms_v.size(); ++p2) {
+		if(elms_v[p2].size() > 0) {
+			std::vector<Element*> refElms(elms_v[p2].size());
+			std::copy(elms_v[p2].begin(), elms_v[p2].end(), refElms.begin());
+			order_elevate(refElms, 1, p2 + 1);
+		}
+	}
 }
 
 /************************************************************************************************************************//**
@@ -3157,7 +3164,7 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, std::ve
 	// get bounding box
 	int dx = end_[0] - start_[0];
 	int dy = end_[1] - start_[1];
-	double scale = (dx>dy) ? 1000.0/dx : 1000.0/dy;
+	double scale = (dx>dy) ? 5000.0/dx : 5000.0/dy;
 	// set the duplicate-knot-line (dkl) display width
 	double dkl_range = (min_span_u>min_span_v) ? min_span_v*scale/6.0 : min_span_u*scale/6.0;
 	int xmin = (start_[0] - dx/30.0)*scale;
@@ -3191,11 +3198,12 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, std::ve
 		}
 	}
 
+	int max_order[2] = {this->max_order(0), this->max_order(1)};
 	out << "0 setgray\n";
 	out << "1 setlinewidth\n";
 	for(uint i=0; i<meshline_.size(); i++) {
 		out << "newpath\n";
-		int multiplicity = min_order_[meshline_[i]->is_spanning_u()==true] - meshline_[i]->continuity_ - 1;
+		int multiplicity = max_order[meshline_[i]->is_spanning_u()==true] - meshline_[i]->continuity_ - 1;
 		double dm = (multiplicity == 1) ? 0 : dkl_range/(multiplicity - 1);
 		for(int m=0; m<multiplicity; m++) {
 			if(meshline_[i]->is_spanning_u()) {
@@ -3247,7 +3255,7 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 
 	double dx = x[1]-x[0];
 	double dy = y[1]-y[0];
-	double scale = (dx>dy) ? 1000.0/dx : 1000.0/dy;
+	double scale = (dx>dy) ? 5000.0/dx : 5000.0/dy;
 
 	int xmin = (x[0] - dx/20.0)*scale;
 	int ymin = (y[0] - dy/20.0)*scale;
