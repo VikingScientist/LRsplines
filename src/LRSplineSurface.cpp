@@ -181,6 +181,7 @@ void LRSplineSurface::initMeta() {
 	selected_basis_red    = 1.0;
 	selected_basis_green  = 0.2;
 	selected_basis_blue   = 0.05;
+	builtElementCache_    = false;
 }
 
 /************************************************************************************************************************//**
@@ -622,6 +623,9 @@ int LRSplineSurface::getElementContaining(double u, double v) const {
 	// sanity check input
 	if(u < startparam(0) || u > endparam(0) || v < startparam(1) || v > endparam(1))
 		return -1;
+	// build cache if not already present
+	if(builtElementCache_ == false)
+		createElementCache();
 
 	// binary search for the right element
 	size_t i = std::upper_bound(glob_knot_u_.begin(), glob_knot_u_.end(), u) - glob_knot_u_.begin() - 1;
