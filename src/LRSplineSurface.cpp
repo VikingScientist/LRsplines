@@ -610,6 +610,7 @@ void LRSplineSurface::createElementCache() const {
 			for(int j=j0; j<j1; j++)
 				elementCache_[i][j] = e->getId();
 	}
+	builtElementCache_ = true;
 }
 
 /************************************************************************************************************************//**
