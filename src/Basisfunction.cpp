@@ -787,7 +787,7 @@ void Basisfunction::reverse(int pardir, double parmin, double parmax) {
  * \brief (used when iterating over all functions), scales knot vectors so they globally fit into range (0,1)
  ***************************************************************************************************************************/
 void Basisfunction::normalize(int pardir, double parmin, double parmax) {
-	for(int i=0; i<knots_[pardir].size(); i++) {
+	for(uint i=0; i<knots_[pardir].size(); i++) {
 		knots_[pardir][i] = (knots_[pardir][i] - parmin) / (parmax-parmin) * (parmax-parmin) + parmin;
 	}
 }

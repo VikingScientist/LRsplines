@@ -970,7 +970,7 @@ void LRSplineVolume::matchParametricEdge(parameterEdge edge, const std::vector<B
 		for(int d=0; d<3; d++) {
 			int mult = 1;
 			auto knots = b->getknots(d);
-			for(int i=0; i<knots.size(); i++) {
+			for(uint i=0; i<knots.size(); i++) {
 				if( i==knots.size()-1 || fabs(knots[i+1] - knots[i])>DOUBLE_TOL) {
 					if(d==0) {
 						this->insert_line(new MeshRectangle((u1+u0)*knots[i]+u0, (v1-v0)*b->getParmin(1)+v0, (w1-w0)*b->getParmin(2)+w0,
@@ -1048,6 +1048,8 @@ bool LRSplineVolume::matchParametricEdge(parameterEdge edge, LRSplineVolume *oth
 			v1 = 1; // second running
 			w1 = 2; // const direction
 			break;
+        default:
+            return false; // do nothing for 'NONE' or corner-input (SOUTH_WEST)
 	}
 	switch(otherEdge) {
 		case WEST:
@@ -1068,6 +1070,8 @@ bool LRSplineVolume::matchParametricEdge(parameterEdge edge, LRSplineVolume *oth
 			v2 = 1;
 			w2 = 2;
 			break;
+        default:
+            return false; // do nothing for 'NONE' or corner-input (SOUTH_WEST)
 	}
 
 	for(auto b : fun1) {
@@ -1988,7 +1992,7 @@ LRSplineVolume* LRSplineVolume::getDerivedBasis(int raise_p1, int raise_p2, int 
 		if(m->constDirection()==1 && (fabs(m->constParameter()-start_[1])<DOUBLE_TOL || fabs(m->constParameter()-end_[1])<DOUBLE_TOL)) continue;
 		if(m->constDirection()==2 && (fabs(m->constParameter()-start_[2])<DOUBLE_TOL || fabs(m->constParameter()-end_[2])<DOUBLE_TOL)) continue;
 
-		int dk;
+		int dk = 0;
 		if(m->constDirection() == 0)
 			dk = lower_k1 + raise_p1;
 		else if(m->constDirection() == 1)
@@ -2104,6 +2108,7 @@ void LRSplineVolume::read(std::istream &is) {
 
 	meshrect_.resize(nMeshRectangles);
 	element_.resize(nElements);
+	basis_.clear();
 	basisVector.resize(nBasis);
 	int allOrder[] = {order_[0], order_[1], order_[2]};
 
