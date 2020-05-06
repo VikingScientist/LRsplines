@@ -2108,6 +2108,7 @@ void LRSplineVolume::read(std::istream &is) {
 
 	meshrect_.resize(nMeshRectangles);
 	element_.resize(nElements);
+	basis_.clear();
 	basisVector.resize(nBasis);
 	int allOrder[] = {order_[0], order_[1], order_[2]};
 

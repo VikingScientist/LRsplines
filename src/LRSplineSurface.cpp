@@ -2842,6 +2842,7 @@ void LRSplineSurface::read(std::istream &is) {
 
 	meshline_.resize(nMeshlines);
 	element_.resize(nElements);
+	basis_.clear();
 	std::vector<Basisfunction*> basisVector(nBasis);
 
 	// get rid of more comments and spaces
