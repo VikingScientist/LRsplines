@@ -975,7 +975,7 @@ void LRSplineSurface::matchParametricEdge(parameterEdge edge, const std::vector<
 		for(int d=0; d<2; d++) {
 			int mult = 1;
 			auto knots = b->getknots(d);
-			for(int i=0; i<knots.size(); i++) {
+			for(uint i=0; i<knots.size(); i++) {
 				if( i==knots.size()-1 || fabs(knots[i+1] - knots[i])>DOUBLE_TOL) {
 					if(d==0) this->insert_line(d==0, (u1-u0)*knots[i]+u0, (v1-v0)*b->getParmin(1-d)+v0, (v1-v0)*b->getParmax(1-d)+v0, mult);
 					else     this->insert_line(d==0, (v1-v0)*knots[i]+v0, (u1-u0)*b->getParmin(1-d)+u0, (u1-u0)*b->getParmax(1-d)+u0, mult);
