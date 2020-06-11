@@ -151,6 +151,7 @@ public:
 	// operator overloading
 	bool equals(const Basisfunction &other) const ;
 	bool operator==(const Basisfunction &other) const;
+	bool operator<( const Basisfunction &other) const;
 	void operator+=(const Basisfunction &other) ;
 	std::vector<double>&       operator[](int i)       { return knots_[i]; } ;
 	const std::vector<double>& operator[](int i) const { return knots_[i]; } ;

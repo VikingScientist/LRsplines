@@ -135,6 +135,9 @@ int main(int argc, char **argv) {
 	if(vol) lrv->renumberElements();
 	else    lrs->renumberElements();
 
+	if(vol) lrv->renumberBasisfunctions();
+	else    lrs->renumberBasisfunctions();
+
 	// test writing to file
 	ofstream lrfile;
 	lrfile.open("TestReadWrite.lr");
