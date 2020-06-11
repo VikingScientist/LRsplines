@@ -48,6 +48,7 @@ public:
 	virtual void generateIDs() const;
 
 	virtual void renumberElements() ;
+	virtual void renumberBasisfunctions() ;
 
 	// common get methods
 
@@ -93,7 +94,7 @@ public:
 	// traditional get methods
 	Element* getElement(int i)                                     { return element_[i]; };
 	const Element* getElement(int i) const                         { return element_[i]; };
-	Basisfunction*       getBasisfunction(int iBasis) ;
+	Basisfunction* getBasisfunction(int iBasis);
 	const Basisfunction* getBasisfunction(int iBasis) const ;
 
 	// refinement functions

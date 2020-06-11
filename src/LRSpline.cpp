@@ -11,19 +11,40 @@ LRSpline::LRSpline() {
 	element_.resize(0);
 }
 
-bool compare(const Element* a, const Element* b) {return *a < *b;};
+bool compareEl(const Element* a, const Element* b) {return *a < *b;};
 
 void LRSpline::renumberElements() {
-    std::sort(element_.begin(), element_.end(), compare);
+	this->generateIDs();
+	std::sort(element_.begin(), element_.end(), compareEl);
 	for(size_t i=0; i<element_.size(); i++)
 		element_[i]->setId(i);
 }
 
+bool compareFunc(const Basisfunction* a, const Basisfunction* b) {return *a < *b;};
+
+void LRSpline::renumberBasisfunctions() {
+	std::vector<Basisfunction*> tmp(basis_.size());
+	std::copy(basis_.begin(), basis_.end(), tmp.begin());
+	std::sort(tmp.begin(), tmp.end(), compareFunc);
+	for(size_t i=0; i<tmp.size(); i++)
+		tmp[i]->setId(i);
+}
+
 void LRSpline::generateIDs() const {
+	/* enumeration by hash function (old way), sensitive to scaling and bit precision
 	uint i=0;
 	for(Basisfunction *b : basis_)
 		b->setId(i++);
-	for(i=0; i<element_.size(); i++)
+	*/
+
+	/* enumeartion by geometric sorting (priorizing lower left corner) */
+	std::vector<Basisfunction*> tmp(basis_.size());
+	std::copy(basis_.begin(), basis_.end(), tmp.begin());
+	std::sort(tmp.begin(), tmp.end(), compareFunc);
+	for(size_t i=0; i<tmp.size(); i++)
+		tmp[i]->setId(i);
+
+	for(size_t i=0; i<element_.size(); i++)
 		element_[i]->setId(i);
 }
 
@@ -121,6 +142,20 @@ void LRSpline::rebuildDimension(int dimvalue) {
 	for(Basisfunction *b : basis_)
 		b->setDimension(dimvalue);
 	dim_ = dimvalue;
+}
+
+Basisfunction* LRSpline::getBasisfunction(int iBasis) {
+	if(iBasis<0 || iBasis>=basis_.size()) return NULL;
+	for(auto b : basis_)
+		if(b->getId() == iBasis) return b;
+	return NULL;
+}
+
+const Basisfunction* LRSpline::getBasisfunction(int iBasis) const {
+	if(iBasis<0 || iBasis>=basis_.size()) return NULL;
+	for(auto b : basis_)
+		if(b->getId() == iBasis) return b;
+	return NULL;
 }
 
 

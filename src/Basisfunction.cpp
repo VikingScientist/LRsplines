@@ -696,6 +696,21 @@ bool Basisfunction::operator==(const Basisfunction &other) const {
 }
 
 /************************************************************************************************************************//**
+ * \brief Test for B-spline ordering according to geometric factor instead of hash function
+ * \param other The other B-spline to check against
+ * \returns True if this.knot[i][j] < other.knot[i][j] for the smallest possible (i,j) whith different values
+ ***************************************************************************************************************************/
+bool Basisfunction::operator<(const Basisfunction &other) const {
+	for(uint i=0; i<knots_.size(); i++)
+		for(uint j=0; j<knots_[i].size(); j++)
+			if(     knots_[i][j] > other[i][j]) return false;
+			else if(knots_[i][j] < other[i][j]) return true;
+			// else continue;
+
+	return false; // all knot vectors identical
+}
+
+/************************************************************************************************************************//**
  * \brief Test for B-spline equality
  * \param other The other B-spline to check against
  * \returns True if the knot vectors are identical (up to a tolerance)
