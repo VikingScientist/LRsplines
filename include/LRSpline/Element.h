@@ -88,6 +88,8 @@ public:
 	virtual void read(std::istream &is);
 	virtual void write(std::ostream &os) const;
 
+	bool operator<(const Element &other) const;
+
 private:
 	std::vector<double> min;  // lower left corner in typical 2 or 3 dimensions
 	std::vector<double> max;  // upper right corner

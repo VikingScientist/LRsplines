@@ -11,6 +11,14 @@ LRSpline::LRSpline() {
 	element_.resize(0);
 }
 
+bool compare(const Element* a, const Element* b) {return *a < *b;};
+
+void LRSpline::renumberElements() {
+    std::sort(element_.begin(), element_.end(), compare);
+	for(size_t i=0; i<element_.size(); i++)
+		element_[i]->setId(i);
+}
+
 void LRSpline::generateIDs() const {
 	uint i=0;
 	for(Basisfunction *b : basis_)

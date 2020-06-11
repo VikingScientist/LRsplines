@@ -236,6 +236,18 @@ bool Element::isOverloaded()  const {
 		}
 	}
 	return false;
+
+}
+
+bool Element::operator<(const Element &other) const {
+	for(size_t i=0; i<min.size(); i++) {
+		if(this->min[i] > other.getParmin(i))
+			return false;
+		else if(this->min[i] < other.getParmin(i))
+			return true;
+		// else(this->min[i] == other.getParmin(i)) continue
+	}
+	return false;
 }
 
 } // end namespace LR
