@@ -47,6 +47,8 @@ public:
 
 	virtual void generateIDs() const;
 
+	virtual void renumberElements() ;
+
 	// common get methods
 
 	//! \brief returns the number of B-splines (basisfunctions) in this LR-spline object
