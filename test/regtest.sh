@@ -11,7 +11,7 @@ i=0
 for line in `cat $2`
 do
   test -z "$line" && continue
-  $((i++))
+  ((i++))
   test $i = 1 && continue # skip first line of regression file
   result=0
   if grep -q "$line" templog 
