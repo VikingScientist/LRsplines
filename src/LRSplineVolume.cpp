@@ -181,7 +181,7 @@ void LRSplineVolume::initMeta() {
 LRSplineVolume* LRSplineVolume::copy() const {
 	generateIDs();
 
-	std::vector<Basisfunction*> basisVector;
+	std::vector<Basisfunction*> basisVector(nBasisFunctions());
 
 	// flat list to make it quicker to update pointers from Basisfunction to Element and back again
 	LRSplineVolume *returnvalue = new LR::LRSplineVolume();
@@ -189,7 +189,7 @@ LRSplineVolume* LRSplineVolume::copy() const {
 	for(Basisfunction* b : basis_) {
 		Basisfunction *newB = b->copy();
 		returnvalue -> basis_.insert(newB);
-		basisVector.push_back(newB);
+		basisVector[b->getId()] = newB;
 	}
 
 	for(Element *e : element_) {
@@ -2125,7 +2125,7 @@ void LRSplineVolume::read(std::istream &is) {
 		Basisfunction *b = new Basisfunction(dim_, 3, allOrder);
 		b->read(is);
 		basis_.insert(b);
-		basisVector[i] = b;
+		basisVector[b->getId()] = b;
 	}
 
 	// get rid of more comments and spaces

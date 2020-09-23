@@ -206,7 +206,7 @@ LRSplineSurface::~LRSplineSurface() {
 LRSplineSurface* LRSplineSurface::copy() const {
 	generateIDs();
 
-	std::vector<Basisfunction*> basisVector;
+	std::vector<Basisfunction*> basisVector(nBasisFunctions());
 
 	// flat list to make it quicker to update pointers from Basisfunction to Element and back again
 	LRSplineSurface *returnvalue = new LR::LRSplineSurface();
@@ -214,7 +214,7 @@ LRSplineSurface* LRSplineSurface::copy() const {
 	for(Basisfunction* b : basis_) {
 		Basisfunction *newB = b->copy();
 		returnvalue -> basis_.insert(newB);
-		basisVector.push_back(newB);
+		basisVector[b->getId()] = newB;
 	}
 
 	for(Element *e : element_) {
@@ -2863,7 +2863,7 @@ void LRSplineSurface::read(std::istream &is) {
 		Basisfunction *b = new Basisfunction(dim_, order_[0], order_[1]);
 		b->read(is);
 		basis_.insert(b);
-		basisVector[i] = b;
+		basisVector[b->getId()] = b;
 	}
 
 	// get rid of more comments and spaces
