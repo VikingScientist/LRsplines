@@ -111,6 +111,8 @@ int main(int argc, char **argv) {
 		SplineSurface   ss(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
 		LRSplineSurface lr(n1, n2, p1, p2, knot_u, knot_v, cp, dim, rat);
 
+		lr.generateIDs();
+
 		// compare function values on edges, knots and in between the knots
 		// as well as all derivatives (up to first derivatives)
 		vector<Point> lr_pts(6), ss_pts(6);
