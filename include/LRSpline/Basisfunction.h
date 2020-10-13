@@ -21,6 +21,8 @@ class Element;
  ***************************************************************************************************************************/
 class Basisfunction : public Streamable {
 public:
+	static double sameFuncTolerance; //!< Tolerance for classifying coninciding basis functions
+
 	Basisfunction(int dim, int order_u, int order_v);
 	/************************************************************************************************************************//**
 	 * \brief Constructor for arbitray high parametric dimension
