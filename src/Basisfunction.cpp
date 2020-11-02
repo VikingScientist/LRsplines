@@ -12,6 +12,8 @@ typedef unsigned int uint;
 
 namespace LR {
 
+double Basisfunction::sameFuncTolerance = 1e-10;
+
 /************************************************************************************************************************//**
  * \brief Default bivariate constructor
  * \param dim The dimension in the physical space, i.e. the number of components of the controlpoints
@@ -618,7 +620,7 @@ long Basisfunction::hashCode() const {
 /************************************************************************************************************************//**
  * \brief Test for B-spline equality
  * \param other The other B-spline to check against
- * \returns True if the knot vectors are identical (up to a tolerance of 1e-10)
+ * \returns True if the knot vectors are identical (up to a tolerance)
  ***************************************************************************************************************************/
 bool Basisfunction::equals(const Basisfunction &other) const {
 	if(knots_.size() != other.knots_.size())
@@ -627,7 +629,7 @@ bool Basisfunction::equals(const Basisfunction &other) const {
 		if(knots_[i].size() != other[i].size())
 			return false;
 		for(uint j=0; j<knots_[i].size(); j++)
-			if(fabs(knots_[i][j] - other[i][j]) > 1e-10)
+			if(fabs(knots_[i][j] - other[i][j]) > sameFuncTolerance)
 				return false;
 	}
 	return true;
@@ -636,7 +638,7 @@ bool Basisfunction::equals(const Basisfunction &other) const {
 /************************************************************************************************************************//**
  * \brief Test for B-spline equality
  * \param other The other B-spline to check against
- * \returns True if the knot vectors are identical (up to a tolerance of 1e-10)
+ * \returns True if the knot vectors are identical (up to a tolerance)
  ***************************************************************************************************************************/
 bool Basisfunction::operator==(const Basisfunction &other) const {
 	return equals(other);
@@ -645,7 +647,7 @@ bool Basisfunction::operator==(const Basisfunction &other) const {
 /************************************************************************************************************************//**
  * \brief Test for B-spline equality
  * \param other The other B-spline to check against
- * \returns True if the knot vectors are identical (up to a tolerance of 1e-10)
+ * \returns True if the knot vectors are identical (up to a tolerance)
  ***************************************************************************************************************************/
 void Basisfunction::operator+=(const Basisfunction &other) {
 	double newWeight = weight_ + other.weight_;

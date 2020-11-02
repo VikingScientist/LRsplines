@@ -69,7 +69,7 @@ SET(INCLUDES ${PROJECT_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/include)
 FIND_PACKAGE(Boost)
 FIND_PACKAGE(GoTools)
 
-set(LRSpline_DEFINITIONS)
+set(LRSpline_DEFINITIONS "-DLRSPLINE_HAS_FUNC_TOLERANCE")
 IF(GoTools_FOUND)
   # must have all of GoTools or none of it
   FIND_PACKAGE(GoTrivariate REQUIRED)
@@ -81,7 +81,7 @@ IF(GoTools_FOUND)
               ${GoTrivariate_LIBRARIES}
               ${GoTools_LIBRARIES})
   ADD_DEFINITIONS(-DHAS_GOTOOLS)
-  set(LRSpline_DEFINITIONS "-DHAS_GOTOOLS")
+  set(LRSpline_DEFINITIONS "${LRSpline_DEFINITIONS} -DHAS_GOTOOLS")
 
   include(CheckTypeSize)
   set(CMAKE_EXTRA_INCLUDE_FILES "GoTools/geometry/SplineSurface.h")
