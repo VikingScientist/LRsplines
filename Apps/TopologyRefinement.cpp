@@ -220,6 +220,8 @@ int main(int argc, char **argv) {
 		atOnce = true;
 	}
 
+	lr->generateIDs();
+
 	// ---------------- Do actual refinement   -----------------------
 	if(atOnce) {
 		if(functions) {

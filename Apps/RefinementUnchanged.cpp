@@ -188,6 +188,7 @@ int main(int argc, char **argv) {
 			sv  = new Go::SplineVolume(n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
 #else
 			sv  = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
+			sv->generateIDs();
 #endif
 			lrv = new LRSplineVolume  (n1, n2, n3, p1, p2, p3, knot_u, knot_v, knot_w, cp.begin(), dim, rat);
 		} else {
@@ -195,6 +196,7 @@ int main(int argc, char **argv) {
 			ss  = new Go::SplineSurface(n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
 #else
 			ss  = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
+			ss->generateIDs();
 #endif
 			lrs = new LRSplineSurface  (n1, n2, p1, p2, knot_u, knot_v, cp.begin(), dim, rat);
 		}
@@ -323,6 +325,10 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	if (vol)
+		lrv->generateIDs();
+	else
+		lrs->generateIDs();
 
 	// compare function values on edges, knots and in between the knots
 	// as well as all derivatives (up to first derivatives)
