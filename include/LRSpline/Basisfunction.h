@@ -23,7 +23,9 @@ class Basisfunction : public Streamable {
 public:
 	static double sameFuncTolerance; //!< Tolerance for classifying coninciding basis functions
 
+	Basisfunction(int dim, int order_u);
 	Basisfunction(int dim, int order_u, int order_v);
+	Basisfunction(int dim, int order_u, int order_v, int order_w);
 	/************************************************************************************************************************//**
 	 * \brief Constructor for arbitray high parametric dimension
 	 * \param physDim The dimension in the physical space, i.e. the number of components of the controlpoints
@@ -39,6 +41,28 @@ public:
 		for(int i=0; i<parDim; i++)
 			knots_[i].resize(order[i]+1);
 		controlpoint_.resize(physDim);
+	}
+
+	/************************************************************************************************************************//**
+	 * \brief Constructor for univariate Basisfunctions
+	 * \param knot_u Knot vector in first parametric direction
+	 * \param controlpoint The control point associated with the B-spline
+	 * \param dim Physical dimension, i.e. the number of components of the controlpoint
+	 * \param order_u Polynomial order (degree + 1) in first parametric direction
+	 * \param weight Scaling weight for partition of unity (note: not NURBS rational weight)
+	 ***************************************************************************************************************************/
+	template <typename RandomIterator1,
+	          typename RandomIterator2>
+	Basisfunction(RandomIterator1 knot_u, RandomIterator2 controlpoint, int dim, int order_u, double weight=1.0) {
+		weight_       = weight ;
+		id_           = -1;
+		hashCode_     = 0;
+		knots_.resize(1);
+		knots_[0].resize(order_u+1);
+		controlpoint_.resize(dim);
+
+		std::copy(knot_u,       knot_u       + order_u+1,   knots_[0].begin());
+		std::copy(controlpoint, controlpoint + dim,         controlpoint_.begin());
 	}
 
 	/************************************************************************************************************************//**
@@ -103,6 +127,7 @@ public:
 	Basisfunction* copy() const;
 
 	//evaluation functions
+	double evaluate(double u, bool u_from_right=true) const;
 	double evaluate(double u, double v, bool u_from_right=true, bool v_from_right=true) const;
 	double evaluate(double u, double v, double w, bool u_from_right=true, bool v_from_right=true, bool w_from_right=true) const;
 	void   evaluate(std::vector<double> &results, double u, double v, int derivs, bool u_from_right=true, bool v_from_right=true) const;
@@ -145,6 +170,7 @@ public:
 	std::vector<double>::const_iterator cp() const { return controlpoint_.begin(); };
 	double cp(int i)                         const { return controlpoint_[i]; };
 	double w()                               const { return weight_; };
+	double integral(Element *el)             const ;
 
 	long hashCode() const ;
 

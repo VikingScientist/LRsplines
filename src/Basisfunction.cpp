@@ -15,6 +15,21 @@ namespace LR {
 double Basisfunction::sameFuncTolerance = 1e-10;
 
 /************************************************************************************************************************//**
+ * \brief Default univariate constructor
+ * \param dim The dimension in the physical space, i.e. the number of components of the controlpoints
+ * \param order_u Polynomial order (degree + 1) in first parametric direction
+ * \param order_v Polynomial order (degree + 1) in second parametric direction
+ ***************************************************************************************************************************/
+Basisfunction::Basisfunction(int dim, int order_u) {
+	weight_       = 1;
+	id_           = -1;
+	hashCode_     = 0;
+	knots_.resize(1);
+	knots_[0].resize(order_u+1);
+	controlpoint_.resize(dim);
+}
+
+/************************************************************************************************************************//**
  * \brief Default bivariate constructor
  * \param dim The dimension in the physical space, i.e. the number of components of the controlpoints
  * \param order_u Polynomial order (degree + 1) in first parametric direction
@@ -27,6 +42,24 @@ Basisfunction::Basisfunction(int dim, int order_u, int order_v) {
 	knots_.resize(2);
 	knots_[0].resize(order_u+1);
 	knots_[1].resize(order_v+1);
+	controlpoint_.resize(dim);
+}
+
+/************************************************************************************************************************//**
+ * \brief Default trivariate constructor
+ * \param dim The dimension in the physical space, i.e. the number of components of the controlpoints
+ * \param order_u Polynomial order (degree + 1) in first parametric direction
+ * \param order_v Polynomial order (degree + 1) in second parametric direction
+ * \param order_w Polynomial order (degree + 1) in second parametric direction
+ ***************************************************************************************************************************/
+Basisfunction::Basisfunction(int dim, int order_u, int order_v, int order_w) {
+	weight_       = 1;
+	id_           = -1;
+	hashCode_     = 0;
+	knots_.resize(3);
+	knots_[0].resize(order_u+1);
+	knots_[1].resize(order_v+1);
+	knots_[2].resize(order_w+1);
 	controlpoint_.resize(dim);
 }
 
@@ -232,6 +265,22 @@ double Basisfunction::evaluate(double u, double v, bool u_from_right, bool v_fro
 #endif
 
 /************************************************************************************************************************//**
+ * \brief evaluates a univariate B-spline
+ * \param u Parametric evaluation point
+ * \param u_from_right Evaluate parametric coordinate in the limit from the right
+ * \return The B-spline evaluated at the chosen parametric coordinate
+ ***************************************************************************************************************************/
+double Basisfunction::evaluate(double u, bool u_from_right) const {
+	std::vector<double> results;
+	std::vector<double> parPt(1);
+	std::vector<bool>   fromRight(1);
+	parPt[0] = u;
+	fromRight[0] = u_from_right;
+	evaluate(results, parPt, 0, fromRight);
+	return results[0];
+}
+
+/************************************************************************************************************************//**
  * \brief evaluates a bivariate B-spline
  * \param u Parametric evaluation point
  * \param v Parametric evaluation point
@@ -363,12 +412,14 @@ void Basisfunction::evaluate(std::vector<double> &results, const std::vector<dou
 		exit(9230);
 	}
 
-	if(dim == 2) {    // bivariate splines
+	if(dim == 1) {    // univariate splines
+		results.resize(derivs+1);
+	} else if(dim == 2) {    // bivariate splines
 		results.resize((derivs+1)*(derivs+2)/2);               // (this is the triangular numbers)
 	} else if(dim == 3) { // trivariate splines
 		results.resize((derivs+1)*(derivs+2)*(2*derivs+6)/12); // (sum of triangular numbers)
 	} else {
-		std::cerr << "Error Basisfunction::evalate(...) for parametric dimension other than 2 or 3" << std::endl;
+		std::cerr << "Error Basisfunction::evalate(...) for parametric dimension other than 1,2 or 3" << std::endl;
 		exit(9231);
 	}
 	fill(results.begin(), results.end(), 0.0);
@@ -792,6 +843,52 @@ void Basisfunction::normalize(int pardir, double parmin, double parmax) {
 	for(uint i=0; i<knots_[pardir].size(); i++) {
 		knots_[pardir][i] = (knots_[pardir][i] - parmin) / (parmax-parmin) * (parmax-parmin) + parmin;
 	}
+}
+
+/************************************************************************************************************************//**
+ * \brief computes the integral of this basisfunction over a particular element.
+ ***************************************************************************************************************************/
+double Basisfunction::integral(Element* el) const {
+	/* This function is built on two observations:
+	 *   1. Johannessen K.A (https://doi.org/10.1016/j.cma.2016.04.030), Equation (5) section 2.1 (integration of splines)
+	 *      \int N_i,p,t = (t_{i+p+1}-t_i)/(p+1) \sum_j N_j,p+1,T, where T=(t0,t1,t2,..,tn,tn)
+	 *   2. Lyche T. and Mørken K.
+	 *      (https://www.uio.no/studier/emner/matnat/ifi/nedlagte-emner/INF-MAT5340/v06/undervisningsmateriale/kap2.pdf)
+	 *      Equation (2.27), exercise 2.6 (functions evaluated at knots)
+	 *      B(t_i | t_j,...,t_{j+1+p} = B(t_i | t_j,...,t_{i-1},t_{i+1},...,t_{j+1+p}
+	 */
+
+	// sanity check, is this element in the support of this basisfunction
+	bool has_support = false;
+	for(auto sup : support_)
+		if(el == sup)
+			has_support = true;
+	if(!has_support)
+		return 0.0;
+
+	// separable integral. We integrate one direction at a time and multiply results in the end
+	double result = 1;
+
+	for(uint i=0; i<knots_.size(); i++) {
+		// dummy input for creating univariate splines. We're only interested in their evaluation call
+		int dim = 1;
+		std::vector<double> cp(1);
+		std::vector<double> knots;
+		double t1 = el->getParmax(i);
+		double t0 = el->getParmin(i);
+		int p = getOrder(i);
+		for(auto k : knots_[i]) knots.push_back(k);
+		for(int j=0; j<p; j++)  knots.push_back(knots_[i].back());
+		double s2 = 0;
+		double s1 = 0;
+		for(int j=0; j<p; j++) {
+			Basisfunction b(knots.begin()+j,   cp.begin(), dim, p+1);
+			s2 += b.evaluate(t1, false);
+			s1 += b.evaluate(t0, true);
+		}
+		result *= (getParmax(i)-getParmin(i))/p * (s2-s1);
+	}
+	return result * weight_;
 }
 
 
