@@ -859,10 +859,7 @@ double Basisfunction::integral(Element* el) const {
 	 */
 
 	// sanity check, is this element in the support of this basisfunction
-	bool has_support = false;
-	for(auto sup : support_)
-		if(el == sup)
-			has_support = true;
+	bool has_support = std::find(support_.begin(), support_.end(), el) != support_.end();
 	if(!has_support)
 		return 0.0;
 
@@ -872,12 +869,11 @@ double Basisfunction::integral(Element* el) const {
 	for(uint i=0; i<knots_.size(); i++) {
 		// dummy input for creating univariate splines. We're only interested in their evaluation call
 		int dim = 1;
-		std::vector<double> cp(1);
-		std::vector<double> knots;
+		int p = getOrder(i);
 		double t1 = el->getParmax(i);
 		double t0 = el->getParmin(i);
-		int p = getOrder(i);
-		for(auto k : knots_[i]) knots.push_back(k);
+		std::vector<double> cp(1);
+		std::vector<double> knots(knots_[i]);
 		for(int j=0; j<p; j++)  knots.push_back(knots_[i].back());
 		double s2 = 0;
 		double s1 = 0;
