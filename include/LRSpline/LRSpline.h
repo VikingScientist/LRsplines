@@ -94,6 +94,8 @@ public:
 	Basisfunction* getBasisfunction(int iBasis) {
 		if(iBasis<0 || iBasis>=basis_.size())
 			return NULL;
+		if (!basisCache_.empty())
+			return basisCache_[iBasis];
 		HashSet_iterator<Basisfunction*> it=basis_.begin();
 		for(int i=0; i<iBasis; i++)
 			++it;
@@ -102,6 +104,8 @@ public:
 	const Basisfunction* getBasisfunction(int iBasis) const {
 		if(iBasis<0 || iBasis>=basis_.size())
 			return NULL;
+		if (!basisCache_.empty())
+			return basisCache_[iBasis];
 		HashSet_const_iterator<Basisfunction*> it=basis_.begin();
 		for(int i=0; i<iBasis; i++)
 			++it;
@@ -154,6 +158,7 @@ protected:
 	std::vector<Basisfunction*> basisVector; // only used in read/write functions
 	HashSet<Basisfunction*> basis_;
 	std::vector<Element*> element_;
+	mutable std::vector<Basisfunction*> basisCache_;
 
 	// refinement parameters
 	enum refinementStrategy refStrat_;
@@ -192,6 +197,8 @@ protected:
 		return result;
 	}
 
+	//! \brief Build a cache for O(1) access to basis functions by id.
+	void buildBasisCache() const;
 };
 
 

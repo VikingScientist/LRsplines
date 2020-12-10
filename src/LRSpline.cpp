@@ -98,5 +98,13 @@ void LRSpline::rebuildDimension(int dimvalue) {
 	dim_ = dimvalue;
 }
 
+void LRSpline::buildBasisCache() const
+{
+	basisCache_.resize(this->nBasisFunctions());
+	size_t idx = 0;
+	for (const auto& b : basis_)
+		basisCache_[idx++] = b;
+}
+
 
 } // end namespace LR

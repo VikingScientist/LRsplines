@@ -492,6 +492,7 @@ void LRSplineVolume::createElementCache() const {
 			  for(int k=k0; k<k1; k++)
 				  elementCache_[i][j][k] = e->getId();
 	}
+	this->LRSpline::buildBasisCache();
 	builtElementCache_ = true;
 }
 
