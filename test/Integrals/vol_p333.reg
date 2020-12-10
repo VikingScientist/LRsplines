@@ -1,0 +1,5 @@
+-vol -p1 3 -p2 3 -p3 3
+
+Total integral: 1 expected 1 ASSERTION PASSED
+Total integral: 0.125 expected 0.125 ASSERTION PASSED
+All assertions passed
