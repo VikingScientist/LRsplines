@@ -91,22 +91,8 @@ public:
 	// traditional get methods
 	Element* getElement(int i)                                     { return element_[i]; };
 	const Element* getElement(int i) const                         { return element_[i]; };
-	Basisfunction* getBasisfunction(int iBasis) {
-		if(iBasis<0 || iBasis>=basis_.size())
-			return NULL;
-		HashSet_iterator<Basisfunction*> it=basis_.begin();
-		for(int i=0; i<iBasis; i++)
-			++it;
-		return *it;
-	}
-	const Basisfunction* getBasisfunction(int iBasis) const {
-		if(iBasis<0 || iBasis>=basis_.size())
-			return NULL;
-		HashSet_const_iterator<Basisfunction*> it=basis_.begin();
-		for(int i=0; i<iBasis; i++)
-			++it;
-		return *it;
-	}
+	Basisfunction*       getBasisfunction(int iBasis) ;
+	const Basisfunction* getBasisfunction(int iBasis) const ;
 
 	// refinement functions
 	virtual void refineBasisFunction(int index) = 0;
@@ -155,6 +141,13 @@ protected:
 	HashSet<Basisfunction*> basis_;
 	std::vector<Element*> element_;
 
+	// caching stuff
+	mutable std::vector<Basisfunction*> basisCache_;
+	mutable bool builtBasisCache_ = false;
+	mutable bool builtElementCache_ = false;
+	virtual void createBasisCache() const;
+	virtual void createElementCache() const = 0;
+
 	// refinement parameters
 	enum refinementStrategy refStrat_;
 	int                     refKnotlineMult_;
@@ -164,7 +157,6 @@ protected:
 	bool                    doAspectRatioFix_;
 	double                  maxAspectRatio_;
 
-	// caching stuff
 	static std::vector<double> getUniformKnotVector(int n, int p) {
 		std::vector<double> result(n+p);
 		int k=0;

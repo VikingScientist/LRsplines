@@ -224,8 +224,6 @@ private:
 	mutable std::vector<std::vector<int> > elementCache_;
 	mutable std::vector<double>            glob_knot_u_;
 	mutable std::vector<double>            glob_knot_v_;
-	mutable bool                           builtElementCache_;
-
 	void createElementCache() const;
 
 	// initializeation methods (called from constructors)
