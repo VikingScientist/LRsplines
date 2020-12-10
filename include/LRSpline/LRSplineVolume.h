@@ -169,8 +169,6 @@ private:
 	mutable std::vector<double>            glob_knot_u_;
 	mutable std::vector<double>            glob_knot_v_;
 	mutable std::vector<double>            glob_knot_w_;
-	mutable bool                           builtElementCache_;
-
 	void createElementCache() const;
 
 	std::vector<MeshRectangle*> meshrect_;

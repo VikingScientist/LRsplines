@@ -175,6 +175,7 @@ void LRSplineVolume::initMeta() {
 	refKnotlineMult_      = 1;
 	symmetry_             = 1;
 	builtElementCache_    = false;
+	builtBasisCache_      = false;
 }
 
 
@@ -1330,6 +1331,7 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 
 	// clear cache since mesh is now changed
 	builtElementCache_ = false;
+	builtBasisCache_   = false;
 
 	return NULL;
 }

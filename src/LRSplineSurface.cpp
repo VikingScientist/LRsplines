@@ -182,6 +182,7 @@ void LRSplineSurface::initMeta() {
 	selected_basis_green  = 0.2;
 	selected_basis_blue   = 0.05;
 	builtElementCache_    = false;
+	builtBasisCache_      = false;
 }
 
 /************************************************************************************************************************//**
@@ -581,8 +582,9 @@ void LRSplineSurface::computeBasis (double param_u,
 
 void LRSplineSurface::generateIDs() const
 {
-  this->LRSpline::generateIDs();
-  createElementCache();
+	this->LRSpline::generateIDs();
+	createElementCache();
+	createBasisCache();
 }
 
 /************************************************************************************************************************//**
@@ -1530,6 +1532,10 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 			basis_.insert(b);
 	}
 	} // end profiler (step 2)
+
+	// reset all caches
+	builtElementCache_ = false;
+	builtBasisCache_   = false;
 
 	return newline;
 }

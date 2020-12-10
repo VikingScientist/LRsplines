@@ -92,6 +92,23 @@ bool LRSpline::setControlPoints(const std::vector<double>& controlpoints) {
 	return true;
 }
 
+Basisfunction* LRSpline::getBasisfunction(int iBasis) {
+	if(!builtBasisCache_)
+		createBasisCache();
+	return basisCache_[iBasis];
+}
+const Basisfunction* LRSpline::getBasisfunction(int iBasis) const {
+	if(!builtBasisCache_)
+		createBasisCache();
+	return basisCache_[iBasis];
+}
+
+void LRSpline::createBasisCache() const {
+	basisCache_.clear();
+	for(auto b : basis_) basisCache_.push_back(b);
+	builtBasisCache_ = true;
+}
+
 void LRSpline::rebuildDimension(int dimvalue) {
 	for(Basisfunction *b : basis_)
 		b->setDimension(dimvalue);
