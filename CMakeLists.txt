@@ -175,6 +175,9 @@ TARGET_LINK_LIBRARIES(TopologyRefinement LRSpline ${DEPLIBS})
 ADD_EXECUTABLE(TestLevelCounting ${PROJECT_SOURCE_DIR}/Apps/TestLevelCounting.cpp)
 TARGET_LINK_LIBRARIES(TestLevelCounting LRSpline ${DEPLIBS})
 
+ADD_EXECUTABLE(TestMaxTjoints ${PROJECT_SOURCE_DIR}/Apps/TestMaxTjoints.cpp)
+TARGET_LINK_LIBRARIES(TestMaxTjoints LRSpline ${DEPLIBS})
+
 IF(HAS_BOOST)
   ADD_EXECUTABLE(LinearIndep ${PROJECT_SOURCE_DIR}/Apps/LinearIndep.cpp)
   TARGET_LINK_LIBRARIES(LinearIndep LRSpline ${DEPLIBS})
