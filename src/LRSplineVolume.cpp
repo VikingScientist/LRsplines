@@ -1122,6 +1122,46 @@ bool LRSplineVolume::matchParametricEdge(parameterEdge edge, LRSplineVolume *oth
 }
 
 
+void LRSplineVolume::aPosterioriFixes()  {
+	int nFunc;
+	do {
+		nFunc = basis_.size();
+//		if(doCloseGaps_)
+//			this->closeGaps(newLines);
+		if(maxTjoints_ > 0)
+			this->enforceMaxTjoints();
+//		if(doAspectRatioFix_)
+//			this->enforceMaxAspectRatio(newLines);
+	} while(nFunc != basis_.size());
+}
+
+
+void LRSplineVolume::enforceMaxTjoints() {
+	bool someFix = true;
+	while(someFix) {
+		std::vector<MeshRectangle*> newRefinement;
+		someFix = false;
+		for(Element* el : element_) {
+			for(Element* neigh : el->neighbours()) {
+				if(neigh->getLevel(0) > el->getLevel(0)+1) {
+					for(int i=0; i<3; i++) {
+						double start[3] = {el->umin(), el->vmin(), el->wmin()};
+						double stop[3]  = {el->umax(), el->vmax(), el->wmax()};
+						start[i] = (el->getParmin(i)+el->getParmax(i)) / 2.0;
+						stop[i]  = (el->getParmin(i)+el->getParmax(i)) / 2.0;
+						newRefinement.push_back(new MeshRectangle(start,stop, refKnotlineMult_));
+						someFix = true;
+					}
+					break;
+				}
+			}
+		}
+		for(auto m : newRefinement) this->insert_line(m);
+	}
+}
+
+
+
 /************************************************************************************************************************//**
  * \brief Enforces all elements to be of equal size in all 3 directions
  * \return true if some elements were bisected

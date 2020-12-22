@@ -3,6 +3,7 @@
 #include "LRSpline/Meshline.h"
 #include "LRSpline/Basisfunction.h"
 #include <stdlib.h>
+#include <set>
 
 typedef unsigned int uint;
 
@@ -122,6 +123,44 @@ Element* Element::split(int splitDim, double par_value) {
 		}
 	}
 	return newElement;
+}
+
+/************************************************************************************************************************//**
+ * \brief returns true if the element shares a side with the current element (corners does NOT count, lines in 3D does NOT count)
+ ***************************************************************************************************************************/
+bool Element::touches(const Element* el) const {
+	for(uint dim=0; dim<min.size(); dim++) {
+		if(el->getParmin(dim) == this->getParmax(dim) || el->getParmax(dim) == this->getParmin(dim)) {
+			bool overlaps = true;
+			for(uint i=0; i<dim; i++) {
+				if(i==dim) continue;
+				overlaps &= el->getParmax(i) > this->getParmin(i);
+				overlaps &= el->getParmin(i) < this->getParmax(i);
+			}
+			if(overlaps) return true;
+		}
+	}
+	return false;
+}
+
+/************************************************************************************************************************//**
+ * \brief returns all Elements which share a side (line in 2D, surface in 3D) with this element
+ ***************************************************************************************************************************/
+std::vector<Element*> Element::neighbours() {
+	std::vector<Element*> result;
+
+	// look at the (element-support) of all functions living on this element
+	// This is the "extended support" of this element, and the true element
+	// neigbours are part of this set
+	std::set<Element*> potentialNeighbours;
+	for(Basisfunction* b : this->support())
+		for(Element* e : b->support())
+			potentialNeighbours.insert(e);
+	for(Element* el : potentialNeighbours)
+		if(el->touches(this))
+			result.push_back(el);
+
+	return result;
 }
 
 /************************************************************************************************************************//**

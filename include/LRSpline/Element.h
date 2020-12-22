@@ -89,6 +89,10 @@ public:
 	//! get the level (number of refinements) of this element (counting different in all directions)
 	int getLevel(int direction) const { return level_[direction]; }
 
+	// topological operators
+	bool touches(const Element* el) const ;
+	std::vector<Element*> neighbours() ;
+
 	void updateBasisPointers(std::vector<Basisfunction*> &basis) ;
 
 	virtual void read(std::istream &is);
