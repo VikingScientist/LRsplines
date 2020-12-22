@@ -36,7 +36,8 @@ public:
 		std::copy(lowerLeft,  lowerLeft  + dim, min.begin());
 		std::copy(upperRight, upperRight + dim, max.begin());
 		id_           = -1;
-		overloadCount = 0;
+		overloadCount_= 0;
+		level_        = std::vector<int>(dim, 0);
 	}
 	Element(std::vector<double> &lowerLeft, std::vector<double> &upperRight);
 	void removeSupportFunction(Basisfunction *f);
@@ -79,9 +80,14 @@ public:
 	void setVmax(double v)                { max[1] = v; };
 
 	bool isOverloaded() const;
-	void resetOverloadCount()    { overloadCount = 0;      }
-	int incrementOverloadCount() { return overloadCount++; }
-	int getOverloadCount() const { return overloadCount;   }
+	void resetOverloadCount()    { overloadCount_ = 0;      }
+	int incrementOverloadCount() { return overloadCount_++; }
+	int getOverloadCount() const { return overloadCount_;   }
+
+	//! set the level (number of refinements) of this element (counting different in all directions)
+	void setLevel(int direction, int new_lvl) { if(direction < min.size()) level_[direction] = new_lvl; }
+	//! get the level (number of refinements) of this element (counting different in all directions)
+	int getLevel(int direction) const { return level_[direction]; }
 
 	void updateBasisPointers(std::vector<Basisfunction*> &basis) ;
 
@@ -96,7 +102,10 @@ private:
 	HashSet<Basisfunction*> support_;
 	std::vector<int> support_ids_; // temporary storage for the read() method only
 
-	int overloadCount ;
+	int overloadCount_ ;
+	// number of refinements for this particular element (i.e. hierarchical B-spline refinement)
+	// This is counting separately in each parametric direction
+	std::vector<int> level_ ;
 
 };
 
