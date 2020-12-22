@@ -12,8 +12,9 @@ namespace LR {
  * \brief Default constructor
  ***************************************************************************************************************************/
 Element::Element() {
-	id_      = -1;
-	overloadCount = 0;
+	id_            = -1;
+	overloadCount_ = 0;
+	level_         = std::vector<int>(0);
 }
 
 /************************************************************************************************************************//**
@@ -22,7 +23,8 @@ Element::Element() {
  ***************************************************************************************************************************/
 Element::Element(int dim) {
 	id_           = -1;
-	overloadCount = 0;
+	overloadCount_= 0;
+	level_        = std::vector<int>(dim,0);
 	min.resize(dim);
 	max.resize(dim);
 }
@@ -43,7 +45,8 @@ Element::Element(double start_u, double start_v, double stop_u, double stop_v) {
 	max[0] = stop_u ;
 	max[1] = stop_v ;
 	id_    = -1;
-	overloadCount = 0;
+	overloadCount_ = 0;
+	level_        = std::vector<int>(2,0);
 }
 
 /************************************************************************************************************************//**
@@ -71,6 +74,7 @@ Element* Element::copy() {
 	returnvalue->id_          = this->id_;
 	returnvalue->min          = this->min;    // it seems that the default vector operator= thing takes a deep copy
 	returnvalue->max          = this->max;
+	returnvalue->level_       = this->level_;
 
 	for(Basisfunction* b : support_)
 		returnvalue->support_ids_.push_back(b->getId());
@@ -97,6 +101,9 @@ Element* Element::split(int splitDim, double par_value) {
 	max[splitDim]    = par_value; // old element should stop  at par_value
 
 	newElement = new Element(min.size(), newMin.begin(), newMax.begin());
+	level_[splitDim]++;
+	for(uint dim=0; dim<level_.size(); dim++)
+		newElement->setLevel(dim, level_[dim]);
 
 	for(Basisfunction *b : support_)
 		if(b->addSupport(newElement)) // tests for overlapping as well
@@ -156,6 +163,7 @@ void Element::read(std::istream &is) {
 	ASSERT_NEXT_CHAR(':');
 	min.resize(dim);
 	max.resize(dim);
+	level_.resize(dim);
 
 	ASSERT_NEXT_CHAR('(');
 	is >> min[0];
@@ -187,6 +195,19 @@ void Element::read(std::istream &is) {
 		nextChar = is.peek();
 	}
 	ASSERT_NEXT_CHAR('}');
+	nextChar = is.peek();
+	if(nextChar == 'l') { // after v.1.6.0 (level specified)
+		ASSERT_NEXT_CHAR('l');
+		ASSERT_NEXT_CHAR('v');
+		ASSERT_NEXT_CHAR('l');
+		is >> level_[0];
+		for(int i=1; i<dim; i++) {
+			ASSERT_NEXT_CHAR(',');
+			is >> level_[i];
+		}
+	} else { // else level undefined, default to all 0's
+		level_ = std::vector<int>(dim,0);
+	}
 }
 #undef ASSERT_NEXT_CHAR
 
@@ -210,7 +231,9 @@ void Element::write(std::ostream &os) const {
 		os << b->getId();
 		isFirst = false;
 	}
-	os << "}";
+	os << "} lvl " << level_[0];
+	for(uint i=1; i<level_.size(); i++)
+		os << ", " << level_[i] ;
 }
 
 /************************************************************************************************************************//**
