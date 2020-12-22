@@ -5,6 +5,7 @@
 #include <fstream>
 #include <cstdlib>
 #include "LRSpline/LRSplineSurface.h"
+#include "LRSpline/LRSplineVolume.h"
 #include "LRSpline/Profiler.h"
 #include "LRSpline/Element.h"
 #include "LRSpline/Meshline.h"
@@ -92,7 +93,9 @@ int main(int argc, char **argv) {
 		exit(3);
 	}
 
-	LRSplineSurface *lr;
+	LRSpline        *lr;
+	LRSplineSurface *lrs;
+	LRSplineVolume  *lrv;
 
 	ifstream inputfile;
 	inputfile.open(inputFileName);
@@ -100,11 +103,20 @@ int main(int argc, char **argv) {
 		cerr << "Error: could not open file " << inputFileName << endl;
 		exit(3);
 	}
-	lr = new LRSplineSurface();
-	inputfile >> *lr;
+
+	char buffer[512];
+	inputfile.getline(buffer, 512); // peek the first line to figure out if it's an LRSpline or a GoTools spline
+	inputfile.seekg(ios_base::beg);
+	if(strncmp(buffer, "# LRSPLINE VOLUME",17)==0) {
+		lr = lrv = new LRSplineVolume();
+		inputfile >> *lrv;
+	} else {
+		lr = lrs = new LRSplineSurface();
+		inputfile >> *lrs;
+	}
 
 	if(isInteger)
-		lr->makeIntegerKnots();
+		lrs->makeIntegerKnots();
 
 	bool isLinearIndep = true;
 	if(refineFileName != NULL) {
@@ -132,20 +144,20 @@ int main(int argc, char **argv) {
 
 		/* setting up for refinement */
 		if(maxTjoints > 0)
-			lr->setMaxTjoints(maxTjoints);
+			lrs->setMaxTjoints(maxTjoints);
 		if(maxAspectRatio > 0)
-			lr->setMaxAspectRatio(maxAspectRatio);
-		lr->setCloseGaps(closeGaps);
+			lrs->setMaxAspectRatio(maxAspectRatio);
+		lrs->setCloseGaps(closeGaps);
 
 		cout << "calling LRSplineSurface::refine(...)\n";
 
 		LRSplineSurface *lr_original = NULL;
 		if(one_by_one)
-			lr_original = lr->copy();
+			lr_original = lrs->copy();
 
 		cout << setprecision(16);
 		vector<Meshline*> *newLines = new vector<Meshline*>();
-		// lr->refine(sorted_list, beta, mult, strat, symmetry, newLines);
+		// lrs->refine(sorted_list, beta, mult, strat, symmetry, newLines);
 		cout << "Number of new mesh lines: " << newLines->size() << endl;
 		for(unsigned int i=0; i<newLines->size(); i++) {
 			newLines->at(i)->writeMore(cout);
@@ -205,7 +217,7 @@ int main(int argc, char **argv) {
 #endif
 				if( ! isLinearIndep) {
 					printf("Nelements = %5d Nbasis = %5d \n", lr_original->nElements(), lr_original->nBasisFunctions());
-					lr = lr_original;
+					lrs = lr_original;
 					isLinearIndep = false;
 					break;
 				}
@@ -214,40 +226,44 @@ int main(int argc, char **argv) {
 	}
 
 	if(!one_by_one) {
-		if(floatingPointCheck)
-			isLinearIndep = lr->isLinearIndepByFloatingPointMappingMatrix(verbose);
-		else if(overload)
+		if(floatingPointCheck) {
+			cout << "Testing for independence by verifying full-rank of mapping matrix to tensor mesh (using floating point numbers)" << endl;
+			isLinearIndep = lrs->isLinearIndepByFloatingPointMappingMatrix(verbose);
+		} else if(overload) {
+			cout << "Testing for independence by overloaded elements" << endl;
 			isLinearIndep = lr->isLinearIndepByOverloading(verbose);
 #ifdef HAS_BOOST
-		else
+		} else {
+			cout << "Testing for independence by verifying full-rank of mapping matrix to tensor mesh (exact edition)" << endl;
 			isLinearIndep = lr->isLinearIndepByMappingMatrix(verbose);
 #endif
+		}
 	}
 
 	if(dumpFile) {
 		ofstream meshfile;
 		meshfile.open("mesh.eps");
-		lr->writePostscriptMesh(meshfile);
+		lrs->writePostscriptMesh(meshfile);
 		meshfile.close();
 
 		ofstream functionfile;
 		functionfile.open("functions.eps");
-		lr->writePostscriptFunctionSpace(functionfile);
+		lrs->writePostscriptFunctionSpace(functionfile);
 		functionfile.close();
 
 		ofstream domainfile;
 		domainfile.open("domain.eps");
-		lr->writePostscriptElements(domainfile, 10, 10);
+		lrs->writePostscriptElements(domainfile, 10, 10);
 		domainfile.close();
 
 		ofstream controlmesh;
 		controlmesh.open("controlmesh.eps");
-		lr->writePostscriptMeshWithControlPoints(controlmesh, 10, 10);
+		lrs->writePostscriptMeshWithControlPoints(controlmesh, 10, 10);
 		controlmesh.close();
 
 		ofstream lrfile;
 		lrfile.open("lrspline.txt");
-		lrfile << *lr << endl;
+		lrfile << *lrs << endl;
 		lrfile.close();
 
 		cout << endl;
@@ -262,7 +278,7 @@ int main(int argc, char **argv) {
 #ifdef HAS_BOOST
 		if(dumpNullSpace) {
 			vector<vector<boost::rational<long long> > > nullspace;
-			lr->getNullSpace(nullspace);
+			lrs->getNullSpace(nullspace);
 			std::cout << "Nullspace: " << nullspace.size() << " x " << nullspace[0].size() << std::endl;
 			cout << "Number of null vectors: " << nullspace.size() << endl;
 			cout << "Vector sizes:           " << nullspace[0].size() << endl;

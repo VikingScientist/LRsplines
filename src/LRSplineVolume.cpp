@@ -1591,6 +1591,29 @@ bool LRSplineVolume::isLinearIndepByOverloading(bool verbose) {
 
 		iterationCount++;
 	} while((uint) lastOverloadCount != overloaded.size());
+	if(verbose && overloaded.size() > 0) {
+		std::cout << "The following ( " << overloaded.size() << ") basis functions could not be ruled out from linear dependence:" << std::endl;
+		double min[3] = { 1e99,  1e99,  1e99};
+		double max[3] = {-1e99, -1e99, -1e99};
+		std::set<int> domain;
+		for(auto b : overloaded) {
+			std::cout << *b << std::endl;
+			for(auto el : b->support()) {
+				domain.insert(el->getId());
+			}
+			for(int i=0; i<3; i++) {
+				min[i] = std::min(min[i], b->getParmin(i));
+				max[i] = std::max(max[i], b->getParmax(i));
+			}
+		}
+		std::cout << "These have support on the following (" << domain.size() << ") elements" << std::endl;
+		for(auto iel : domain) {
+			std::cout << *element_[iel] << std::endl;
+		}
+		std::cout << "These are contained in the bounding box:" << std::endl;
+		std::cout << "  Lower Left:  " << min[0] << ", " << min[1] << ", " << min[2] << std::endl;
+		std::cout << "  Upper Right: " << max[0] << ", " << max[1] << ", " << max[2] << std::endl;
+	}
 
 	return overloaded.size() == 0;
 }
