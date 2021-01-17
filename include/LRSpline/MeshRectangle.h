@@ -44,7 +44,6 @@ public:
 	bool contains(const MeshRectangle *rect) const;
 	bool splits(Basisfunction *basis) const;
 	bool splits(Element *el) const;
-	int makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, int meshIndex, bool allowSplits) ;
 
 	int    multiplicity()   const { return multiplicity_; };
 	int    constDirection() const;
@@ -56,6 +55,7 @@ public:
 	virtual void write(std::ostream &os) const;
 
 	static bool addUniqueRect(std::vector<MeshRectangle*> &rects, MeshRectangle* newRect);
+	static int makeOverlappingRects(MeshRectangle* first, MeshRectangle* second, MeshRectangle **new1, MeshRectangle **new2);
 
 // private:
 	std::vector<double> start_;
