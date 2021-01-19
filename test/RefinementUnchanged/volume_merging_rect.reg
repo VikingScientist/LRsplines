@@ -1,0 +1,9 @@
+-p1 3 -p2 3 -p3 3 -n1 10 -n2 4 -n3 8 volume_merging_rect.inp
+
+    all assertions passed
+
+Key LR-spline information:
+  number of basis functions: 320
+  number of mesh lines     : 20
+  number of elements       : 99
+
