@@ -848,7 +848,7 @@ void Basisfunction::normalize(int pardir, double parmin, double parmax) {
 /************************************************************************************************************************//**
  * \brief computes the integral of this basisfunction over a particular element.
  ***************************************************************************************************************************/
-double Basisfunction::integral(Element* el) const {
+double Basisfunction::integral(const Element* el) const {
 	/* This function is built on two observations:
 	 *   1. Johannessen K.A (https://doi.org/10.1016/j.cma.2016.04.030), Equation (5) section 2.1 (integration of splines)
 	 *      \int N_i,p,t = (t_{i+p+1}-t_i)/(p+1) \sum_j N_j,p+1,T, where T=(t0,t1,t2,..,tn,tn)

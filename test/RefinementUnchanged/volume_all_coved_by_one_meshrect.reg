@@ -1,0 +1,9 @@
+-p1 3 -p2 3 -p3 3 -n1 10 -n2 4 -n3 8 volume_all_coved_by_one_meshrect.inp
+
+
+    all assertions passed
+
+Key LR-spline information:
+  number of mesh lines     : 20
+  number of elements       : 126
+

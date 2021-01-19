@@ -1122,6 +1122,46 @@ bool LRSplineVolume::matchParametricEdge(parameterEdge edge, LRSplineVolume *oth
 }
 
 
+void LRSplineVolume::aPosterioriFixes()  {
+	int nFunc;
+	do {
+		nFunc = basis_.size();
+//		if(doCloseGaps_)
+//			this->closeGaps(newLines);
+		if(maxTjoints_ > 0)
+			this->enforceMaxTjoints();
+//		if(doAspectRatioFix_)
+//			this->enforceMaxAspectRatio(newLines);
+	} while(nFunc != basis_.size());
+}
+
+
+void LRSplineVolume::enforceMaxTjoints() {
+	bool someFix = true;
+	while(someFix) {
+		std::vector<MeshRectangle*> newRefinement;
+		someFix = false;
+		for(Element* el : element_) {
+			for(Element* neigh : el->neighbours()) {
+				if(neigh->getLevel(0) > el->getLevel(0)+1) {
+					for(int i=0; i<3; i++) {
+						double start[3] = {el->umin(), el->vmin(), el->wmin()};
+						double stop[3]  = {el->umax(), el->vmax(), el->wmax()};
+						start[i] = (el->getParmin(i)+el->getParmax(i)) / 2.0;
+						stop[i]  = (el->getParmin(i)+el->getParmax(i)) / 2.0;
+						newRefinement.push_back(new MeshRectangle(start,stop, refKnotlineMult_));
+						someFix = true;
+					}
+					break;
+				}
+			}
+		}
+		for(auto m : newRefinement) this->insert_line(m);
+	}
+}
+
+
+
 /************************************************************************************************************************//**
  * \brief Enforces all elements to be of equal size in all 3 directions
  * \return true if some elements were bisected
@@ -1187,6 +1227,7 @@ bool LRSplineVolume::enforceIsotropic() {
 }
 
 MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
+	// Error test input
 	if(newRect->start_[0] < start_[0] ||
 	   newRect->start_[1] < start_[1] ||
 	   newRect->start_[2] < start_[2] ||
@@ -1210,67 +1251,118 @@ MeshRectangle* LRSplineVolume::insert_line(MeshRectangle *newRect) {
 #ifdef TIME_LRSPLINE
 	PROFILE("meshrectangle verification");
 #endif
-	for(uint i=0; i<meshrect_.size(); i++) {
-		for(uint j=0; j<newGuys.size(); j++) {
-			int status = meshrect_[i]->makeOverlappingRects(newGuys, j, true);
-			if(status == 1) { // deleted j, i kept unchanged
-				j--;
-				continue;
-			} else if(status == 2) { // j kept unchanged, delete i
-				delete meshrect_[i];
-				meshrect_.erase(meshrect_.begin() + i);
-				i--;
-				break;
-			} else if(status == 3) { // j kept unchanged, i added to newGuys
-				meshrect_.erase(meshrect_.begin() + i);
-				i--;
-				break;
-			} else if(status == 4) { // deleted j, i added to newGuys
-				meshrect_.erase(meshrect_.begin() + i);
-				i--;
-				j--;
-				break;
-			} else if(status == 5) { // deleted j, i duplicate in newGuys
-				delete meshrect_[i];
-				meshrect_.erase(meshrect_.begin() + i);
-				i--;
-				j--;
-				break;
-			} else if(status == 6) { // j kept unchanged, i duplicate in newGuys
-				delete meshrect_[i];
-				meshrect_.erase(meshrect_.begin() + i);
-				i--;
-				break;
-			}
-		}
-	}
 	bool change = true;
+	bool did_del_j = false;
+	MeshRectangle *new1, *new2;
 	while(change) {
 		change = false;
-		for(uint i=0; i<newGuys.size() && !change ; i++) {
-			for(uint j=i+1; j<newGuys.size() && j>i; j++) {
-				int status = newGuys[i]->makeOverlappingRects(newGuys, j, false);
-				if(status == 1) { //deleted j, i kept unchanged
-					;
-				} else if(status == 2) { // j kept unchanged, deleted i
-					delete newGuys[i];
-					newGuys.erase(newGuys.begin() + i);
-				} else if(status == 3) { // j kept unchanged, i added to newGuys
-					newGuys.erase(newGuys.begin() + i);
-				} else if(status == 4) { // deleted j, i added to newGuys
-					newGuys.erase(newGuys.begin() + i);
-				} else if(status == 5) { // deleted j, i duplicate in newGuys
-					;
-				} else if(status == 6) { // j kept unchanged, i duplicate in newGuys
-					newGuys.erase(newGuys.begin() + i);
-				}
-				if(status > 0) {
+		for(uint j=0; !change && j<newGuys.size(); j++) {
+			for(uint i=0; i<meshrect_.size(); i++) {
+				int status = MeshRectangle::makeOverlappingRects(meshrect_[i], newGuys[j], &new1, &new2);
+				if(status == 1) { // delete j, i kept unchanged
+					delete newGuys[j];
+					newGuys.erase(newGuys.begin() + j);
+					j--;
+					did_del_j = true;
+					break;
+				} else if(status == 2) { // j kept unchanged (continue evaluation), request delete of i
+					delete meshrect_[i];
+					meshrect_.erase(meshrect_.begin() + i);
+					i--;
+					continue;
+				} else if(status == 3) { // j changed, delete i
+					meshrect_.erase(meshrect_.begin() + i);
+					i--;
 					change = true;
 					break;
+				} else if(status == 4) { // j change, i unchanged
+					change = true;
+					break;
+				} else if(status == 5) { // j unchanged, i changed
+					newGuys.push_back(meshrect_[i]);
+					meshrect_.erase(meshrect_.begin() + i);
+					i--;
+					continue;
+				} else if(status == 6) { // j unchanged, i unchanged, new1 added
+					bool exists = false;
+					for(auto m : meshrect_)
+						if(m->equals(new1) || m->contains(new1))
+							exists = true;
+					if(exists || !MeshRectangle::addUniqueRect(newGuys, new1))
+						delete new1;
+					else
+						change = true;
+				} else if(status == 7) { // i,j unchanged, added both new1 and new2
+					bool exists = false;
+					for(auto m : meshrect_)
+						if(m->equals(new1) || m->contains(new1))
+							exists = true;
+					if(exists || !MeshRectangle::addUniqueRect(newGuys, new1))
+						delete new1;
+					else
+						change = true;
+					exists = false;
+					for(auto m : meshrect_)
+						if(m->equals(new2) || m->contains(new2))
+							exists = true;
+					if(exists || !MeshRectangle::addUniqueRect(newGuys, new2))
+						delete new2;
+					else
+						change = true;
+				}
+			}
+			if(change) break;
+			if(did_del_j) continue;
+
+			for(uint i=j+1; !change && i<newGuys.size(); i++) {
+				int status = MeshRectangle::makeOverlappingRects(newGuys[i], newGuys[j], &new1, &new2);
+				if(status == 1) {        // j delete, i unchanged
+					newGuys.erase(newGuys.begin() + j);
+					j--;
+					change = true;
+				} else if(status == 2) { // j unchanged, i delete
+					newGuys.erase(newGuys.begin() + i);
+					i--;
+				} else if(status == 3) { // j changed, delete i
+					newGuys.erase(newGuys.begin() + i);
+					i--;
+					change = true;
+				} else if(status == 4) { // j changed, i unchanged
+					change = true;
+				} else if(status == 5) { // j unchanged, i changed
+					change = true;
+				} else if(status == 6) { // j unchanged, i unchanged, new1 added
+					bool exists = false;
+					for(auto m : meshrect_)
+						if(m->equals(new1) || m->contains(new1))
+							exists = true;
+					if(exists || !MeshRectangle::addUniqueRect(newGuys, new1))
+						delete new1;
+					else
+						change = true;
+				} else if(status == 7) { // i,j unchanged, added both new1 and new2
+					bool exists1 = false;
+					bool exists2 = false;
+					bool did_add_func = false;
+					for(auto m : meshrect_) {
+						if(m->equals(new1) || m->contains(new1))
+							exists1 = true;
+						if(m->equals(new2) || m->contains(new2))
+							exists2 = true;
+					}
+					if(exists1 || !MeshRectangle::addUniqueRect(newGuys, new1))
+						delete new1;
+					else
+						change = true;
+					if(exists2 || !MeshRectangle::addUniqueRect(newGuys, new2))
+						delete new2;
+					else
+						change = true;
 				}
 			}
 		}
 	}
+
 	} // end meshrectangle verification timer
 
 	HashSet<Basisfunction*> newFuncStp1, newFuncStp2;
@@ -1551,6 +1643,29 @@ bool LRSplineVolume::isLinearIndepByOverloading(bool verbose) {
 
 		iterationCount++;
 	} while((uint) lastOverloadCount != overloaded.size());
+	if(verbose && overloaded.size() > 0) {
+		std::cout << "The following ( " << overloaded.size() << ") basis functions could not be ruled out from linear dependence:" << std::endl;
+		double min[3] = { 1e99,  1e99,  1e99};
+		double max[3] = {-1e99, -1e99, -1e99};
+		std::set<int> domain;
+		for(auto b : overloaded) {
+			std::cout << *b << std::endl;
+			for(auto el : b->support()) {
+				domain.insert(el->getId());
+			}
+			for(int i=0; i<3; i++) {
+				min[i] = std::min(min[i], b->getParmin(i));
+				max[i] = std::max(max[i], b->getParmax(i));
+			}
+		}
+		std::cout << "These have support on the following (" << domain.size() << ") elements" << std::endl;
+		for(auto iel : domain) {
+			std::cout << *element_[iel] << std::endl;
+		}
+		std::cout << "These are contained in the bounding box:" << std::endl;
+		std::cout << "  Lower Left:  " << min[0] << ", " << min[1] << ", " << min[2] << std::endl;
+		std::cout << "  Upper Right: " << max[0] << ", " << max[1] << ", " << max[2] << std::endl;
+	}
 
 	return overloaded.size() == 0;
 }
