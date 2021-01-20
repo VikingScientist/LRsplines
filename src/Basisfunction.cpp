@@ -696,6 +696,21 @@ bool Basisfunction::operator==(const Basisfunction &other) const {
 }
 
 /************************************************************************************************************************//**
+ * \brief Test for B-spline ordering according to geometric factor instead of hash function
+ * \param other The other B-spline to check against
+ * \returns True if this.knot[i][j] < other.knot[i][j] for the smallest possible (i,j) whith different values
+ ***************************************************************************************************************************/
+bool Basisfunction::operator<(const Basisfunction &other) const {
+	for(uint i=0; i<knots_.size(); i++)
+		for(uint j=0; j<knots_[i].size(); j++)
+			if(     knots_[i][j] > other[i][j]) return false;
+			else if(knots_[i][j] < other[i][j]) return true;
+			// else continue;
+
+	return false; // all knot vectors identical
+}
+
+/************************************************************************************************************************//**
  * \brief Test for B-spline equality
  * \param other The other B-spline to check against
  * \returns True if the knot vectors are identical (up to a tolerance)
@@ -848,7 +863,7 @@ void Basisfunction::normalize(int pardir, double parmin, double parmax) {
 /************************************************************************************************************************//**
  * \brief computes the integral of this basisfunction over a particular element.
  ***************************************************************************************************************************/
-double Basisfunction::integral(Element* el) const {
+double Basisfunction::integral(const Element* el) const {
 	/* This function is built on two observations:
 	 *   1. Johannessen K.A (https://doi.org/10.1016/j.cma.2016.04.030), Equation (5) section 2.1 (integration of splines)
 	 *      \int N_i,p,t = (t_{i+p+1}-t_i)/(p+1) \sum_j N_j,p+1,T, where T=(t0,t1,t2,..,tn,tn)
