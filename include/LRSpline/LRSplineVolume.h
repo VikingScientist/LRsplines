@@ -268,7 +268,7 @@ private:
 					double wmax = meshrect_[unique_v + unique_u + k+1]->stop_[2];
 					double min[]   = {umin,    vmin,    wmin};
 					double max[]   = {umax,    vmax,    wmax};
-					double order[] = {order_u, order_v, order_w};
+					int    order[] = {order_u, order_v, order_w};
 					Element *elm = new Element(3, min, max, order);
 					element_.push_back(elm);
 					elmRows[k][j].push_back(elm);

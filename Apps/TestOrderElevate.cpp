@@ -9,7 +9,6 @@
 #include "LRSpline/Profiler.h"
 #include "LRSpline/Element.h"
 
-using namespace Go;
 using namespace LR;
 using namespace std;
 

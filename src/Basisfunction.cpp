@@ -115,7 +115,7 @@ void Basisfunction::order_elevate(HashSet<Basisfunction*> &results, int directio
 	int p = getOrder(d) + 1;
 	bool rightEdge = knots_[d][1] == knots_[d].back();
 	std::vector<double> newKnots;
-	for(int i=0; i<knots_[d].size(); i++) {
+	for(uint i=0; i<knots_[d].size(); i++) {
 		newKnots.push_back(knots_[d][i]); // every new knot added twice
 		newKnots.push_back(knots_[d][i]);
 		while(i<knots_[d].size()-1 && knots_[d][i] == knots_[d][i+1] ) {
@@ -162,7 +162,7 @@ void Basisfunction::order_elevate(HashSet<Basisfunction*> &results, int directio
 	// create all the resulting functions
 	std::vector<const double*> knots(3);
 	int neworder[3];
-	for(int j=0; j<knots_.size(); j++) {
+	for(uint j=0; j<knots_.size(); j++) {
 		knots[j] = &knots_[j][0];
 		neworder[j] = getOrder(j);
 	}
@@ -879,7 +879,7 @@ void Basisfunction::read(std::istream &is) {
  ***************************************************************************************************************************/
 void Basisfunction::write(std::ostream &os) const {
 	os << id_ << ": ";
-    for(int i=0; i<knots_.size(); i++)
+    for(uint i=0; i<knots_.size(); i++)
         os << getOrder(i) << " ";
 	bool isFirst = true;
 	for(std::vector<double> knot : knots_) {

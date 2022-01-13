@@ -870,14 +870,14 @@ void LRSplineSurface::orderElevateFunction(const std::vector<int> &indices) {
 			elms_v[p2].insert(el);
 		}
 	}
-	for(int p1=0; p1<elms_u.size(); ++p1) {
+	for(uint p1=0; p1<elms_u.size(); ++p1) {
 		if(elms_u[p1].size() > 0) {
 			std::vector<Element*> refElms(elms_u[p1].size());
 			std::copy(elms_u[p1].begin(), elms_u[p1].end(), refElms.begin());
 			order_elevate(refElms, 0, p1 + 1);
 		}
 	}
-	for(int p2=0; p2<elms_v.size(); ++p2) {
+	for(uint p2=0; p2<elms_v.size(); ++p2) {
 		if(elms_v[p2].size() > 0) {
 			std::vector<Element*> refElms(elms_v[p2].size());
 			std::copy(elms_v[p2].begin(), elms_v[p2].end(), refElms.begin());
