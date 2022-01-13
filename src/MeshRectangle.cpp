@@ -3,6 +3,7 @@
 #include "LRSpline/Element.h"
 #include "LRSpline/Basisfunction.h"
 #include <algorithm>
+#include <cmath>
 
 namespace LR {
 
