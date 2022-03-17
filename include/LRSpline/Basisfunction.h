@@ -170,7 +170,7 @@ public:
 	std::vector<double>::const_iterator cp() const { return controlpoint_.begin(); };
 	double cp(int i)                         const { return controlpoint_[i]; };
 	double w()                               const { return weight_; };
-	double integral(Element *el)             const ;
+	double integral(const Element *el)       const ;
 
 	long hashCode() const ;
 

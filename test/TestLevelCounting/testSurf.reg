@@ -1,0 +1,9 @@
+-p1 3 -p2 3 -n1 9 -n2 9
+
+Length=0.0625 level 4, 4 (expects lvl 4) - OK
+Length=0.125 level 3, 3 (expects lvl 3) - OK
+Length=0.25 level 2, 2 (expects lvl 2) - OK
+Length=0.5 level 1, 1 (expects lvl 1) - OK
+Length=1 level 0, 0 (expects lvl 0) - OK
+====================================================
+All assertions passed
