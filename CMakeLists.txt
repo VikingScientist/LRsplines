@@ -27,7 +27,8 @@ INCLUDE(cmake/Modules/UseMultiArch.cmake)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
-IF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+IF(CMAKE_CXX_COMPILER_ID MATCHES GNU OR
+   CMAKE_CXX_COMPILER_ID MATCHES Clang)
 # check if compiler supports c++-0x
   CHECK_CXX_COMPILER_FLAG("-std=gnu++0x" HAVE_0x)
   IF(HAVE_0x)
@@ -36,7 +37,7 @@ IF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
     MESSAGE("A compiler with c++-0x support is needed")
     EXIT(1)
   ENDIF(HAVE_0x)
-ENDIF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+ENDIF()
 
 # Check that the required C++11 features are available
 CHECK_CXX_SOURCE_COMPILES("
@@ -135,6 +136,36 @@ ADD_LIBRARY(LRSpline SHARED ${LRSPLINE_SRCS})
 TARGET_LINK_LIBRARIES(LRSpline ${DEPLIBS})
 SET_TARGET_PROPERTIES(LRSpline PROPERTIES  VERSION ${LRSpline_VERSION}
                       SOVERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR})
+
+# Add static analysis tests
+configure_file(test/clang-check-test.sh.in bin/clang-check-test.sh @ONLY)
+configure_file(test/cppcheck-test.sh.in bin/cppcheck-test.sh @ONLY)
+find_program(CLANGCHECK_COMMAND clang-check)
+find_program(CPPCHECK_COMMAND cppcheck)
+if(CPPCHECK_COMMAND)
+  foreach(include ${INCLUDES})
+    list(APPEND IPATH -I ${include})
+  endforeach()
+endif()
+foreach(src ${LRSPLINE_SRCS})
+  get_filename_component(name ${src} NAME)
+  get_filename_component(EXT ${src} EXT)
+  if(EXT STREQUAL .cpp)
+    if(NOT IS_ABSOLUTE ${src})
+      set(src ${PROJECT_SOURCE_DIR}/${src})
+    endif()
+    if(CLANGCHECK_COMMAND AND CMAKE_EXPORT_COMPILE_COMMANDS)
+      add_test(NAME clang-check+${name}
+               COMMAND bin/clang-check-test.sh ${CLANGCHECK_COMMAND} ${src}
+               CONFIGURATIONS analyze clang-check)
+    endif()
+    if(CPPCHECK_COMMAND)
+      add_test(NAME cppcheck+${name}
+               COMMAND bin/cppcheck-test.sh ${CPPCHECK_COMMAND} ${src} ${IPATHS}
+               CONFIGURATIONS analyze cppcheck)
+    endif()
+  endif()
+endforeach()
 
 # Make some Apps
 ADD_EXECUTABLE(reduceContinuity ${PROJECT_SOURCE_DIR}/Apps/reduceContinuity.cpp)
