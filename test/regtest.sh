@@ -4,7 +4,8 @@ mysim=$1
 
 cd `dirname $2`
 readarray < $2
-$mysim $MAPFILE 2>&1 > templog
+templog=`mktemp -t lrsplinelogXXXXX`
+$mysim $MAPFILE 2>&1 > $templog
 globres=1
 IFS=$'\n'
 i=0
@@ -14,7 +15,7 @@ do
   ((i++))
   test $i = 1 && continue # skip first line of regression file
   result=0
-  if grep -q "$line" templog 
+  if grep -q "$line" $templog
     then result=1 
   fi
   if test $result -eq 0 
@@ -30,10 +31,10 @@ done
 
 if test $globres -eq 0
 then
-  cat templog >> ../failed.log
-  rm templog
+  cat $templog >> ../failed.log
+  rm -f $templog
   exit 1
 fi
 
-rm templog
+rm -f $templog
 exit 0
