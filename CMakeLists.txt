@@ -215,15 +215,15 @@ IF(WIN32)
   #  install(FILES ${INCLUDES} DESTINATION LRSplines/include)
   # TODO
 ELSE(WIN32)
+  include(GNUInstallDirs)
   # lib
-  INSTALL(TARGETS LRSpline DESTINATION ${CMAKE_INSTALL_LIBDIR}
-          COMPONENT liblrspline)
+  INSTALL(TARGETS LRSpline DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
   # For generating the doxy
   ADD_CUSTOM_TARGET(doc doxygen ${CMAKE_BINARY_DIR}/Doxyfile
                     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
                     COMMENT "Generating API documentation" VERBATIM)
-  INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${CMAKE_BUILD_TOOL} doc WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")" COMPONENT doc)
+  INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${CMAKE_BUILD_TOOL} doc WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")")
 
   INSTALL(DIRECTORY ${CMAKE_BINARY_DIR}/doc/html/ DESTINATION share/doc/liblrsplines1/html)
 
@@ -240,11 +240,8 @@ ELSE(WIN32)
                              include/LRSpline/MeshRectangle.h
                              ${CMAKE_BINARY_DIR}/include/LRSpline/LRSpline_version.h)
   INSTALL(FILES ${LRSPLINE_HEADERS}
-                DESTINATION include/LRSpline
-                COMPONENT liblrspline-dev)
+                DESTINATION include/LRSpline)
   INSTALL(FILES ${CMAKE_BINARY_DIR}/LRSplineConfig.cmake
                 ${CMAKE_BINARY_DIR}/LRSplineConfigVersion.cmake
-          DESTINATION lib/LRSpline COMPONENT liblrspline-dev)
+          DESTINATION ${CMAKE_INSTALL_LIBDIR}/LRSpline)
 ENDIF(WIN32)
-
-include(CPack)
