@@ -14,16 +14,16 @@
 template<typename T>
 class HashSet_iterator
 {
-	using iterator_category = std::forward_iterator_tag;
-	using value_type = T;
-	using difference_type = ptrdiff_t;
-	using pointer = T*;
-	using reference = T&;
 	typedef typename std::map<long, std::list<T> >::iterator       iter;
 	typedef typename std::map<long, std::list<T> >::const_iterator citer;
 	typedef typename std::list<T>::iterator                        list_iter;
 
 public:
+	using iterator_category = std::forward_iterator_tag;
+	using value_type = T;
+	using difference_type = ptrdiff_t;
+	using pointer = T*;
+	using reference = T&;
 
 	//! \brief Default constructor
 	HashSet_iterator() {
@@ -87,15 +87,15 @@ private:
 template<typename T>
 class HashSet_const_iterator
 {
+	typedef typename std::map<long, std::list<T> >::const_iterator iter;
+	typedef typename std::list<T>::const_iterator                  list_iter;
+
+public:
 	using iterator_category = std::forward_iterator_tag;
 	using value_type = T;
 	using difference_type = ptrdiff_t;
 	using pointer = const T*;
 	using reference = const int&;
-	typedef typename std::map<long, std::list<T> >::const_iterator iter;
-	typedef typename std::list<T>::const_iterator                  list_iter;
-
-public:
 
 	//! \brief Default constructor
 	HashSet_const_iterator() {
