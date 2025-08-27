@@ -3,8 +3,9 @@
 myApp=$1
 testDir=`dirname $2`
 
-cd /tmp
-readarray < $2 &> LR_regtest.log
+folder=`mktemp -d -t LR_regtestXXXXX`
+cd $folder
+readarray < $2 &> log
 $myApp $MAPFILE 
 
 diff -u TestReadWrite.lr TestReadWrite2.lr
@@ -14,7 +15,7 @@ if [ $result -eq 0 ]; then
 	result=$?
 fi
 
-rm -f TestReadWrite.lr TestReadWrite2.lr TestReadWrite3.lr TestReadWrite4.lr
-
+rm -Rf $folder
 test $result -eq 0 && exit 0
+
 exit 1

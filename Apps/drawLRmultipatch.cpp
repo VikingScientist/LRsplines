@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
 	// get date
 	time_t t = time(0);
 	tm* lt = localtime(&t);
-	char date[11];
+	char date[32];
 	sprintf(date, "%02d/%02d/%04d", lt->tm_mday, lt->tm_mon + 1, lt->tm_year+1900);
 
 	// compute scaling factors

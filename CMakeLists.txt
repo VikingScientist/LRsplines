@@ -27,35 +27,8 @@ INCLUDE(cmake/Modules/UseMultiArch.cmake)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
-IF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-# check if compiler supports c++-0x
-  CHECK_CXX_COMPILER_FLAG("-std=gnu++0x" HAVE_0x)
-  IF(HAVE_0x)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x")
-  ELSE(HAVE_0x)
-    MESSAGE("A compiler with c++-0x support is needed")
-    EXIT(1)
-  ENDIF(HAVE_0x)
-ENDIF(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-
-# Check that the required C++11 features are available
-CHECK_CXX_SOURCE_COMPILES("
-                          #include <map>
-                          #include <list>
-                          int main(void)
-                          {
-                            std::map<int, std::list<int> > loop;
-                            loop.insert(std::make_pair(1,std::list<int>(1)));
-                            std::map<int, std::list<int >>::iterator it = loop.begin();
-                            for (int a : it->second)
-                              ;
-                          }
-                          " COMPILER_SATISFIES_CXX11)
-IF (NOT COMPILER_SATISFIES_CXX11)
-  MESSAGE(FATAL_ERROR "Compiler do not provide C++-11 features required, bailing")
-ENDIF(NOT COMPILER_SATISFIES_CXX11)
-
-#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L/boost_1_55_0/boost_1_55_0/stage/lib -I/boost_1_55_0/boost_1_55_0")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ENABLE_TESTING()
 
@@ -242,15 +215,15 @@ IF(WIN32)
   #  install(FILES ${INCLUDES} DESTINATION LRSplines/include)
   # TODO
 ELSE(WIN32)
+  include(GNUInstallDirs)
   # lib
-  INSTALL(TARGETS LRSpline DESTINATION ${CMAKE_INSTALL_LIBDIR}
-          COMPONENT liblrspline)
+  INSTALL(TARGETS LRSpline DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
   # For generating the doxy
   ADD_CUSTOM_TARGET(doc doxygen ${CMAKE_BINARY_DIR}/Doxyfile
                     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
                     COMMENT "Generating API documentation" VERBATIM)
-  INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${CMAKE_BUILD_TOOL} doc WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")" COMPONENT doc)
+  INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${CMAKE_BUILD_TOOL} doc WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")")
 
   INSTALL(DIRECTORY ${CMAKE_BINARY_DIR}/doc/html/ DESTINATION share/doc/liblrsplines1/html)
 
@@ -267,11 +240,8 @@ ELSE(WIN32)
                              include/LRSpline/MeshRectangle.h
                              ${CMAKE_BINARY_DIR}/include/LRSpline/LRSpline_version.h)
   INSTALL(FILES ${LRSPLINE_HEADERS}
-                DESTINATION include/LRSpline
-                COMPONENT liblrspline-dev)
+                DESTINATION include/LRSpline)
   INSTALL(FILES ${CMAKE_BINARY_DIR}/LRSplineConfig.cmake
                 ${CMAKE_BINARY_DIR}/LRSplineConfigVersion.cmake
-          DESTINATION lib/LRSpline COMPONENT liblrspline-dev)
+          DESTINATION ${CMAKE_INSTALL_LIBDIR}/LRSpline)
 ENDIF(WIN32)
-
-include(CPack)

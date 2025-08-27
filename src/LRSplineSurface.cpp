@@ -2945,7 +2945,7 @@ void LRSplineSurface::writePostscriptMesh(std::ostream &out, bool close, std::ve
 	// get date
 	time_t t = time(0);
 	tm* lt = localtime(&t);
-	char date[11];
+	char date[32];
 	sprintf(date, "%02d/%02d/%04d", lt->tm_mday, lt->tm_mon + 1, lt->tm_year+1900);
 
 	// get bounding box
@@ -3020,7 +3020,7 @@ void LRSplineSurface::writePostscriptElements(std::ostream &out, int nu, int nv,
 	// get date
 	time_t t = time(0);
 	tm* lt = localtime(&t);
-	char date[11];
+	char date[32];
 	sprintf(date, "%02d/%02d/%04d", lt->tm_mday, lt->tm_mon + 1, lt->tm_year+1900);
 
 	// get bounding box (max/min of the control points)
