@@ -25,7 +25,9 @@ int main(int argc, char **argv) {
 	bool one_by_one               = false;
 	bool floatingPointCheck       = false;
 	bool isInteger                = false;
+#ifdef HAS_BOOST
 	bool dumpNullSpace            = false;
+#endif
 	bool overload                 = false;
 	double beta                   = 0.10;
 	double maxAspectRatio         = -1;
@@ -70,8 +72,10 @@ int main(int argc, char **argv) {
 			refineFileName = argv[++i];
 		else if(strcmp(argv[i], "-overload") == 0)
 			overload = true;
+#ifdef HAS_BOOST
 		else if(strcmp(argv[i], "-nullspace") == 0)
 			dumpNullSpace = true;
+#endif
 		else if(strcmp(argv[i], "-help") == 0) {
 			cout << "usage: " << argv[0] << "[parameters] <refine inputfile>" << endl << parameters;
 			exit(0);
