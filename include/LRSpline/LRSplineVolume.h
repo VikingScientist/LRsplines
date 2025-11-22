@@ -5,9 +5,6 @@
 	#include <GoTools/utils/Point.h>
 	#include <GoTools/trivariate/SplineVolume.h>
 #endif
-#ifdef HAS_BOOST
-	#include <boost/rational.hpp>
-#endif
 #ifdef TIME_LRSPLINE
 #include "Profiler.h"
 #endif
@@ -102,9 +99,6 @@ public:
 	bool isLinearIndepByOverloading(bool verbose) ;
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
 	bool isLinearIndepByFloatingPointMappingMatrix(bool verbose) const ;
-#ifdef HAS_BOOST
-	void getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const ;
-#endif
 
 	void updateSupport(Basisfunction *f) ;
 	void updateSupport(Basisfunction *f,

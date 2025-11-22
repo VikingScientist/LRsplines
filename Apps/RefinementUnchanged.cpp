@@ -404,9 +404,7 @@ int main(int argc, char **argv) {
 			linearIndep = true;
 		} else {
 			doActualLinTest = true;
-#ifdef HAS_BOOST
 			linearIndep = lrs->isLinearIndepByMappingMatrix(true);
-#endif
 		}
 		cout << endl;
 		cout << "   =====================    RESULT SUMMARY   ====================     \n\n";

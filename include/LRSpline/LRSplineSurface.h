@@ -156,9 +156,6 @@ public:
 	// linear independence methods
 	bool isLinearIndepByOverloading(bool verbose) ;
 	bool isLinearIndepByFloatingPointMappingMatrix(bool verbose) const ;
-#ifdef HAS_BOOST
-	void getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const ;
-#endif
 	bool isLinearIndepByMappingMatrix(bool verbose) const;
 
 	void updateSupport(Basisfunction *f) ;
