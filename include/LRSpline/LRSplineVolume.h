@@ -51,10 +51,16 @@ public:
 #ifdef HAS_GOTOOLS
 	virtual void point(Go::Point &pt, double u, double v, double w, int iEl=-1) const;
 	virtual void point(Go::Point &pt, double u, double v, double w, int iEl, bool u_from_right, bool v_from_right, bool w_from_right) const;
-	virtual void point(std::vector<Go::Point> &pts, double upar, double vpar, double wpar, int derivs, int iEl=-1) const;
+    virtual void point(std::vector<Go::Point> &pts, double upar, double vpar, double wpar, int derivs, int iEl=-1) const;
+#if GoTools_VERSION_MAJOR > 4
+    void computeBasis (double param_u, double param_v, double param_w, Go::BasisPtsVol     & result, int iEl=-1 ) const;
+    void computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivsVol  & result, int iEl=-1 ) const;
+    void computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivsVol2 & result, int iEl=-1 ) const;
+#else
 	void computeBasis (double param_u, double param_v, double param_w, Go::BasisPts     & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivs  & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivs2 & result, int iEl=-1 ) const;
+#endif
 #endif
 	virtual void point(std::vector<double> &pt, double u, double v, double w, int iEl=-1) const;
 	virtual void point(std::vector<double> &pt, double u, double v, double w, int iEl, bool u_from_right, bool v_from_right, bool w_from_right) const;
