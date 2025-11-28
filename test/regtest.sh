@@ -1,6 +1,7 @@
 #!/bin/bash
 
 mysim=$1
+BINARY_DIR=$3
 
 cd `dirname $2`
 readarray < $2
@@ -22,16 +23,16 @@ do
   then 
     if test $globres -eq 1
     then
-      echo "-------- $2 --------" >> ../failed.log
+      echo "-------- $2 --------" >> $BINARY_DIR/failed.log
     fi
     globres=0
-    echo Failed to find output: $line >> ../failed.log
+    echo Failed to find output: $line >> $BINARY_DIR/failed.log
   fi
 done
 
 if test $globres -eq 0
 then
-  cat $templog >> ../failed.log
+  cat $templog >> $BINARY_DIR/failed.log
   rm -f $templog
   exit 1
 fi
