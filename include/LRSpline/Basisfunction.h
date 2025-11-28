@@ -170,7 +170,7 @@ public:
 	std::vector<double>::const_iterator cp() const { return controlpoint_.begin(); };
 	double cp(int i)                         const { return controlpoint_[i]; };
 	double w()                               const { return weight_; };
-	double integral(Element *el)             const ;
+	double integral(const Element *el)       const ;
 
 	long hashCode() const ;
 
@@ -179,6 +179,7 @@ public:
 	// operator overloading
 	bool equals(const Basisfunction &other) const ;
 	bool operator==(const Basisfunction &other) const;
+	bool operator<( const Basisfunction &other) const;
 	void operator+=(const Basisfunction &other) ;
 	std::vector<double>&       operator[](int i)       { return knots_[i]; } ;
 	const std::vector<double>& operator[](int i) const { return knots_[i]; } ;

@@ -13,6 +13,8 @@ bool MeshRectangle::addUniqueRect(std::vector<MeshRectangle*> &rects, MeshRectan
 	for(MeshRectangle *m : rects) {
 		if(m->equals(newRect) ) {
 			return false;
+		} else if(m->contains(newRect)) {
+			return false;
 		}
 	}
 	rects.push_back(newRect);
@@ -131,25 +133,22 @@ bool MeshRectangle::contains(const MeshRectangle *rect) const {
 	return false;
 }
 
-int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, int meshIndex, bool allowSplits) {
-	int c1  = constDir_; // constant index
+int MeshRectangle::makeOverlappingRects(MeshRectangle* first, MeshRectangle* second, MeshRectangle **new1, MeshRectangle **new2) {
+	int c1  = first->constDir_; // constant index
 	int v1  = (c1+1)%3;  // first variable index
 	int v2  = (c1+2)%3;  // second variable index
 	int v[] = {v1, v2};  // index way of referencing these
 	bool addThisToNewGuys = false;
-	MeshRectangle *rect = newGuys.at(meshIndex);
-	if( ! this->overlaps(rect) )
+	if( ! first->overlaps(second) )
 		return 0;
-	if( this->contains(rect) ) {
-		newGuys.erase(newGuys.begin() + meshIndex);
-		// std::cout << "Deleted: " << *rect << std::endl;
-		// std::cout << "  contained in : " << *this << std::endl;
-		delete rect;
+	if( first->contains(second) ) {
+		// std::cout << "CONTAINED: " << *second << std::endl;
+		// std::cout << "  contained in : " << *first << std::endl;
 		return 1;
 	}
-	if( rect->contains(this) ) {
-		// std::cout << "Deleted: " << *this << std::endl;
-		// std::cout << "  contained in : " << *rect << std::endl;
+	if( second->contains(first) ) {
+		// std::cout << "CONTAINED: " << *first << std::endl;
+		// std::cout << "  contained in : " << *second << std::endl;
 		return 2;
 	}
 
@@ -167,94 +166,98 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 		 *  +-------+------+
 		 */
 		// if the two mesh rectangles perfectly line up, keep only one of them
-		if((stop_[v[i]]  == rect->start_[v[i]] ||
-		    start_[v[i]] == rect->stop_[v[i]]  )) {
+		if((first->stop_[v[i]]  == second->start_[v[i]] ||
+		    first->start_[v[i]] == second->stop_[v[i]]  )) {
 
-			if(start_[v[j]] == rect->start_[v[j]]  &&
-			   stop_[v[j]]  == rect->stop_[v[j]]  ) {
-				double min = std::min(start_[v[i]], rect->start_[v[i]]);
-				double max = std::max(stop_[v[i]],  rect->stop_[v[i]] );
-				// std::cout << "Deleted: " << *rect << std::endl;
-				// std::cout << "  merged with  : " << *this << std::endl;
-				newGuys.erase(newGuys.begin() + meshIndex);
-				delete rect;
-				start_[v[i]] = min;
-				stop_[v[i]]  = max;
-				if(addUniqueRect(newGuys, this))
-					return 4;
-				else
-					return 5;
-			/*
-			 *    ADD ELONGATED RECT
-			 * y3 +-------+
-			 * y2 |       +------+         +-------+------+
-			 *    |       |      |   =>    |              |
-			 * y1 +-------+      |         +-------+------+
-			 *            |      |                new one
-			 * y0         +------+
-			 *   x0      x1     x3
-			 */
+			if(first->start_[v[j]] == second->start_[v[j]]  &&
+			   first->stop_[v[j]]  == second->stop_[v[j]]  ) {
+				double min = std::min(first->start_[v[i]], second->start_[v[i]]);
+				double max = std::max(first->stop_[v[i]],  second->stop_[v[i]] );
+				// std::cout << "ELONGATED: " << *first << " (request delete)" << std::endl;
+				// std::cout << "  merged (elongated) with  : " << *second << " (kept)";
+				second->start_[v[i]] = min;
+				second->stop_[v[i]]  = max;
+				// std::cout << "  new support: " << *second << std::endl;
+				return 3;
+				/*
+				 *    ADD ELONGATED RECT
+				 * y3 +-------+
+				 * y2 |       +------+         +-------+------+
+				 *    |       |      |   =>    |              |
+				 * y1 +-------+      |         +-------+------+
+				 *            |      |                new one
+				 * y0         +------+
+				 *   x0      x1     x3
+				 */
 
-			} else if((start_[v[j]] < rect->start_[v[j]]   &&
-			           stop_[v[j]]  < rect->stop_[v[j]] ) ||
-			          (start_[v[j]] > rect->start_[v[j]]   &&
-			           stop_[v[j]]  > rect->stop_[v[j]]  )) {
-				double x0 = std::min(rect->start_[v[i]], start_[v[i]]);
-				double x3 = std::max(rect->stop_[v[i]],  stop_[v[i]] );
-				double y1 = std::max(rect->start_[v[j]], start_[v[j]]);
-				double y2 = std::min(rect->stop_[v[j]],  stop_[v[j]] );
+			} else if((first->start_[v[j]] < second->start_[v[j]]   &&
+			           first->stop_[v[j]]  < second->stop_[v[j]] ) ||
+			          (first->start_[v[j]] > second->start_[v[j]]   &&
+			           first->stop_[v[j]]  > second->stop_[v[j]]  )) {
+				double x0 = std::min(second->start_[v[i]], first->start_[v[i]]);
+				double x3 = std::max(second->stop_[v[i]],  first->stop_[v[i]] );
+				double y1 = std::max(second->start_[v[j]], first->start_[v[j]]);
+				double y2 = std::min(second->stop_[v[j]],  first->stop_[v[j]] );
 				double start[3];
 				double stop[3];
-				start[c1]   = start_[c1];
-				stop[c1]    = stop_[c1];
+				start[c1]   = first->start_[c1];
+				stop[c1]    = first->stop_[c1];
 				start[v[i]] = x0;
 				stop[v[i]]  = x3;
 				start[v[j]] = y1;
 				stop[v[j]]  = y2;
-				if(allowSplits) {
-					MeshRectangle *m1 = new MeshRectangle(start, stop);
-					if(!addUniqueRect(newGuys, m1))
-						delete m1;
-				}
+				*new1 = new MeshRectangle(start, stop);
+				// std::cout << "Creating intersecting rect between " << *second << " and  " << *first << " Result : " << **new1 << std::endl;
+				return 6;
 			}
 		}
 		/*
-		 *     EXPAND 'RECT' (RIGHT ONE)
+		 *     EXPAND 'second' (RIGHT ONE)
 		 *  +-------+
 		 *  |    +--+------+
 		 *  |    |  |      |
 		 *  |    +--+------+
 		 *  +-------+
 		 */
-		if(start_[v[i]] <  rect->start_[v[i]] &&
-		   start_[v[j]] <= rect->start_[v[j]] &&
-		   stop_[v[j]]  >= rect->stop_[v[j]]) { // expand the support of rect DOWN in v[i]
-			rect->start_[v[i]] = start_[v[i]];
+		if(first->start_[v[i]] <  second->start_[v[i]] &&
+		   first->start_[v[j]] <= second->start_[v[j]] &&
+		   first->stop_[v[j]]  >= second->stop_[v[j]]) { // expand the support of second DOWN in v[i]
+			// std::cout << "Extended support (second-DOWN). Old Support: " << *second ;
+			second->start_[v[i]] = first->start_[v[i]];
+			// std::cout << "new support: " << *second << std::endl;
+			return 4;
 		}
-		if(stop_[v[i]]  >  rect->stop_[v[i]]  &&
-		   start_[v[j]] <= rect->start_[v[j]] &&
-		   stop_[v[j]]  >= rect->stop_[v[j]]) { // expand the support of rect UP in v[i]
-			rect->stop_[v[i]] = stop_[v[i]];
+		if(first->stop_[v[i]]  >  second->stop_[v[i]]  &&
+		   first->start_[v[j]] <= second->start_[v[j]] &&
+		   first->stop_[v[j]]  >= second->stop_[v[j]]) { // expand the support of second UP in v[i]
+			// std::cout << "Extended support (second-UP). Old Support: " << *second ;
+			second->stop_[v[i]] = first->stop_[v[i]];
+			// std::cout << "new support: " << *second << std::endl;
+			return 4;
 		}
 		/*
-		 *     EXPAND 'THIS' (LEFT ONE)
+		 *     EXPAND 'first' (LEFT ONE)
 		 *        +------+
 		 *  +-----+--+   |
 		 *  |     |  |   |
 		 *  +-----+--+   |
 		 *        +------+
 		 */
-		if(rect->start_[v[i]] <  start_[v[i]] &&
-		   rect->start_[v[j]] <= start_[v[j]] &&
-		   rect->stop_[v[j]]  >= stop_[v[j]]) {
-			start_[v[i]] = rect->start_[v[i]];
-			addThisToNewGuys = true;
+		if(second->start_[v[i]] <  first->start_[v[i]] &&
+		   second->start_[v[j]] <= first->start_[v[j]] &&
+		   second->stop_[v[j]]  >= first->stop_[v[j]]) {
+			// std::cout << "Extended support (first-DOWN). Old Support: " << *first ;
+			first->start_[v[i]] = second->start_[v[i]];
+			// std::cout << "new support: " << *first << std::endl;
+			return 5;
 		}
-		if(rect->stop_[v[i]]  >  stop_[v[i]]  &&
-		   rect->start_[v[j]] <= start_[v[j]] &&
-		   rect->stop_[v[j]]  >= stop_[v[j]]) {
-			stop_[v[i]] = rect->stop_[v[i]];
-			addThisToNewGuys = true;
+		if(second->stop_[v[i]]  >  first->stop_[v[i]]  &&
+		   second->start_[v[j]] <= first->start_[v[j]] &&
+		   second->stop_[v[j]]  >= first->stop_[v[j]]) {
+			// std::cout << "Extended support (first-UP). Old Support: " << *first ;
+			first->stop_[v[i]] = second->stop_[v[i]];
+			// std::cout << "new support: " << *first << std::endl;
+			return 5;
 		}
 	}
 
@@ -270,14 +273,14 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 	 *          +--+               +--+
 	 *        note that this is after fixes above
 	 */
-	if((rect->stop_[v1]  >=       stop_[v1]   &&
-	    rect->start_[v1] <=       start_[v1]  &&
-	          stop_[v2]  >= rect->stop_[v2]   &&
-	          start_[v2] <= rect->start_[v2]) ||
-	   (      stop_[v1]  >= rect->stop_[v1]   &&
-	          start_[v1] <= rect->start_[v1]  &&
-	    rect->stop_[v2]  >=       stop_[v2]   &&
-	    rect->start_[v2] <=       start_[v2])) {
+	if((second->stop_[v1]  >= first->stop_[v1]   &&
+	    second->start_[v1] <= first->start_[v1]  &&
+	     first->stop_[v2]  >= second->stop_[v2]  &&
+	     first->start_[v2] <= second->start_[v2])||
+	   ( first->stop_[v1]  >= second->stop_[v1]  &&
+	     first->start_[v1] <= second->start_[v1] &&
+	     second->stop_[v2] >= first->stop_[v2]   &&
+	     second->start_[v2]<= first->start_[v2])) {
 		// ...
 		;
 	/*
@@ -292,53 +295,40 @@ int MeshRectangle::makeOverlappingRects(std::vector<MeshRectangle*> &newGuys, in
 	 *     x0   x1 x2   x3                  x1  x2
 	 *                                    these are the two new ones
 	 */
-	} else {
-		double x0 = std::min(rect->start_[v1], start_[v1]);
-		double x1 = std::max(rect->start_[v1], start_[v1]);
-		double x2 = std::min(rect->stop_[v1],  stop_[v1] );
-		double x3 = std::max(rect->stop_[v1],  stop_[v1] );
-		double y0 = std::min(rect->start_[v2], start_[v2]);
-		double y1 = std::max(rect->start_[v2], start_[v2]);
-		double y2 = std::min(rect->stop_[v2],  stop_[v2] );
-		double y3 = std::max(rect->stop_[v2],  stop_[v2] );
+	} else if(first->start_[v1] < second->stop_[v1] && first->stop_[v1] > second->start_[v1] &&
+	          first->start_[v2] < second->stop_[v2] && first->stop_[v2] > second->start_[v2]) {
+		double x0 = std::min(second->start_[v1], first->start_[v1]);
+		double x1 = std::max(second->start_[v1], first->start_[v1]);
+		double x2 = std::min(second->stop_[v1],  first->stop_[v1] );
+		double x3 = std::max(second->stop_[v1],  first->stop_[v1] );
+		double y0 = std::min(second->start_[v2], first->start_[v2]);
+		double y1 = std::max(second->start_[v2], first->start_[v2]);
+		double y2 = std::min(second->stop_[v2],  first->stop_[v2] );
+		double y3 = std::max(second->stop_[v2],  first->stop_[v2] );
 		double start[3];
 		double stop[3];
-		start[c1] = start_[c1];
-		stop[c1]  = stop_[c1];
+		start[c1] = first->start_[c1];
+		stop[c1]  = first->stop_[c1];
 
-		if(allowSplits) {
-			start[v1] = x0;
-			stop[v1]  = x3;
-			start[v2] = y1;
-			stop[v2]  = y2;
-			MeshRectangle *m1 = new MeshRectangle(start, stop);
+		start[v1] = x0;
+		stop[v1]  = x3;
+		start[v2] = y1;
+		stop[v2]  = y2;
+		*new1 = new MeshRectangle(start, stop);
 
-			start[v1] = x1;
-			stop[v1]  = x2;
-			start[v2] = y0;
-			stop[v2]  = y3;
-			MeshRectangle *m2 = new MeshRectangle(start, stop);
+		start[v1] = x1;
+		stop[v1]  = x2;
+		start[v2] = y0;
+		stop[v2]  = y3;
+		*new2 = new MeshRectangle(start, stop);
 
-			// std::cout << "Added: " << *m1 << std::endl;
-			// std::cout << "Added: " << *m2 << std::endl;
-			// std::cout << "  overlaps from  : " << *rect << std::endl;
-			// std::cout << "  overlaps from  : " << *this << std::endl;
-
-			if(!addUniqueRect(newGuys, m1))
-				delete m1;
-			if(!addUniqueRect(newGuys, m2))
-				delete m2;
-		}
-
+		// std::cout << "Added: " << **new1 << std::endl;
+		// std::cout << "Added: " << **new2 << std::endl;
+		// std::cout << "  overlaps from  : " << *second << std::endl;
+		// std::cout << "  overlaps from  : " << *first << std::endl;
+		return 7;
 	}
-	if(addThisToNewGuys) {
-		// std::cout << "Moved: " << *this << std::endl;
-		if(addUniqueRect(newGuys, this))
-			return 3;
-		else
-			return 6;
-	}
-	return 0;
+	return -1;
 }
 
 bool MeshRectangle::splits(Element *el) const {

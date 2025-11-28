@@ -1,0 +1,9 @@
+-p1 3 -p2 3 -p3 3 -n1 10 -n2 8 -n3 4 overlap_w.inp
+
+    all assertions passed
+
+Key LR-spline information:
+  number of basis functions: 331
+  number of mesh lines     : 23
+  number of elements       : 123
+
