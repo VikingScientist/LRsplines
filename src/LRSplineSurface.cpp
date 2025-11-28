@@ -1480,11 +1480,29 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 #ifdef TIME_LRSPLINE
 	PROFILE("STEP 1");
 #endif
+	// limit the search of basisfunctions to only ones locally active to the new line
+	HashSet<Basisfunction*> checkFunc;
+	std::vector<int> splitEl;
+	double length   = newline->stop_ - newline->start_;
+	double el_spans = 0;
+	for(uint i=element_.size(); i-->0; ) {
+		Element *el = element_[i];
+		if(newline->splits(el)) {
+			splitEl.push_back(i);
+			el_spans += (newline->span_u_line_) ? (el->umax() - el->umin()) : (el->vmax() - el->vmin());
+			for(Basisfunction* b : element_[i]->support()) {
+				checkFunc.insert(b);
+			}
+			// stop the global element-search once we found all elements traversed by newline
+			if(el_spans >= length - DOUBLE_TOL)
+				break;
+		}
+	}
 	{
 #ifdef TIME_LRSPLINE
 	PROFILE("S1-basissplit");
 #endif
-	for(Basisfunction* b : basis_) {
+	for(Basisfunction* b : checkFunc) {
 		if(newline->splits(b)) {
 			int nKnots = newline->nKnotsIn(b);
 			if( nKnots < newline->multiplicity_ ) {
@@ -1493,18 +1511,33 @@ Meshline* LRSplineSurface::insert_line(bool const_u, double const_par, double st
 			}
 		}
 	}
+	} // end profiler (basissplit)
+	{
+#ifdef TIME_LRSPLINE
+	PROFILE("S1-basiserase");
+#endif
 	for(Basisfunction* b : removeFunc) {
 		basis_.erase(b);
 		delete b;
 	}
-	} // end profiler
+	} // end profiler (basiserase)
 	{
 #ifdef TIME_LRSPLINE
 	PROFILE("S1-elementsplit");
 #endif
-	for(uint i=0; i<element_.size(); i++) {
-		if(newline->splits(element_[i]))
-			element_.push_back(element_[i]->split(newline->is_spanning_u(), newline->const_par_));
+	uint count = 0;
+    for(uint i : splitEl) {
+		element_.push_back(element_[i]->split(newline->is_spanning_u(), newline->const_par_));
+		// rearrange elements to keep the newest ones at the back of the list
+		uint j = element_.size() * 89 / 100 - count*4; // put it at 89% end of the list
+		count++;
+		while(std::find(splitEl.begin(), splitEl.end(), j) != splitEl.end())
+			j--;
+		if(j > 0 && j < element_.size()) {
+			Element *el = element_[j];
+			element_[j] = element_[i];
+			element_[i] = el;
+		}
 	}
 	} // end profiler (elementsplit)
 	} // end profiler (step 1)
