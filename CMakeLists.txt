@@ -1,247 +1,410 @@
-PROJECT(LRSpline)
+cmake_minimum_required(VERSION 3.22)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-SET(LRSpline_VERSION_MAJOR 1)
-SET(LRSpline_VERSION_MINOR 6)
-SET(LRSpline_VERSION_PATCH 0)
-SET(LRSpline_VERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR}.${LRSpline_VERSION_PATCH})
-IF(NOT WIN32)
-  SET(TIME_LRSPLINE 1)
-ENDIF(NOT WIN32)
-IF(WIN32)
-  SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS 1)
-ENDIF(WIN32)
+set(LRSpline_VERSION_MAJOR 1)
+set(LRSpline_VERSION_MINOR 7)
+set(LRSpline_VERSION_PATCH 0)
+set(LRSpline_VERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR}.${LRSpline_VERSION_PATCH})
 
-# Generate header with version info
-CONFIGURE_FILE(include/LRSpline/LRSpline_version.h.in
-              ${PROJECT_BINARY_DIR}/include/LRSpline/LRSpline_version.h @ONLY)
+project(LRSpline
+        VERSION ${LRSpline_VERSION}
+        LANGUAGES CXX
+)
 
-# Generate doxy in build tree
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/Doxyfile.in
-               Doxyfile @ONLY)
+if(WIN32)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS 1)
+endif()
 
-ENABLE_LANGUAGE(CXX)
+configure_file(include/LRSpline/LRSpline_version.h.in LRSpline_version.h @ONLY)
 
-INCLUDE(CheckCXXCompilerFlag)
-INCLUDE(cmake/Modules/UseMultiArch.cmake)
+configure_file(${PROJECT_SOURCE_DIR}/Doxyfile.in Doxyfile @ONLY)
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
+add_library(LRSpline)
+target_compile_features(LRSpline PUBLIC cxx_std_17)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set_target_properties(
+  LRSpline
+  PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY
+      lib
+    LIBRARY_OUTPUT_DIRECTORY
+      lib
+)
 
-ENABLE_TESTING()
+find_package(SISL QUIET)
+find_package(GoToolsCore QUIET)
+find_package(GoTrivariate QUIET)
+if(TARGET GoToolsCore AND TARGET GoTrivariate)
+  add_library(GoTools::GoToolsCore IMPORTED INTERFACE)
+  string(REPLACE "." ";" GoVersion ${GoToolsCore_VERSION})
+  list(GET GoVersion 0 GoToolsCore_VERSION_MAJOR)
+  target_compile_definitions(GoTools::GoToolsCore
+    INTERFACE
+      GoTools_VERSION_MAJOR=${GoToolsCore_VERSION_MAJOR}
+      GOTOOLS_HAS_BASISDERIVS_SF3=1
+  )
+  target_link_libraries(GoTools::GoToolsCore INTERFACE GoToolsCore)
+  add_library(GoTools::GoTrivariate IMPORTED INTERFACE)
+  target_link_libraries(
+    GoTools::GoTrivariate
+    INTERFACE
+      GoTrivariate
+      GoTools::GoToolsCore
+  )
+else()
+  find_package(GoTools)
+  find_package(GoTrivariate)
+  if(GoTools_FOUND AND GoTrivariate_FOUND)
+    find_package(GoTools)
+    add_library(GoTools::GoToolsCore INTERFACE IMPORTED)
+    set(GoTools_LIBRARY_DIRS ${GoTools_LIBRARIES})
+    list(FILTER GoTools_LIBRARY_DIRS INCLUDE REGEX -L.*)
+    list(TRANSFORM GoTools_LIBRARY_DIRS REPLACE "-L" "")
+    list(FILTER GoTools_LIBRARIES EXCLUDE REGEX -L.*)
+    target_link_libraries(GoTools::GoToolsCore INTERFACE ${GoTools_LIBRARIES})
+    target_include_directories(GoTools::GoToolsCore INTERFACE ${GoTools_INCLUDE_DIRS})
+    target_compile_definitions(GoTools::GoToolsCore INTERFACE ${GoTools_CXX_FLAGS} -DGoTools_VERSION_MAJOR=4)
+    target_link_directories(GoTools::GoToolsCore INTERFACE ${GoTools_LIBRARY_DIRS})
+    include(CheckTypeSize)
+    set(CMAKE_EXTRA_INCLUDE_FILES "GoTools/geometry/SplineSurface.h")
+    set(CMAKE_REQUIRED_FLAGS -std=c++11)
+    check_type_size(Go::BasisDerivsSf3 HAS_BD3 LANGUAGE CXX)
+    if(HAS_BD3)
+      target_compile_definitions(GoTools::GoToolsCore INTERFACE GOTOOLS_HAS_BASISDERIVS_SF3=1)
+    endif()
 
-# Required packages
-#    - none -
-
-# Required include directories
-SET(INCLUDES ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
-
-# Optional packages
-FIND_PACKAGE(Boost)
-FIND_PACKAGE(GoTools)
-
-set(LRSpline_DEFINITIONS "-DLRSPLINE_HAS_FUNC_TOLERANCE")
-IF(GoTools_FOUND)
-  # must have all of GoTools or none of it
-  FIND_PACKAGE(GoTrivariate REQUIRED)
-  OPTION(HAS_GOTOOLS "Link library with GoTools" ON)
-  SET(INCLUDES ${INCLUDES}
-               ${GoTools_INCLUDE_DIRS}
-               ${GoTrivariate_INCLUDE_DIRS})
-  SET(DEPLIBS ${DEPLIBS}
-              ${GoTrivariate_LIBRARIES}
-              ${GoTools_LIBRARIES})
-  ADD_DEFINITIONS(-DHAS_GOTOOLS)
-  set(LRSpline_DEFINITIONS "${LRSpline_DEFINITIONS} -DHAS_GOTOOLS")
-
-  include(CheckTypeSize)
-  set(CMAKE_EXTRA_INCLUDE_FILES "GoTools/geometry/SplineSurface.h")
-  set(CMAKE_REQUIRED_FLAGS -std=c++11)
-  check_type_size(Go::BasisDerivsSf3 HAS_BD3 LANGUAGE CXX)
-  if(HAS_BD3)
-    add_definitions(-DGOTOOLS_HAS_BASISDERIVS_SF3)
-    set(LRSpline_DEFINITIONS "${LRSpline_DEFINITIONS} -DGOTOOLS_HAS_BASISDERIVS_SF3")
+    add_library(GoTools::GoTrivariate INTERFACE IMPORTED)
+    set(GoTrivariate_LIBRARY_DIRS ${GoTrivariate_LIBRARIES})
+    list(FILTER GoTrivariate_LIBRARY_DIRS INCLUDE REGEX -L.*)
+    list(TRANSFORM GoTrivariate_LIBRARY_DIRS REPLACE "-L" "")
+    list(FILTER GoTrivariate_LIBRARIES EXCLUDE REGEX -L.*)
+    target_include_directories(GoTools::GoTrivariate INTERFACE ${GoTrivariate_INCLUDE_DIRS})
+    target_link_libraries(GoTools::GoTrivariate INTERFACE ${GoTrivariate_LIBRARIES} GoTools::GoToolsCore)
+    target_link_directories(GoTools::GoTrivariate INTERFACE ${GoTrivariate_LIBRARY_DIRS})
   endif()
-ELSE()
-  MESSAGE(STATUS "Compiling without GoTools")
-  OPTION(HAS_GOTOOLS "Link library with GoTools" OFF)
-ENDIF()
+endif()
 
-IF(Boost_FOUND)
-  SET(DEPLIBS  ${DEPLIBS}  ${Boost_LIBRARIES})
-  SET(INCLUDES ${INCLUDES} ${Boost_INCLUDE_DIRS} )
-  OPTION(HAS_BOOST "Link library with Boost" ON)
-  ADD_DEFINITIONS(-DHAS_BOOST)
-  set(LRSpline_DEFINITIONS "${LRSpline_DEFINITIONS} -DHAS_BOOST")
-ELSE(Boost_FOUND)
-  OPTION(HAS_BOOST "Link library with Boost" OFF)
-  MESSAGE(STATUS "Compiling without Boost")
-ENDIF(Boost_FOUND)
+target_compile_definitions(LRSpline INTERFACE LRSPLINE_HAS_FUNC_TOLERANCE=1)
 
-CONFIGURE_FILE(cmake/Templates/LRSplineConfig.cmake.in
-                LRSplineConfig.cmake @ONLY)
-CONFIGURE_FILE(cmake/Templates/LRSplineConfigVersion.cmake.in
-                LRSplineConfigVersion.cmake @ONLY)
+if(NOT TARGET GoTools::GoTrivariate)
+  message(STATUS "Compiling without GoTools")
+endif()
 
-IF(TIME_LRSPLINE)
-  ADD_DEFINITIONS(-DTIME_LRSPLINE)
-ENDIF(TIME_LRSPLINE)
+find_package(Boost CONFIG)
 
+if(NOT Boost_FOUND)
+  message(STATUS "Compiling without Boost")
+endif()
 
-INCLUDE_DIRECTORIES(${INCLUDES})
+if(NOT WIN32)
+  option(USE_PROFILING "Enable profiling?" OFF)
+  if(USE_PROFILING)
+    target_compile_definitions(LRSpline PUBLIC TIME_LRSPLINE=1)
+  endif()
+endif()
 
-SET(EXECUTABLE_OUTPUT_PATH bin)
-SET(LIBRARY_OUTPUT_PATH lib)
+option(USE_TRACY "Use Tracy for profiling?" OFF)
+if(USE_TRACY AND USE_PROFILING)
+  find_package(Tracy)
+  if(TARGET Tracy::TracyClient)
+    target_link_libraries(LRSpline PUBLIC Tracy::TracyClient)
+    target_compile_definitions(LRSpline PUBLIC USE_TRACY=1)
+    message(STATUS "Tracy support enabled")
+  endif()
+endif()
 
-IF(NOT WIN32)
-  # Emit position-independent code, suitable for dynamic linking
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-  # Enable all warnings
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-parentheses")
-ENDIF(NOT WIN32)
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(-Wall HAS_WALL)
+if(HAS_WALL)
+  target_compile_options(LRSpline PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-Wall>)
+endif()
 
-# Make the LRSpline library
-FILE(GLOB LRSPLINE_SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp)
-ADD_LIBRARY(LRSpline SHARED ${LRSPLINE_SRCS})
-TARGET_LINK_LIBRARIES(LRSpline ${DEPLIBS})
-SET_TARGET_PROPERTIES(LRSpline PROPERTIES  VERSION ${LRSpline_VERSION}
-                      SOVERSION ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR})
+check_cxx_compiler_flag(-Wno-parentheses HAS_PARENTHESES)
+if(HAS_PARENTHESES)
+  target_compile_options(LRSpline PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-Wno-parentheses>)
+endif()
 
-# Make some Apps
-ADD_EXECUTABLE(reduceContinuity ${PROJECT_SOURCE_DIR}/Apps/reduceContinuity.cpp)
-TARGET_LINK_LIBRARIES(reduceContinuity LRSpline ${DEPLIBS})
+target_sources(
+  LRSpline
+  PRIVATE
+    src/Basisfunction.cpp
+    src/Element.cpp
+    src/LRSpline.cpp
+    src/LRSplineSurface.cpp
+    src/LRSplineVolume.cpp
+    src/Meshline.cpp
+    src/MeshRectangle.cpp
+    src/Profiler.cpp
+)
 
-ADD_EXECUTABLE(testIntegral ${PROJECT_SOURCE_DIR}/Apps/testIntegral.cpp)
-TARGET_LINK_LIBRARIES(testIntegral LRSpline ${DEPLIBS})
+# TODO: Remove list when we can drop support for CMake 3.22
+set(LRSpline_PUBLIC_HEADERS
+  ${PROJECT_BINARY_DIR}/LRSpline_version.h
+  include/LRSpline/Basisfunction.h
+  include/LRSpline/Element.h
+  include/LRSpline/HashSet.h
+  include/LRSpline/LRSpline.h
+  include/LRSpline/LRSplineSurface.h
+  include/LRSpline/LRSplineVolume.h
+  include/LRSpline/Meshline.h
+  include/LRSpline/MeshRectangle.h
+  include/LRSpline/Profiler.h
+  include/LRSpline/Streamable.h
+)
 
-ADD_EXECUTABLE(PartitionOfUnityTest ${PROJECT_SOURCE_DIR}/Apps/PartitionOfUnityTest.cpp)
-TARGET_LINK_LIBRARIES(PartitionOfUnityTest LRSpline ${DEPLIBS})
+if(CMAKE_VERSION GREATER_EQUAL 3.23)
+  target_sources(
+    LRSpline
+    PUBLIC
+    FILE_SET
+      HEADERS
+    BASE_DIRS
+      ${PROJECT_BINARY_DIR}
+      include
+    FILES
+    ${LRSpline_PUBLIC_HEADERS}
+  )
+endif()
 
-ADD_EXECUTABLE(StresstestRefinement ${PROJECT_SOURCE_DIR}/Apps/StresstestRefinement.cpp)
-TARGET_LINK_LIBRARIES(StresstestRefinement LRSpline ${DEPLIBS})
+set_target_properties(
+  LRSpline
+  PROPERTIES
+    VERSION
+      ${LRSpline_VERSION}
+    SOVERSION
+      ${LRSpline_VERSION_MAJOR}.${LRSpline_VERSION_MINOR}
+)
 
-ADD_EXECUTABLE(StresstestEvaluation ${PROJECT_SOURCE_DIR}/Apps/StresstestEvaluation.cpp)
-TARGET_LINK_LIBRARIES(StresstestEvaluation LRSpline ${DEPLIBS})
+if(TARGET GoTools::GoTrivariate)
+  target_compile_definitions(LRSpline PUBLIC HAS_GOTOOLS=1)
+  target_link_libraries(LRSpline PUBLIC GoTools::GoTrivariate)
+endif()
 
-ADD_EXECUTABLE(TestReadWrite ${PROJECT_SOURCE_DIR}/Apps/TestReadWrite.cpp)
-TARGET_LINK_LIBRARIES(TestReadWrite LRSpline ${DEPLIBS})
+set(APP_LIST
+  BezierExtract
+  Diagonal
+  drawLRmesh
+  drawLRmultipatch
+  MakeWaterfall
+  reduceContinuity
+  refine
+  RefinementUnchanged
+  PartitionOfUnityTest
+  StresstestEvaluation
+  StresstestRefinement
+  testIntegral
+  TestMatchingKnots
+  TestReadWrite
+  TopologyRefinement
+)
 
-ADD_EXECUTABLE(Diagonal ${PROJECT_SOURCE_DIR}/Apps/Diagonal.cpp)
-TARGET_LINK_LIBRARIES(Diagonal LRSpline ${DEPLIBS})
+if(TARGET GoTools::GoTrivariate)
+  list(APPEND APP_LIST TensorComparison)
+endif()
 
-ADD_EXECUTABLE(MakeWaterfall ${PROJECT_SOURCE_DIR}/Apps/MakeWaterfall.cpp)
-TARGET_LINK_LIBRARIES(MakeWaterfall LRSpline ${DEPLIBS})
+if(Boost_FOUND)
+  list(APPEND APP_LIST LinearIndep)
+endif()
 
-ADD_EXECUTABLE(RefinementUnchanged ${PROJECT_SOURCE_DIR}/Apps/RefinementUnchanged.cpp)
-TARGET_LINK_LIBRARIES(RefinementUnchanged LRSpline ${DEPLIBS})
+foreach(APP ${APP_LIST})
+  add_executable(${APP} Apps/${APP}.cpp)
+  target_link_libraries(${APP} PRIVATE LRSpline)
+  set_target_properties(
+    ${APP}
+    PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY
+        bin
+  )
+endforeach()
+if(TARGET LinearIndep)
+  target_link_libraries(LinearIndep PRIVATE Boost::boost)
+endif()
 
-IF(HAS_GOTOOLS)
-  ADD_EXECUTABLE(TensorComparison ${PROJECT_SOURCE_DIR}/Apps/TensorComparison.cpp)
-  TARGET_LINK_LIBRARIES(TensorComparison LRSpline ${DEPLIBS})
-ENDIF(HAS_GOTOOLS)
+# Regression tests
+enable_testing()
 
-ADD_EXECUTABLE(TopologyRefinement ${PROJECT_SOURCE_DIR}/Apps/TopologyRefinement.cpp)
-TARGET_LINK_LIBRARIES(TopologyRefinement LRSpline ${DEPLIBS})
+function(add_tests)
+  set(oneValueArgs TARGET WORKING_DIRECTORY)
+  set(multiValueArgs TEST_FILES)
+  cmake_parse_arguments(PARAM "" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  foreach(REG ${PARAM_TEST_FILES})
+    get_filename_component(TEST_NAME ${REG} NAME)
+    get_filename_component(WD ${REG} DIRECTORY)
+    add_test(
+      NAME
+        ${PARAM_TARGET}+${TEST_NAME}
+      COMMAND
+        ${PROJECT_SOURCE_DIR}/test/regtest.sh
+        $<TARGET_FILE:${PARAM_TARGET}>
+        ${PROJECT_SOURCE_DIR}/${REG}
+        ${PROJECT_BINARY_DIR}
+    )
+  endforeach()
+endfunction()
 
-IF(HAS_BOOST)
-  ADD_EXECUTABLE(LinearIndep ${PROJECT_SOURCE_DIR}/Apps/LinearIndep.cpp)
-  TARGET_LINK_LIBRARIES(LinearIndep LRSpline ${DEPLIBS})
-ENDIF(HAS_BOOST)
+add_tests(
+  TARGET
+    RefinementUnchanged
+  TEST_FILES
+    test/RefinementUnchanged/article_example.reg
+    test/RefinementUnchanged/corner_refine.reg
+    test/RefinementUnchanged/cross_1_5_m1.reg
+    test/RefinementUnchanged/cross_1_5_m2.reg
+    test/RefinementUnchanged/discontinuous.reg
+    test/RefinementUnchanged/mergeVol.reg
+    test/RefinementUnchanged/one_third_raise_mult.reg
+    test/RefinementUnchanged/one_third_start_at.reg
+    test/RefinementUnchanged/overlap.reg
+    test/RefinementUnchanged/vol_3cube_corner.reg
+)
+add_tests(
+  TARGET
+    Diagonal
+  TEST_FILES
+    test/Diagonal/fullspan_p3_m1.reg
+    test/Diagonal/minspan_p3_m3.reg
+    test/Diagonal/struct_p3_m1.reg
+)
+add_tests(
+  TARGET
+    TestReadWrite
+  TEST_FILES
+    test/TestReadWrite/p3n50.reg
+    test/TestReadWrite/p3q6.reg
+    test/TestReadWrite/p3.reg
+    test/TestReadWrite/vol_p345.reg
+)
+add_tests(
+  TARGET
+    TopologyRefinement
+  TEST_FILES
+    test/TopologyRefinement/orderDep_2D.reg
+    test/TopologyRefinement/orderIndep_2D.reg
+    test/TopologyRefinement/vol.reg
+)
+add_tests(
+  TARGET
+    testIntegral
+  TEST_FILES
+    test/Integrals/surf_p33.reg
+    test/Integrals/vol_p333.reg
+)
 
-ADD_EXECUTABLE(drawLRmesh ${PROJECT_SOURCE_DIR}/Apps/drawLRmesh.cpp)
-TARGET_LINK_LIBRARIES(drawLRmesh LRSpline ${DEPLIBS})
+if(Boost_FOUND)
+  add_tests(
+    TARGET
+      RefinementUnchanged
+    TEST_FILES
+      test/RefinementUnchanged/LinDep_elongation.reg
+      test/RefinementUnchanged/LinDep_newline.reg
+  )
+  add_tests(
+    TARGET
+      LinearIndep
+    TEST_FILES
+      test/LinearIndep/Pettersen_InitPaper_Overload.reg
+      test/LinearIndep/Pettersen_InitPaper.reg
+  )
+endif()
 
-ADD_EXECUTABLE(drawLRmultipatch ${PROJECT_SOURCE_DIR}/Apps/drawLRmultipatch.cpp)
-TARGET_LINK_LIBRARIES(drawLRmultipatch LRSpline ${DEPLIBS})
+if(TARGET GoTrivariate)
+  add_tests(
+    TARGET
+      TensorComparison
+    TEST_FILES
+      test/TensorComparison/p4q5.reg
+      test/TensorComparison/vol_p345.reg
+  )
+endif()
 
-ADD_EXECUTABLE(BezierExtract ${PROJECT_SOURCE_DIR}/Apps/BezierExtract.cpp)
-TARGET_LINK_LIBRARIES(BezierExtract LRSpline ${DEPLIBS})
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+  cmake/Templates/LRSplineConfig.cmake.in
+  ${PROJECT_BINARY_DIR}/LRSplineConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LRSpline
+)
 
-ADD_EXECUTABLE(refine ${PROJECT_SOURCE_DIR}/Apps/refine.cpp)
-TARGET_LINK_LIBRARIES(refine LRSpline ${DEPLIBS})
+export(TARGETS LRSpline FILE LRSplineTargets.cmake NAMESPACE LRSpline::)
 
-ADD_EXECUTABLE(TestMatchingKnots ${PROJECT_SOURCE_DIR}/Apps/TestMatchingKnots.cpp)
-TARGET_LINK_LIBRARIES(TestMatchingKnots LRSpline ${DEPLIBS})
+if(WIN32)
+  set(INSTALL_LIBDIR LRSpline)
+  set(INSTALL_INCLUDE_DIR LRSpline/include)
+  set(INSTALL_DOCDIR LRSpline/docs)
+else()
+  set(INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
+  set(INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_INCLUDEDIR}/LRSpline)
+  set(INSTALL_DOCDIR ${CMAKE_INSTALL_DOCDIR}/LRSpline)
+endif()
 
-# # Regression tests
-IF(HAS_BOOST)
-  FILE(GLOB_RECURSE REGRESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/RefinementUnchanged/*.reg")
-ELSE(HAS_BOOST)
-  FILE(GLOB_RECURSE REGRESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/RefinementUnchanged/[^LinDep]*.reg")
-ENDIF(HAS_BOOST)
-FOREACH(TESTFILE ${REGRESSION_TESTFILES})
-  ADD_TEST(${TESTFILE} ${PROJECT_SOURCE_DIR}/test/regtest.sh "${PROJECT_BINARY_DIR}/${EXECUTABLE_OUTPUT_PATH}/RefinementUnchanged" "${TESTFILE}" ${PROJECT_BINARY_DIR})
-ENDFOREACH()
+if(CMAKE_VERSION GREATER_EQUAL 3.23)
+  install(
+    TARGETS
+      LRSpline
+    EXPORT
+      LRSpline
+    DESTINATION
+      ${INSTALL_LIBDIR}
+    FILE_SET
+      HEADERS
+    DESTINATION
+      ${INSTALL_INCLUDEDIR}
+  )
+else()
+  install(
+    TARGETS
+      LRSpline
+    EXPORT
+      LRSpline
+    DESTINATION
+      ${INSTALL_LIBDIR}
+  )
+  install(
+    FILES
+      ${LRSpline_PUBLIC_HEADERS}
+    DESTINATION
+      ${INSTALL_INCLUDEDIR}
+  )
+endif()
 
-IF(HAS_GOTOOLS)
-  FILE(GLOB_RECURSE REGRESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/TensorComparison/*.reg")
-  FOREACH(TESTFILE ${REGRESSION_TESTFILES})
-    ADD_TEST(${TESTFILE} ${PROJECT_SOURCE_DIR}/test/regtest.sh "${PROJECT_BINARY_DIR}/${EXECUTABLE_OUTPUT_PATH}/TensorComparison" "${TESTFILE}" ${PROJECT_BINARY_DIR})
-  ENDFOREACH()
-ENDIF(HAS_GOTOOLS)
+install(
+  EXPORT
+    LRSpline
+  DESTINATION
+    ${INSTALL_LIBDIR}/cmake/LRSpline
+  FILE
+    LRSplineTargets.cmake
+)
 
-FILE(GLOB_RECURSE REGRESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/Diagonal/*.reg")
-FOREACH(TESTFILE ${REGRESSION_TESTFILES})
-  ADD_TEST(${TESTFILE} ${PROJECT_SOURCE_DIR}/test/regtest.sh "${PROJECT_BINARY_DIR}/${EXECUTABLE_OUTPUT_PATH}/Diagonal" "${TESTFILE}" ${PROJECT_BINARY_DIR})
-ENDFOREACH()
+install(
+  FILES
+    ${PROJECT_BINARY_DIR}/LRSplineConfig.cmake
+  DESTINATION
+    ${INSTALL_LIBDIR}/cmake/LRSpline
+)
 
-IF(HAS_BOOST)
-  FILE(GLOB_RECURSE REGRESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/LinearIndep/*.reg")
-  FOREACH(TESTFILE ${REGRESSION_TESTFILES})
-    ADD_TEST(${TESTFILE} ${PROJECT_SOURCE_DIR}/test/regtest.sh "${PROJECT_BINARY_DIR}/${EXECUTABLE_OUTPUT_PATH}/LinearIndep" "${TESTFILE}" ${PROJECT_BINARY_DIR})
-  ENDFOREACH()
-ENDIF(HAS_BOOST)
+# For generating the doxy
+add_custom_target(doc
+  doc
+  COMMAND
+    doxygen ${PROJECT_BINARY_DIR}/Doxyfile
+  WORKING_DIRECTORY
+    ${PROJECT_SOURCE_DIR}
+  COMMENT
+    "Generating API documentation" VERBATIM
+)
 
-FILE(GLOB_RECURSE REGRESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/TestReadWrite/*.reg")
-FOREACH(TESTFILE ${REGRESSION_TESTFILES})
-  ADD_TEST(${TESTFILE} ${PROJECT_SOURCE_DIR}/test/TestReadWrite/regtest.sh "${PROJECT_BINARY_DIR}/${EXECUTABLE_OUTPUT_PATH}/TestReadWrite" "${TESTFILE}" ${PROJECT_BINARY_DIR})
-ENDFOREACH()
+install(
+  CODE
+  "EXECUTE_PROCESS(COMMAND ${CMAKE_BUILD_TOOL} doc WORKING_DIRECTORY \"${PROJECT_BINARY_DIR}\")"
+)
 
-FILE(GLOB_RECURSE REGRESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/TopologyRefinement/*.reg")
-FOREACH(TESTFILE ${REGRESSION_TESTFILES})
-  ADD_TEST(${TESTFILE} ${PROJECT_SOURCE_DIR}/test/regtest.sh "${PROJECT_BINARY_DIR}/${EXECUTABLE_OUTPUT_PATH}/TopologyRefinement" "${TESTFILE}" ${PROJECT_BINARY_DIR})
-ENDFOREACH()
-
-FILE(GLOB_RECURSE REGRESSION_TESTFILES "${PROJECT_SOURCE_DIR}/test/Integrals/*.reg")
-FOREACH(TESTFILE ${REGRESSION_TESTFILES})
-  ADD_TEST(${TESTFILE} ${PROJECT_SOURCE_DIR}/test/regtest.sh "${PROJECT_BINARY_DIR}/${EXECUTABLE_OUTPUT_PATH}/testIntegral" "${TESTFILE}" ${PROJECT_BINARY_DIR})
-ENDFOREACH()
-
-# 'install' target
-IF(WIN32)
-  #  install(TARGETS LRSplines DESTINATION LRSplines)
-  #  install(FILES ${INCLUDES} DESTINATION LRSplines/include)
-  # TODO
-ELSE(WIN32)
-  include(GNUInstallDirs)
-  # lib
-  INSTALL(TARGETS LRSpline DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
-  # For generating the doxy
-  ADD_CUSTOM_TARGET(doc doxygen ${PROJECT_BINARY_DIR}/Doxyfile
-                    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-                    COMMENT "Generating API documentation" VERBATIM)
-  INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${CMAKE_BUILD_TOOL} doc WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")")
-
-  INSTALL(DIRECTORY ${PROJECT_BINARY_DIR}/doc/html/ DESTINATION share/doc/liblrsplines1/html)
-
-  # headers
-  FILE(GLOB LRSPLINE_HEADERS include/LRSpline/Basisfunction.h
-                             include/LRSpline/Element.h
-                             include/LRSpline/Meshline.h
-                             include/LRSpline/LRSpline_version.h
-                             include/LRSpline/LRSpline.h
-                             include/LRSpline/LRSplineSurface.h
-                             include/LRSpline/LRSplineVolume.h
-                             include/LRSpline/Streamable.h
-                             include/LRSpline/HashSet.h
-                             include/LRSpline/MeshRectangle.h
-                             ${PROJECT_BINARY_DIR}/include/LRSpline/LRSpline_version.h)
-  INSTALL(FILES ${LRSPLINE_HEADERS}
-                DESTINATION include/LRSpline)
-  INSTALL(FILES ${PROJECT_BINARY_DIR}/LRSplineConfig.cmake
-                ${PROJECT_BINARY_DIR}/LRSplineConfigVersion.cmake
-          DESTINATION ${CMAKE_INSTALL_LIBDIR}/LRSpline)
-ENDIF(WIN32)
+install(
+  DIRECTORY
+    ${PROJECT_BINARY_DIR}/doc/html
+  DESTINATION
+    ${INSTALL_DOCDIR}/html
+  PATTERN
+    *.md5 EXCLUDE
+  PATTERN
+    *.map EXCLUDE
+)

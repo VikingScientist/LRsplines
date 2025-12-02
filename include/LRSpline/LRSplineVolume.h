@@ -5,9 +5,6 @@
 	#include <GoTools/utils/Point.h>
 	#include <GoTools/trivariate/SplineVolume.h>
 #endif
-#ifdef HAS_BOOST
-	#include <boost/rational.hpp>
-#endif
 #ifdef TIME_LRSPLINE
 #include "Profiler.h"
 #endif
@@ -54,10 +51,16 @@ public:
 #ifdef HAS_GOTOOLS
 	virtual void point(Go::Point &pt, double u, double v, double w, int iEl=-1) const;
 	virtual void point(Go::Point &pt, double u, double v, double w, int iEl, bool u_from_right, bool v_from_right, bool w_from_right) const;
-	virtual void point(std::vector<Go::Point> &pts, double upar, double vpar, double wpar, int derivs, int iEl=-1) const;
+    virtual void point(std::vector<Go::Point> &pts, double upar, double vpar, double wpar, int derivs, int iEl=-1) const;
+#if GoTools_VERSION_MAJOR > 4
+    void computeBasis (double param_u, double param_v, double param_w, Go::BasisPtsVol     & result, int iEl=-1 ) const;
+    void computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivsVol  & result, int iEl=-1 ) const;
+    void computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivsVol2 & result, int iEl=-1 ) const;
+#else
 	void computeBasis (double param_u, double param_v, double param_w, Go::BasisPts     & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivs  & result, int iEl=-1 ) const;
 	void computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivs2 & result, int iEl=-1 ) const;
+#endif
 #endif
 	virtual void point(std::vector<double> &pt, double u, double v, double w, int iEl=-1) const;
 	virtual void point(std::vector<double> &pt, double u, double v, double w, int iEl, bool u_from_right, bool v_from_right, bool w_from_right) const;
@@ -102,9 +105,6 @@ public:
 	bool isLinearIndepByOverloading(bool verbose) ;
 	bool isLinearIndepByMappingMatrix(bool verbose) const ;
 	bool isLinearIndepByFloatingPointMappingMatrix(bool verbose) const ;
-#ifdef HAS_BOOST
-	void getNullSpace(std::vector<std::vector<boost::rational<long long> > >& nullspace) const ;
-#endif
 
 	void updateSupport(Basisfunction *f) ;
 	void updateSupport(Basisfunction *f,

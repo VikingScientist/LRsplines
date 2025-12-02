@@ -371,7 +371,11 @@ void LRSplineVolume::point(std::vector<std::vector<double> > &pts, double u, dou
 }
 
 #ifdef HAS_GOTOOLS
+#if GoTools_VERSION_MAJOR > 4
+void LRSplineVolume::computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivsVol2 & result, int iEl ) const {
+#else
 void LRSplineVolume::computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivs2 & result, int iEl ) const {
+#endif
 #ifdef TIME_LRSPLINE
 	PROFILE("computeBasis()");
 #endif
@@ -400,7 +404,11 @@ void LRSplineVolume::computeBasis (double param_u, double param_v, double param_
 	}
 }
 
+#if GoTools_VERSION_MAJOR > 4
+void LRSplineVolume::computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivsVol & result, int iEl ) const {
+#else
 void LRSplineVolume::computeBasis (double param_u, double param_v, double param_w, Go::BasisDerivs & result, int iEl ) const {
+#endif
 #ifdef TIME_LRSPLINE
 	PROFILE("computeBasis()");
 #endif
@@ -423,7 +431,11 @@ void LRSplineVolume::computeBasis (double param_u, double param_v, double param_
 }
 
 
+#if GoTools_VERSION_MAJOR > 4
+void LRSplineVolume::computeBasis(double param_u, double param_v, double param_w, Go::BasisPtsVol & result, int iEl ) const {
+#else
 void LRSplineVolume::computeBasis(double param_u, double param_v, double param_w, Go::BasisPts & result, int iEl ) const {
+#endif
 #ifdef TIME_LRSPLINE
 	PROFILE("computeBasis()");
 #endif

@@ -9,10 +9,171 @@
 #include "LRSpline/Element.h"
 #include "LRSpline/Meshline.h"
 
+#include <boost/rational.hpp>
+
 typedef unsigned int uint;
 
 using namespace LR;
 using namespace std;
+
+using NullSpaceVec = std::vector<std::vector<boost::rational<long long>>>;
+
+void getNullSpace(const LR::LRSplineSurface& lr, NullSpaceVec& nullspace) {
+#ifdef TIME_LRSPLINE
+    PROFILE("Linear independent)");
+#endif
+    // try and figure out this thing by the projection matrix C
+
+    std::vector<double> knots_u, knots_v;
+    lr.getGlobalKnotVector(knots_u, knots_v);
+    int nmb_bas = lr.nBasisFunctions();
+    int n1 = knots_u.size() - lr.order(0);
+    int n2 = knots_v.size() - lr.order(1);
+    int fullDim = n1*n2;
+
+    std::vector<std::vector<boost::rational<long long> > > Ct;  // rational projection matrix (transpose of this)
+
+    // scaling factor to ensure that all knots are integers (assuming all multiplum of smallest knot span)
+    double smallKnotU = std::numeric_limits<double>::max();
+    double smallKnotV = std::numeric_limits<double>::max();;
+    for(uint i=0; i<knots_u.size()-1; i++)
+        if(knots_u[i+1]-knots_u[i] < smallKnotU && knots_u[i+1] != knots_u[i])
+            smallKnotU = knots_u[i+1]-knots_u[i];
+    for(uint i=0; i<knots_v.size()-1; i++)
+        if(knots_v[i+1]-knots_v[i] < smallKnotV && knots_v[i+1] != knots_v[i])
+            smallKnotV = knots_v[i+1]-knots_v[i];
+
+    // initialize C transpose with zeros
+    for(int i=0; i<fullDim; i++)
+        Ct.push_back(std::vector<boost::rational<long long> >(nmb_bas, boost::rational<long long>(0)));
+
+    int basCount = 0;
+    for(const Basisfunction* b : lr.getAllBasisfunctions())  {
+        int startU, startV;
+        std::vector<double> locKnotU((*b)[0].begin(), (*b)[0].end());
+        std::vector<double> locKnotV((*b)[1].begin(), (*b)[1].end());
+
+        for(startU=knots_u.size(); startU-->0; )
+            if(knots_u[startU] == (*(b))[0][0]) break;
+        for(int j=0; j<lr.order(0); j++) {
+            if(knots_u[startU] == (*(b))[0][j]) startU--;
+            else break;
+        }
+        startU++;
+        for(startV=knots_v.size(); startV-->0; )
+            if(knots_v[startV] == (*(b))[1][0]) break;
+        for(int j=0; j<lr.order(1); j++) {
+            if(knots_v[startV] == (*(b))[1][j]) startV--;
+            else break;
+        }
+        startV++;
+
+        std::vector<boost::rational<long long> > rowU(1,1), rowV(1,1);
+        int curU = startU+1;
+        for(uint j=0; j<locKnotU.size()-1; j++, curU++) {
+            if(locKnotU[j+1] != knots_u[curU]) {
+                std::vector<boost::rational<long long> > newRowU(rowU.size()+1, boost::rational<long long>(0));
+                for(uint k=0; k<rowU.size(); k++) {
+                    #define U(x) ((long long) (locKnotU[x+k]/smallKnotU + 0.5))
+                    long long z = (long long) (knots_u[curU] / smallKnotU + 0.5);
+                    int p = lr.order(0)-1;
+                    if(z < U(0) || z > U(p+1)) {
+                        newRowU[k] = rowU[k];
+                        continue;
+                    }
+                    boost::rational<long long> alpha1 = (U(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - U(0),  U(p)  - U(0));
+                    boost::rational<long long> alpha2 = (z    <= U(1)) ? 1 : boost::rational<long long>( U(p+1) - z   , U(p+1) - U(1));
+                    newRowU[k]   += rowU[k]*alpha1;
+                    newRowU[k+1] += rowU[k]*alpha2;
+                    #undef U
+                }
+                locKnotU.insert(locKnotU.begin()+(j+1), knots_u[curU]);
+                rowU = newRowU;
+            }
+        }
+        int curV = startV+1;
+        for(uint j=0; j<locKnotV.size()-1; j++, curV++) {
+            if(locKnotV[j+1] != knots_v[curV]) {
+                std::vector<boost::rational<long long> > newRowV(rowV.size()+1, boost::rational<long long>(0));
+                for(uint k=0; k<rowV.size(); k++) {
+                    #define V(x) ((long long) (locKnotV[x+k]/smallKnotV + 0.5))
+                    long long z = (long long) (knots_v[curV] / smallKnotV + 0.5);
+                    int p = lr.order(1)-1;
+                    if(z < V(0) || z > V(p+1)) {
+                        newRowV[k] = rowV[k];
+                        continue;
+                    }
+                    boost::rational<long long> alpha1 = (V(p) <=  z  ) ? 1 : boost::rational<long long>(   z    - V(0),  V(p)  - V(0));
+                    boost::rational<long long> alpha2 = (z    <= V(1)) ? 1 : boost::rational<long long>( V(p+1) - z   , V(p+1) - V(1));
+                    newRowV[k]   += rowV[k]*alpha1;
+                    newRowV[k+1] += rowV[k]*alpha2;
+                    #undef V
+                }
+                locKnotV.insert(locKnotV.begin()+(j+1), knots_v[curV]);
+                rowV= newRowV;
+            }
+        }
+        for(uint i1=0; i1<rowU.size(); i1++)
+            for(uint i2=0; i2<rowV.size(); i2++)
+                Ct[(startV+i2)*n1 + (startU+i1)][basCount] = rowV[i2]*rowU[i1];
+        basCount++;
+    }
+
+
+    std::ofstream out;
+    out.open("Ct.m");
+    out << "A = [";
+    for(uint i=0; i<Ct.size(); i++) {
+        for(uint j=0; j<Ct[i].size(); j++)
+            if(Ct[i][j] > 0)
+                out << i << " " << j << " " << Ct[i][j] << ";\n";
+    }
+    out << "];" << std::endl;
+    out.close();
+    // gauss-jordan elimination
+    int zeroColumns = 0;
+    for(uint i=0; i<Ct.size() && i+zeroColumns<Ct[i].size(); i++) {
+        boost::rational<long long> maxPivot(0);
+        int maxI = -1;
+        for(uint j=i; j<Ct.size(); j++) {
+            if(abs(Ct[j][i+zeroColumns]) > maxPivot) {
+                maxPivot = abs(Ct[j][i+zeroColumns]);
+                maxI = j;
+            }
+        }
+        if(maxI == -1) {
+            i--;
+            zeroColumns++;
+            continue;
+        }
+        std::vector<boost::rational<long long> > tmp = Ct[i];
+        Ct[i]    = Ct[maxI];
+        Ct[maxI] = tmp;
+        boost::rational<long long> leading = Ct[i][i+zeroColumns];
+        for(uint j=i+zeroColumns; j<Ct[i].size(); j++)
+            Ct[i][j] /= leading;
+
+        for(uint j=0; j<Ct.size(); j++) {
+            if(i==j) continue;
+            boost::rational<long long> scale =  Ct[j][i+zeroColumns] / Ct[i][i+zeroColumns];
+            if(scale != 0) {
+                for(uint k=i+zeroColumns; k<Ct[j].size(); k++)
+                    Ct[j][k] -= Ct[i][k] * scale;
+            }
+        }
+    }
+
+    // figure out the null space
+    nullspace.clear();
+    for(int i=0; i<zeroColumns; i++) {
+        std::vector<boost::rational<long long> > newRow(nmb_bas, boost::rational<long long>(0));
+        newRow[nmb_bas-(i+1)] = 1;
+        nullspace.push_back(newRow);
+    }
+    for(int i=0; i<zeroColumns; i++)
+        for(int j=0; j<nmb_bas-zeroColumns; j++)
+            nullspace[i][j] = -Ct[j][nmb_bas-(i+1)]; // no need to divide by C[j][j] since it's 1
+}
 
 int main(int argc, char **argv) {
 #ifdef TIME_LRSPLINE
@@ -25,9 +186,7 @@ int main(int argc, char **argv) {
 	bool one_by_one               = false;
 	bool floatingPointCheck       = false;
 	bool isInteger                = false;
-#ifdef HAS_BOOST
 	bool dumpNullSpace            = false;
-#endif
 	bool overload                 = false;
 	double beta                   = 0.10;
 	double maxAspectRatio         = -1;
@@ -72,10 +231,8 @@ int main(int argc, char **argv) {
 			refineFileName = argv[++i];
 		else if(strcmp(argv[i], "-overload") == 0)
 			overload = true;
-#ifdef HAS_BOOST
 		else if(strcmp(argv[i], "-nullspace") == 0)
 			dumpNullSpace = true;
-#endif
 		else if(strcmp(argv[i], "-help") == 0) {
 			cout << "usage: " << argv[0] << "[parameters] <refine inputfile>" << endl << parameters;
 			exit(0);
@@ -203,10 +360,8 @@ int main(int argc, char **argv) {
 					isLinearIndep = lr_original->isLinearIndepByFloatingPointMappingMatrix(false);
 				else if(overload)
 					isLinearIndep = lr_original->isLinearIndepByOverloading(false);
-#ifdef HAS_BOOST
 				else
 					isLinearIndep = lr_original->isLinearIndepByMappingMatrix(false);
-#endif
 				if( ! isLinearIndep) {
 					printf("Nelements = %5d Nbasis = %5d \n", lr_original->nElements(), lr_original->nBasisFunctions());
 					lr = lr_original;
@@ -222,10 +377,8 @@ int main(int argc, char **argv) {
 			isLinearIndep = lr->isLinearIndepByFloatingPointMappingMatrix(verbose);
 		else if(overload)
 			isLinearIndep = lr->isLinearIndepByOverloading(verbose);
-#ifdef HAS_BOOST
 		else
 			isLinearIndep = lr->isLinearIndepByMappingMatrix(verbose);
-#endif
 	}
 
 	if(dumpFile) {
@@ -263,10 +416,9 @@ int main(int argc, char **argv) {
 		exit(0);
 	} else {
 		cout << "Linear dependent mesh!\n";
-#ifdef HAS_BOOST
 		if(dumpNullSpace) {
-			vector<vector<boost::rational<long long> > > nullspace;
-			lr->getNullSpace(nullspace);
+			NullSpaceVec nullspace;
+			getNullSpace(*lr, nullspace);
 			std::cout << "Nullspace: " << nullspace.size() << " x " << nullspace[0].size() << std::endl;
 			cout << "Number of null vectors: " << nullspace.size() << endl;
 			cout << "Vector sizes:           " << nullspace[0].size() << endl;
@@ -276,7 +428,6 @@ int main(int argc, char **argv) {
 				cout << endl;
 			}
 		}
-#endif
 		exit(1);
 	}
 
