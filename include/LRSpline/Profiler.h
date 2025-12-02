@@ -16,6 +16,11 @@
 
 #ifdef TIME_LRSPLINE
 
+#ifdef USE_TRACY
+#define TRACY_ENABLE 1
+#include <tracy/Tracy.hpp>
+#endif
+
 #include <iostream>
 #include <string>
 #include <map>
@@ -113,7 +118,13 @@ namespace utl
 
 
 //! \brief Macro to add profiling of the local scope.
+#ifdef USE_TRACY
+//! \brief Macro to add profiling of the local scope.
+#define PROFILE(label) ZoneNamedN(_prof, #label, true)
+#else
+//! \brief Macro to add profiling of the local scope.
 #define PROFILE(label) utl::prof _prof(label)
+#endif
 
 #if PROFILE_LEVEL >= 1
 #define PROFILE1(label) PROFILE(label)

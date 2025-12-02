@@ -85,7 +85,7 @@ endif()
 
 target_compile_definitions(LRSpline INTERFACE LRSPLINE_HAS_FUNC_TOLERANCE=1)
 
-if(NOT TARGET GoTrivariate)
+if(NOT TARGET GoTools::GoTrivariate)
   message(STATUS "Compiling without GoTools")
 endif()
 
@@ -96,7 +96,20 @@ if(NOT Boost_FOUND)
 endif()
 
 if(NOT WIN32)
-  target_compile_definitions(LRSpline PRIVATE TIME_LRSPLINE=1)
+  option(USE_PROFILING "Enable profiling?" OFF)
+  if(USE_PROFILING)
+    target_compile_definitions(LRSpline PUBLIC TIME_LRSPLINE=1)
+  endif()
+endif()
+
+option(USE_TRACY "Use Tracy for profiling?" OFF)
+if(USE_TRACY AND USE_PROFILING)
+  find_package(Tracy)
+  if(TARGET Tracy::TracyClient)
+    target_link_libraries(LRSpline PUBLIC Tracy::TracyClient)
+    target_compile_definitions(LRSpline PUBLIC USE_TRACY=1)
+    message(STATUS "Tracy support enabled")
+  endif()
 endif()
 
 include(CheckCXXCompilerFlag)
